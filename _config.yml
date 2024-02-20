@@ -21,7 +21,7 @@ repository               : "jamesnulliu/jamesnulliu.github.io"
 #               Additional customization can be done by editing /_includes/author-profile.html
 author:
   # Biographic information
-  avatar           : "profile.png"
+  avatar           : "my_photo.png"
   name             : "Yanchen Liu"
   pronouns         : # example: "she/her"  
   bio              : "Short biography for the left-hand sidebar"
@@ -64,7 +64,7 @@ author:
   steam            : # Username
   telegram         : # URL
   tumblr           : # Username
-  twitter          : "UniofOxford"  # Replace this with your X / Twitter handle
+  twitter          : #"UniofOxford"  # Replace this with your X / Twitter handle
   vine             : # Username
   weibo            : # Username
   wikipedia        : # Username
