@@ -15,9 +15,9 @@ I love to learn new things and share my knowledge with others. I am always open 
 
 - Computer Vision
 - Machine Learning
+- CUDA Programming
 - High Performance Computing
 - Computer Architecture
-- Functional Safety and Cybersecurity
 
 # News 🎉
 
@@ -25,4 +25,4 @@ I love to learn new things and share my knowledge with others. I am always open 
 
 # Publications 📰
 
-1. Qi Liu, Xingyu Li, Ke Sun, Yufeng Li, **Yanchen Liu**. "SISSA: Real-time Monitoring of Hardware Functional Safety and Cybersecurity with In-vehicle SOME/IP Ethernet Traffic" [[Project](https://github.com/jamesnulliu/SISSA)][[Arxiv](https://arxiv.org/abs/2402.14862)].
+1. Qi Liu, Xingyu Li, Ke Sun, Yufeng Li\*, **Yanchen Liu**\*. "SISSA: Real-time Monitoring of Hardware Functional Safety and Cybersecurity with In-vehicle SOME/IP Ethernet Traffic" [[Project](https://github.com/jamesnulliu/SISSA)][[Arxiv](https://arxiv.org/abs/2402.14862)].
