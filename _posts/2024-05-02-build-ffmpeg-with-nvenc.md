@@ -26,9 +26,11 @@ sudo make install
 
 cd nv-codec-headers && sudo make install
 
-cd FFmpeg
+cd ..
 
 git clone git@github.com:FFmpeg/FFmpeg.git
+
+cd FFmpeg
 
 ./configure --prefix=/usr/local/ffmpeg --enable-nonfree \
     --enable-cuda-nvcc --disable-x86asm --nvcc=$CUDA_HOME/nvcc \

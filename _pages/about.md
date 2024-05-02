@@ -11,7 +11,7 @@ I'm a third year undergraduate student from [School of CES](https://cs.shu.edu.c
 
 I love to learn new things and share my knowledge with others. I am always open to new opportunities and challenges. If you have any questions or want to collaborate, feel free to contact me via [email](jamesnulliu@gmail.com).
 
-# Research Interests 😎
+# Research Interests
 
 - Computer Vision
 - Machine Learning

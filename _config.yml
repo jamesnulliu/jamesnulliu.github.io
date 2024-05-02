@@ -21,13 +21,13 @@ repository               : "jamesnulliu/jamesnulliu.github.io"
 #               Additional customization can be done by editing /_includes/author-profile.html
 author:
   # Biographic information
-  avatar           : "profile.png"
+  avatar           : "me.png"
   name             : "Yanchen Liu"
-  pronouns         : # example: "she/her"  
+  pronouns         : "He/Him"
   bio              : "Learner and Researcher in CV, ML and HPC"
   location         : "Shanghai"
   employer         : "Shanghai University"
-  uri              : "https://jamesnulliu.github.io" # Used for author profile link
+  uri              : "https://jamesnulliu.github.io"
   email            : "jamesnulliu@gmail.com" 
 
   # Academic websites
