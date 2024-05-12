@@ -26,4 +26,4 @@ I am passionate about learning and sharing knowledge, and I am always open to ne
 
 # Publications 📰
 
-1. Qi Liu, Xingyu Li, Ke Sun, Yufeng Li\*, **Yanchen Liu**\*. "SISSA: Real-time Monitoring of Hardware Functional Safety and Cybersecurity with In-vehicle SOME/IP Ethernet Traffic" [[Project](https://github.com/jamesnulliu/SISSA)][[Arxiv](https://arxiv.org/abs/2402.14862)].
+1. Q. Liu, X. Li, K. Sun, Y. Li\* and **Y. Liu**\*, "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic," in IEEE Internet of Things Journal, doi: 10.1109/JIOT.2024.3397665. [[Paper](https://ieeexplore.ieee.org/document/10521910)][[Code](https://github.com/jamesnulliu/SISSA)][[Arxiv](https://arxiv.org/abs/2402.14862)].
