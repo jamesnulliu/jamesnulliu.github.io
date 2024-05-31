@@ -61,10 +61,6 @@ redirect_from:
 1. Q. Liu, X. Li, K. Sun, Y. Li\* and **Y. Liu**\*, "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic," in *IEEE Internet of Things Journal*, doi: 10.1109/JIOT.2024.3397665. [[Paper](https://ieeexplore.ieee.org/document/10521910)][[Code](https://github.com/jamesnulliu/SISSA)]
 1. Li, Xingyu, Ruifeng Li, and **Yanchen Liu**. "HP-LSTM: Hawkes Process–LSTM-Based Detection of DDoS Attack for In-Vehicle Network." *Future Internet* 16.6 (2024): 185. [[Paper](https://www.mdpi.com/1999-5903/16/6/185)][[Code](https://github.com/jamesnulliu/HP-LSTM)]
 
-## Projects
-- PrettyLazy0 - A PL/0 Compiler Implemented in C++. [[Code](https://github.com/jamesnulliu/PrettyLazy0)]
-- MySorts - A Collection of Sorting Algorithms Implemented in Morden C++. [[Code](https://github.com/jamesnulliu/MySort)]
-- DrawBoard3D - A 3D drawboard implemented in C++, Vulkan and ImGui. [[Code](https://github.com/jamesnulliu/DrawBoard3D)]
 
 ## Skills and Other Information
 ### Programming Abilities
@@ -79,6 +75,12 @@ redirect_from:
 ### Open Source Contributions
 - Principal maintainer of [Shanghai University Super Computing Team (SHUSCT)](https://github.com/SHUSCT).
 - Contributor to [Shanghai University Open Source Community (SHUOSC)](https://github.com/shuosc).
+
+
+### Course Projects
+- PrettyLazy0 - A PL/0 Compiler Implemented in C++. [[Code](https://github.com/jamesnulliu/PrettyLazy0)]
+- MySorts - A Collection of Sorting Algorithms Implemented in Morden C++. [[Code](https://github.com/jamesnulliu/MySort)]
+- DrawBoard3D - A 3D drawboard implemented in C++, Vulkan and ImGui. [[Code](https://github.com/jamesnulliu/DrawBoard3D)]
 
 ### Hobbies
 - 🎸 Electric Guitar
