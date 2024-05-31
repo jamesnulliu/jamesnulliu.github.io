@@ -20,10 +20,11 @@ I am passionate about learning and sharing knowledge, and I am always open to ne
 - High Performance Computing
 - Computer Architecture
 
-# News 🎉
+# Achievement 🎉
 
-1. [2024.04.13] Achieved **First Prize** and **Group Competition Award** in [2024 ASC Student Supercomputer Challenge](http://www.asc-events.org/StudentChallenge/index.html#) Final Round.
+- [2024.04] **First Prize** and **Group Competition Award** in [2024 ASC Student Supercomputer Challenge](http://www.asc-events.org/StudentChallenge/index.html#) Final Round.
+- [2022.06] **First-Class Academic Scholarship** for outstanding academic performance, Shanghai University.
 
 # Publications 📰
-
-1. Q. Liu, X. Li, K. Sun, Y. Li\* and **Y. Liu**\*, "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic," in IEEE Internet of Things Journal, doi: 10.1109/JIOT.2024.3397665. [[Paper](https://ieeexplore.ieee.org/document/10521910)][[Code](https://github.com/jamesnulliu/SISSA)][[Arxiv](https://arxiv.org/abs/2402.14862)].
+1. Q. Liu, X. Li, K. Sun, Y. Li\* and **Y. Liu**\*, "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic," in *IEEE Internet of Things Journal*, doi: 10.1109/JIOT.2024.3397665. [[Paper](https://ieeexplore.ieee.org/document/10521910)][[Code](https://github.com/jamesnulliu/SISSA)].
+2. Li, Xingyu, Ruifeng Li, and **Yanchen Liu**. "HP-LSTM: Hawkes Process–LSTM-Based Detection of DDoS Attack for In-Vehicle Network." *Future Internet* 16.6 (2024): 185. [[Paper](https://www.mdpi.com/1999-5903/16/6/185)][[Code](https://github.com/jamesnulliu/HP-LSTM)]
