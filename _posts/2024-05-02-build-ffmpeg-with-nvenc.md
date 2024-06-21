@@ -8,6 +8,8 @@ tags:
   - nvenc
 ---
 
+FFmpeg is a powerful tool for video processing. It supports a wide range of codecs and formats. In this post, I will show you how to build FFmpeg with NVENC support.
+
 ```bash
 export CUDA_HOME=/usr/local/cuda-12.2
 
