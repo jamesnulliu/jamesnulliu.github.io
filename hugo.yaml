@@ -1,0 +1,78 @@
+# Basic Configs
+baseURL: "https://www.autumnrivulet.com"  # Site Address
+title: "秋水|AutumnRivulet"    # 站点标题
+languageCode: "zh" 
+DefaultContentLanguage: "zh"
+hasCJKLanguage: true          # 检测 CJK
+paginate: 6                   # 每个分页文章数
+paginatePath: "page"
+permalinks:                   # 永久连结格式
+        post: /:slug/
+        page: /:filename/
+theme: "PaperMod"             # 使用的主题
+enableInlineShortcodes: true  # 短代码支持
+enableRobotsTXT: true         # 启用 Robots.txt
+buildDrafts: false            # 不生成标记为草稿的文章
+buildFuture: false
+buildExpired: false
+enableEmoji: true
+enableGitInfo: true
+pygmentsUseClasses: true
+
+#高级配置
+outputs:
+  home:
+    - HTML
+    - JSON
+    - RSS 
+params:
+  ShowFullTextinRSS: true     # 启用 RSS
+  env: production
+  defaultTheme: auto
+  disableScrollToTop: false
+  disableThemeToggle: false
+  comments: true              # Turn on comments
+  ShowWordCount: true
+  ShowShareButtons: true
+  ShareButtons: ['telegram']  # Options: twitter, linkedin, reddit, facebook, whatsapp, telegram
+  socialIcons:                # 社交平台小图标 支持列表 https://adityatelange.github.io/hugo-PaperMod/posts/papermod/papermod-icons/
+    - name: 'github'
+      url: https://www.github.com/jamesnulliu
+    - name: 'telegram'
+      url: 
+    - name: 'email'
+      url: jamesnulliu@gmail.com
+  homeInfoParams:
+    Title: "Hi there \U0001F44B" # 博客主页上的大标题
+    Content: I am **JamesNULLiu**. Welcome to my personal blog! Here I share my **thoughts**, **opinions** and **life journal** #博客主页上的介绍
+  menu:
+    main:
+      - identifier: "home"
+        name: "Home"
+        url: "/"
+        weight: 1
+      - identifier: "about"
+        name: "About"
+        url: "/about/"
+        weight: 2
+      - identifier: "search"
+        name: "Search"
+        url: "/search/"
+        weight: 3 
+      - identifier: "archives"
+        name: "Archives"
+        url: "/archives/"
+        weight: 4
+      - identifier: "tags"
+        name: "Tags"
+        url: "/tags/"
+        weight: 5 
+      - identifier: "categories"
+        name: "Categories"
+        url: "/categories/"
+        weight: 6 
+      - identifier: "contact"
+        name: "Contact"
+        url: "/contact/"
+        weight: 7 
+
