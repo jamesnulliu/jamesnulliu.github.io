@@ -35,7 +35,20 @@ params:
   ShowWordCount: true
   ShowShareButtons: true
   ShareButtons: ['telegram']  # Options: twitter, linkedin, reddit, facebook, whatsapp, telegram
-  socialIcons:                # 社交平台小图标 支持列表 https://adityatelange.github.io/hugo-PaperMod/posts/papermod/papermod-icons/
+  profileMode:
+    enabled: true
+    # title: "<Title>" # optional default will be site title
+    subtitle: "This is subtitle"
+    # imageUrl: "<image link>" # optional
+    imageTitle: "JamesNULLiu" # optional
+    imageWidth: 120 # custom size
+    imageHeight: 120 # custom size
+    buttons:
+      - name: Archive
+        url: "/archive"
+      - name: Github
+        url: "https://github.com/"
+  socialIcons:
     - name: 'github'
       url: https://www.github.com/jamesnulliu
     - name: 'telegram'
@@ -43,7 +56,7 @@ params:
     - name: 'email'
       url: jamesnulliu@gmail.com
   homeInfoParams:
-    Title: "Hi there \U0001F44B" # 博客主页上的大标题
+    Title: "Hi there \U0001F44B"
     Content: I am **JamesNULLiu**. Welcome to my personal blog! Here I share my **thoughts**, **opinions** and **life journal** #博客主页上的介绍
   menu:
     main:
@@ -75,4 +88,13 @@ params:
         name: "Contact"
         url: "/contact/"
         weight: 7 
+  fuseOpts:
+    isCaseSensitive: false
+    shouldSort: true
+    location: 0
+    distance: 1000
+    threshold: 0.4
+    minMatchCharLength: 0
+    # limit: 10 # refer: https://www.fusejs.io/api/methods.html#search
+    keys: ["title", "permalink", "summary", "content"]
 
