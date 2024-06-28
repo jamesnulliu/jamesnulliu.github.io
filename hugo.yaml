@@ -7,8 +7,8 @@ hasCJKLanguage: true          # 检测 CJK
 paginate: 6                   # 每个分页文章数
 paginatePath: "page"
 permalinks:                   # 永久连结格式
-        post: /:slug/
-        page: /:filename/
+  post: /:slug/
+  page: /:filename/
 theme: "PaperMod"             # 使用的主题
 enableInlineShortcodes: true  # 短代码支持
 enableRobotsTXT: true         # 启用 Robots.txt
@@ -34,20 +34,20 @@ params:
   comments: true              # Turn on comments
   ShowWordCount: true
   ShowShareButtons: true
-  ShareButtons: ['telegram']  # Options: twitter, linkedin, reddit, facebook, whatsapp, telegram
-  # profileMode:
-  #   enabled: true
-  #   # title: "<Title>" # optional default will be site title
-  #   subtitle: "This is subtitle"
-  #   # imageUrl: "<image link>" # optional
-  #   imageTitle: "JamesNULLiu" # optional
-  #   imageWidth: 120 # custom size
-  #   imageHeight: 120 # custom size
-  #   buttons:
-  #     - name: Archive
-  #       url: "/archive"
-  #     - name: Github
-  #       url: "https://github.com/"
+  ShareButtons: ['telegram', 'twitter', 'reddit', 'linkedin', 'facebook']
+  profileMode:
+    enabled: true
+    title: "JamesNULLiu's Personal Blog" # optional default will be site title
+    subtitle: "吾常见笑于大方之家"
+    # imageUrl: "<image link>" # optional
+    imageTitle: "JamesNULLiu" # optional
+    imageWidth: 120 # custom size
+    imageHeight: 120 # custom size
+    buttons:
+      - name: Archive
+        url: "/archive"
+      - name: Github
+        url: "https://github.com/"
   socialIcons:
     - name: 'github'
       url: https://www.github.com/jamesnulliu
