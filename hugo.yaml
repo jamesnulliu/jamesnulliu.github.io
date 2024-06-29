@@ -15,7 +15,7 @@ buildDrafts: false
 buildFuture: false
 buildExpired: false
 enableEmoji: true
-enableGitInfo: true
+enableGitInfo: false
 pygmentsUseClasses: true
 
 outputs:
@@ -39,11 +39,12 @@ params:
   ShowUpdateTime: true
   comments: true 
   showToc: true
-  TocOpen: true
+  TocOpen: false
   hidemeta: false
   showbreadcrumbs: true
   mermaid: true
   codeFont: "Cascadia Code"
+  ShowCodeCopyButtons: true
   ShareButtons: ['telegram', 'twitter', 'reddit', 'linkedin', 'facebook']
   profileMode:
     enabled: true
@@ -56,10 +57,10 @@ params:
     buttons:
       - name: About
         url: "/about/"
-      - name: Posts
-        url: "/posts/"
-      - name: Github
-        url: "https://github.com/"
+      - name: Blogs
+        url: "/blogs/"
+      - name: Search
+        url: /search/
   socialIcons:
     - name: 'github'
       url: https://www.github.com/jamesnulliu
@@ -67,6 +68,8 @@ params:
       url: https://twitter.com/jamesnulliu
     - name: 'telegram'
       url: https://t.me/jamesnulliu
+    - name: 'email'
+      url: "mailto:jamesnulliu@gmail.com"
 
   fuseOpts:
     isCaseSensitive: false
@@ -104,3 +107,12 @@ menu:
       name: Search
       url: /search/
       weight: 6
+
+markup:
+  highlight:
+    noClasses: false
+    # anchorLineNos: true
+    codeFences: true
+    guessSyntax: true
+    lineNos: true
+    style: monokai
