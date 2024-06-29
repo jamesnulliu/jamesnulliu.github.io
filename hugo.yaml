@@ -1,39 +1,44 @@
-# Basic Configs
 baseURL: "https://www.autumnrivulet.com"  # Site Address
-title: "秋水|AutumnRivulet"    # 站点标题
+title: "🔯 秋水"
 languageCode: "zh" 
 DefaultContentLanguage: "zh"
-hasCJKLanguage: true          # 检测 CJK
-paginate: 6                   # 每个分页文章数
+hasCJKLanguage: true
+paginate: 6 
 paginatePath: "page"
-permalinks:                   # 永久连结格式
+permalinks:  
   post: /:slug/
   page: /:filename/
-theme: "PaperMod"             # 使用的主题
-enableInlineShortcodes: true  # 短代码支持
-enableRobotsTXT: true         # 启用 Robots.txt
-buildDrafts: false            # 不生成标记为草稿的文章
+theme: "PaperMod"
+enableInlineShortcodes: true
+enableRobotsTXT: true
+buildDrafts: false
 buildFuture: false
 buildExpired: false
 enableEmoji: true
 enableGitInfo: true
 pygmentsUseClasses: true
 
-#高级配置
 outputs:
   home:
     - HTML
     - JSON
     - RSS 
+
 params:
-  ShowFullTextinRSS: true     # 启用 RSS
+  ShowFullTextinRSS: true 
   env: production
   defaultTheme: auto
   disableScrollToTop: false
   disableThemeToggle: false
-  comments: true              # Turn on comments
+  comments: true 
+  visitCount: true
+  hideFooter: true
+  DateFormat: "2006-01-02"
   ShowWordCount: true
   ShowShareButtons: true
+  ShowReadingTime: true
+  ShowUpdateTime: true
+  codeFont: "Fira Code"
   ShareButtons: ['telegram', 'twitter', 'reddit', 'linkedin', 'facebook']
   profileMode:
     enabled: true
@@ -58,36 +63,6 @@ params:
   homeInfoParams:
     Title: "Hi there \U0001F44B"
     Content: I am **JamesNULLiu**. Welcome to my personal blog! Here I share my **thoughts**, **opinions** and **life journal** #博客主页上的介绍
-  menu:
-        main:
-                - identifier: home
-                  name: home
-                  url: /
-                  weight: 0
-                - identifier: categories
-                  name: categories
-                  url: /categories/
-                  weight: 2
-                - identifier: tags
-                  name: tags
-                  url: /tags/
-                  weight: 3
-                - identifier: archives
-                  name: archives
-                  url: /archives/
-                  weight: 1
-                - identifier: search
-                  name: search
-                  url: /search/
-                  weight: 6
-                - identifier: links
-                  name: links
-                  url: /links/
-                  weight: 5
-                - identifier: about
-                  name: about
-                  url: /about/
-                  weight: 4
 
   fuseOpts:
     isCaseSensitive: false
@@ -99,3 +74,29 @@ params:
     # limit: 10 # refer: https://www.fusejs.io/api/methods.html#search
     keys: ["title", "permalink", "summary", "content"]
 
+menu:
+  main:
+    - identifier: home
+      name: home
+      url: /
+      weight: 0
+    - identifier: categories
+      name: categories
+      url: /categories/
+      weight: 2
+    - identifier: tags
+      name: tags
+      url: /tags/
+      weight: 3
+    - identifier: archives
+      name: archives
+      url: /archives/
+      weight: 1
+    - identifier: search
+      name: search
+      url: /search/
+      weight: 5 
+    - identifier: about
+      name: about
+      url: /about/
+      weight: 4

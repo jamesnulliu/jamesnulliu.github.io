@@ -1,0 +1,4 @@
+---
+title: "Categories"
+hideFooter: true
+---
