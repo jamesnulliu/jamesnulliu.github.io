@@ -30,7 +30,6 @@ params:
   defaultTheme: auto
   disableScrollToTop: false
   disableThemeToggle: false
-  comments: true 
   visitCount: true
   hideFooter: false
   DateFormat: "Jan-02-2006"
@@ -38,7 +37,13 @@ params:
   ShowShareButtons: true
   ShowReadingTime: true
   ShowUpdateTime: true
-  codeFont: "Fira Code"
+  comments: true 
+  showToc: true
+  TocOpen: true
+  hidemeta: false
+  showbreadcrumbs: true
+  mermaid: true
+  codeFont: "Cascadia Code"
   ShareButtons: ['telegram', 'twitter', 'reddit', 'linkedin', 'facebook']
   profileMode:
     enabled: true
