@@ -1,5 +1,5 @@
 baseURL: "https://www.autumnrivulet.com"  # Site Address
-title: "🔯 秋水"
+title: "秋水|JamesNULLiu"
 languageCode: "zh" 
 DefaultContentLanguage: "zh"
 hasCJKLanguage: true
@@ -44,13 +44,15 @@ params:
     enabled: true
     title: "JamesNULLiu's Personal Blog" # optional default will be site title
     subtitle: "吾常见笑于大方之家"
-    # imageUrl: "<image link>" # optional
+    imageUrl: "data/myself.jpg" # optional
     imageTitle: "JamesNULLiu" # optional
     imageWidth: 120 # custom size
     imageHeight: 120 # custom size
     buttons:
-      - name: Archive
-        url: "/archives/"
+      - name: About
+        url: "/about/"
+      - name: Posts
+        url: "/posts/"
       - name: Github
         url: "https://github.com/"
   socialIcons:
@@ -77,26 +79,29 @@ params:
 menu:
   main:
     - identifier: home
-      name: home
+      name: Home
       url: /
-      weight: 0
+      weight: 1
+    - identifier: about
+      name: About
+      url: /about/
+      weight: 2
+    - identifier: search
+      name: Search
+      url: /search/
+      weight: 3
+    - identifier: posts
+      name: Posts
+      url: /posts/
     - identifier: categories
       name: categories
       url: /categories/
-      weight: 2
-    - identifier: tags
-      name: tags
-      url: /tags/
-      weight: 3
-    - identifier: archives
-      name: archives
-      url: /archives/
-      weight: 1
-    - identifier: search
-      name: search
-      url: /search/
-      weight: 5 
-    - identifier: about
-      name: about
-      url: /about/
       weight: 4
+    - identifier: tags
+      name: Tags
+      url: /tags/
+      weight: 5
+    - identifier: archives
+      name: Archives
+      url: /archives/
+      weight: 6
