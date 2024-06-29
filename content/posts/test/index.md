@@ -16,7 +16,6 @@ comments: true
 showToc: true
 TocOpen: true
 hidemeta: false
-hideFooter: true
 showbreadcrumbs: true
 mermaid: true
 images: 

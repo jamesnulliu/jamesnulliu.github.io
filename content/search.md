@@ -6,6 +6,5 @@ description: ""
 summary: "search"
 placeholder: ""
 nolisence: true
-hideFooter: true
 draft: false
 ---

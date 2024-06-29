@@ -1,4 +1,3 @@
 ---
 title: "Categories"
-hideFooter: true
 ---

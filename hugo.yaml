@@ -1,7 +1,7 @@
 baseURL: "https://www.autumnrivulet.com"  # Site Address
 title: "秋水|JamesNULLiu"
-languageCode: "zh" 
-DefaultContentLanguage: "zh"
+languageCode: "en-us" 
+DefaultContentLanguage: "en-us"
 hasCJKLanguage: true
 paginate: 6 
 paginatePath: "page"
@@ -32,8 +32,8 @@ params:
   disableThemeToggle: false
   comments: true 
   visitCount: true
-  hideFooter: true
-  DateFormat: "2006-01-02"
+  hideFooter: false
+  DateFormat: "Jan-02-2006"
   ShowWordCount: true
   ShowShareButtons: true
   ShowReadingTime: true
@@ -42,12 +42,12 @@ params:
   ShareButtons: ['telegram', 'twitter', 'reddit', 'linkedin', 'facebook']
   profileMode:
     enabled: true
-    title: "JamesNULLiu's Personal Blog" # optional default will be site title
-    subtitle: "吾常见笑于大方之家"
-    imageUrl: "/data/myself.jpg"
+    title: "Hi, I am JamesNULLiu" # optional default will be site title
+    subtitle: "吾常见笑于大方之家 - 秋水"
+    imageUrl: "myself.jpg"
     imageTitle: "JamesNULLiu"
-    imageWidth: 120 # custom size
-    imageHeight: 120 # custom size
+    imageWidth: 150 # custom size
+    imageHeight: 150 # custom size
     buttons:
       - name: About
         url: "/about/"
@@ -60,11 +60,9 @@ params:
       url: https://www.github.com/jamesnulliu
     - name: 'telegram'
       url: 
-    - name: 'email'
-      url: jamesnulliu@gmail.com
-  homeInfoParams:
-    Title: "Hi there \U0001F44B"
-    Content: I am **JamesNULLiu**. Welcome to my personal blog! Here I share my **thoughts**, **opinions** and **life journal** #博客主页上的介绍
+  # homeInfoParams:
+  #   Title: "Hi there \U0001F44B"
+  #   Content: I am **JamesNULLiu**. Welcome to my personal blog! Here I share my **thoughts**, **opinions** and **life journal** #博客主页上的介绍
 
   fuseOpts:
     isCaseSensitive: false
@@ -95,7 +93,7 @@ menu:
       url: /posts/
       weight: 4
     - identifier: categories
-      name: categories
+      name: Categories
       url: /categories/
       weight: 5
     - identifier: tags

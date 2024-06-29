@@ -11,7 +11,6 @@ categories:
 tags:
 -
 description: ""
-hideFooter: true
 comments: true
 showToc: false
 TocOpen: false
