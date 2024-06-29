@@ -1,7 +1,7 @@
 ---
 title: "A Simple Pytorch Trainpipeline"
 date: 2024-06-30T01:52:00+08:00
-lastmod: 2024-06-30T02:34:00+08:00
+lastmod: 2024-06-30T02:44:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -12,8 +12,8 @@ categories:
 tags:
     - python
     - pytorch
-description: A simple Pytorch trainpipeline.
-summary: A simple Pytorch trainpipeline.
+description: How to build simple Pytorch trainpipeline.
+summary: How to build a simple Pytorch trainpipeline.
 comments: true
 images: 
 cover:
@@ -100,7 +100,7 @@ python simple_dataset.py
 
 ## 4. Dataloader
 
-As long as the dataset is built, creating a dataloader is quite easy. So we will cover the dataloader in the trainpipeline.
+As long as the dataset is built, creating a dataloader is quite easy. 
 
 A dataloader will provide `batch_size` samples in each iteration. For example:
 
