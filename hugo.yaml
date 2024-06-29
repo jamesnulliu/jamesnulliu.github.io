@@ -56,10 +56,10 @@ params:
     buttons:
       - name: About
         url: "/about/"
-      - name: Posts
-        url: "/posts/"
-      - name: Github
-        url: "https://github.com/"
+      - name: Blogs
+        url: "/blogs/"
+      - name: Search
+        url: "/search/"
   socialIcons:
     - name: 'github'
       url: https://www.github.com/jamesnulliu
@@ -67,6 +67,8 @@ params:
       url: https://twitter.com/jamesnulliu
     - name: 'telegram'
       url: https://t.me/jamesnulliu
+    - name: 'email'
+      url: mailto: jamesnulliu@gmail.com
 
   fuseOpts:
     isCaseSensitive: false
