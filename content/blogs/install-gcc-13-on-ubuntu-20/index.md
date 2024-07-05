@@ -1,5 +1,5 @@
 ---
-title: "Install GCC-13 in Ubuntu 20 (or Earlier)"
+title: "Install GCC-13 on Ubuntu 20 (or Earlier)"
 date: 2024-06-29T00:00:00+08:00
 lastmod: 2024-06-29T15:00:00+08:00
 draft: false
@@ -10,8 +10,9 @@ keywords:
 categories:
     - software
 tags:
-    - gcc-13
+    - gcc
     - c/c++
+    - ubuntu
 description: This blog is a tutorial on how to install GCC-13 in Ubuntu 20 (or earlier).
 summary: How to install GCC-13 in Ubuntu 20 (or earlier).
 comments: true
