@@ -27,4 +27,6 @@ The buzzer is a small speaker that emits a beep sound. It is used to notify the 
 
 ```bash
 sudo bash -c "echo blacklist pcspkr > /etc/modprobe.d/blacklist-pcspkr.conf"
+# Reboot
+sudo reboot
 ```

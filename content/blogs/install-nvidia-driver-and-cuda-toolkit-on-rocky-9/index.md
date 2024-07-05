@@ -24,7 +24,6 @@ cover:
     alt: ""
     relative: true
     hidden: true
-draft: true
 ---
 
 To stop and disable gdm service (which is the default display manager):
