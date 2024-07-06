@@ -1,5 +1,5 @@
 ---
-title: "Close the Buzzer"
+title: "Turn off The Buzzer"
 date: 2024-07-06T06:41:00+08:00
 lastmod: 2024-07-06T06:41:00+08:00
 draft: false

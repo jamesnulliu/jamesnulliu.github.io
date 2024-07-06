@@ -22,16 +22,16 @@ cover:
 ---
 
 
-## 01 View C++ as a federation of languages.
+## Term 01: View C++ as a federation of languages.
 
 Today's C++ is a multiparadigm programming language, one supporting a combination of procedural, object-oriented, functional, generic, and metaprogramming features. 
 
 
-## 02 Prefer consts, enums, inlines to #defines
+## Term 02: Prefer consts, enums, inlines to #defines
 
 The substitution of a macro could result in multiple copies of the object in your object code, while the use of the constant should never result in more than one copy.
 
-### constant pointer
+### 🎼 Constant Pointer
 
 To define a constant char*-based string in a header file, for example, you have to write const twice:
 
@@ -40,9 +40,9 @@ To define a constant char*-based string in a header file, for example, you have 
 const char* const authorName = "Scott Meyers";
 ```
 
-> **note**: A constant object can be defined in a header file, and there will be no redefinition error when the header file is included in multiple source files.
+> 💡 **Note**: A constant object can be defined in a header file, and there will be no redefinition error when the header file is included in multiple source files.
 
-### b. static const members of a class
+### 🎼 Static Constant Members of a Class
 
 To limit the scope of a constant to a class, you must make it a member, and to ensure there's at most one copy of the constant, you must make it a static member:
 
@@ -68,10 +68,8 @@ const int GamePlayer::NumTurns;  // Definition of a const
 
 You put this in an implementation file, not a header file. Because the initial value of class constants is provided where the constant is declared (e.g., `NumTurns` is initialized to 5 when it is declared), no initial value is permitted at the point of definition.
 
-## c. enum hack
 
-现代编译器都支持 static 成员在声明式上获得初始值, 但是旧的编译器可能不支持.  
-对于这种情况, 可以将初始值写在类外对类的专属常量的定义中.  
+For non-integral types, you must provide a definition for the constant in the header file, like this:
 
 ```cpp
 // File CostEstimate.h
@@ -84,11 +82,13 @@ private:
 const double CostEstimate::FudgeFactor = 1.35;  // Defination of a class static const
 ```
 
-采用这种写法, 如果在 class 编译期间需要一个常量值 (例如上述 `GamePlayer::scores` 的数组声明式中, 数组的大小必须在编译期间确定) , 一些编译器可能会 (错误地) 报出问题.   
+> 💡 **Keypoints**:
+> 1. Declare class-specific constants as `static` members of the class.
+> 2. Provide a separate definition in an implementation file if the compiler requires it.
+> 3. Only for **static** **constants** of **integral** type, provide an initial value at the point of declaration. Otherwise, provide an initial value of a static member at the point of definition.
 
-一种补偿做法是采用 **enum hack** 技术.
 
-enum hack 技术的理论基础为: 一个属于枚举类型 (enumerated type) 的数值可权充 int 被使用.
+### 🎼 Enum Hack
 
 ```cpp
 class GamePlayer2 {
@@ -96,17 +96,16 @@ private:
     enum { NumTurns = 5};  // "the enum hack" - let {NumTurns} be a marker of 5
     int scores[NumTurns];  // valid
 }
-
 ```
 
-enum hack 的行为与 #define 较像 (而不是 const) .  
-例如取一个 const 对象的地址是合法的, 但是取一个 enum 对象的地址不合法; 取一个 #define 对象的地址通常也不合法.  
-优秀的编译器不会为 "整数型 const 对象" 设定额外的储存空间, 但是不够优秀的编译器可能会; enum 和 #define 一定不会导致非必要的内存分配.  
+The enum hack is worth knowing about for several reasons. 
 
-enum hack 是 template metaprograming 的基础技术.
+1. The enum hack behaves in some ways more like a #define than a const does, and sometimes that's what you want. It's not legal to take the address of an enum, and it's typically not legal to take the address of a #define, either. Also, like #defines, enums never result in unnecessary memory allocation.
+2. The enum hack is purely pragmatic. The enum hack is a fundamental technique of template metaprogramming (item 48).
 
-## d. inline
-尽可能利用 template inline functions 代替 #define 实现的 macros.
+### 🎼 Inline
+
+Use inline functions instead of #defines. 
 
 ```cpp
 #define CALL_WITH_MAX(a, b) f((a)>(b)?(a):(b))
@@ -121,28 +120,60 @@ inline void callWithMax(const T& a, const T& b) {
 }
 ```
 
-# 03 Use const whenever possible
+## Term 03: Use `const` Whenever Possible
 
-令函数返回一个常量值, 往往可以降低因客户错误而造成的例外.  例如:
+### 🎼 `const` and Pointers
+
+If the word const appears to the left of the asterisk, what's pointed to is constant; if the word const appears to the right of the asterisk, the pointer itself is constant; if const appears on both sides, both are constant. 
+
+For example:
 
 ```cpp
-class Rational {...}
-const Rational operator* (const Rational& lhs, const Rational& rhs) {...}
-
-if((a * b) = c)  // Should be (a * b) == c
-    ...
+char greeting[] = "Hello";
+char* p = greeting;  // non-const pointer, non-const data
+const char* p = greeting;  // non-const pointer, const data
+char* const p = greeting;  // const pointer, non-const data
+const char* const p = greeting;  // const pointer, const data
 ```
 
-因为返回值是 const , 编译器会直接提示错误. 如果不是 const, 有可能隐式地对 bool 进行转换.
+### 🎼 Use `const` to Restrict the User's Behavior 
 
-### 成员函数如何是 const 意味着什么?
+```cpp
+class A
+{
+public:
+    A operator+(const A& a) { return A(); }
+};
 
-有两个流行概念: **bitwise constness** (aka. **physical constness**) 和 **logical constness**.
+int main()
+{
+    A a1, a2;
+    a1 + a2 = A();  // This is not expected.
+    return 0;
+}
+```
 
-**bitwise const** 阵营的人相信, 成员函数只有在不更改类内任何成员变量(static 变量除外)时才可以说是 const (i.e., 不更改类内任何一个 bit).  
-这种论点的好处在于很容易侦测违反点: 编译器只需寻找成员变量的赋值动作即可.
+Where `a1 + a2 = A();` is not expected, because the result of `a1 + a2` is a temporary object, and it is not allowed to assign a value to a temporary object.
 
-然而, 存在成员函数虽然不十足具备 const 性质, 但能通过 bitwise 测试. 参考以下例子:
+To prevent this, you can add `const` to the return value of the `operator+` function:
+
+```cpp
+class A
+{
+public:
+    const A operator+(const A& a) { return A(); }
+};
+```
+
+### 🎼 Const Member Functions
+
+There are two prevailing notions: ***bitwise* constness** (also known as physical constness) and ***logical* constness**.
+
+The bitwise const camp believes that a member function is const if and only if it doesn't modify any of the object's data members (excluding those that are static), i.e., if it doesn't modify any of the bits inside the object.
+
+The nice thing about bitwise constness is that it's easy to detect violations: compilers just look for assignments to data members.
+
+Unfortunately, many member functions that don't act very const pass the bitwise test. For exapmle:
 
 ```cpp
 class CTextBlock {
@@ -156,9 +187,9 @@ private:
 }
 ```
 
-注意, 以上写法并不合适 (但能通过编译器的测试), 应该返回 `const char&` .
+> It is worth noting that you should return a `const char&` instead of a `char&` in the `operator[]` function above.
 
-**logical constness** 阵营的人相信, 一个 const 成员函数可以修改所改对象内的某些 bits, 但只有在客户侦测不出的情况下才能如此. 参考以下代码:
+This leads to the notion of **logical constness**. Adherents to this philosophy (and you should be among them) — argue that a const member function might modify some of the bits in the object on which it's invoked, but only in ways that clients cannot detect. For example:
 
 ```cpp
 class CTextBlock {
@@ -177,9 +208,9 @@ private:
 }
 ```
 
-### 避免 const 和 non-const 成员函数的重复
+### 🎼 Avoiding Duplication in const and Non-const Member Functions
 
-以下情况可以这样写:
+When you have a const and a non-const member function that have essentially identical implementations, you can **avoid code duplication by having the non-const member function call the const member function**. For example:
 
 ```cpp
 class TextBlock {
@@ -190,33 +221,53 @@ public:
     char& operator[](std::size_t position) {
         return 
             const_cast<char&>(
-                static_case<const TextBlock&>(*this)[position]
+                static_cast<const TextBlock&>(*this)[position]
             );
     }
 }
 ```
 
-注意不要令 const 版本调用 non-const 版本.  
-const 成员函数承诺绝不改变其对象的逻辑状态, 而 non-const 函数没有.  
-若要令这样的代码通过编译, 你必须使用一个 const-cast 将 \*this 身上的 const 性质解放, 这是乌云罩顶的清晰前兆.
+> 💡 **Note**: Do not avoiding duplication by having the const version call the non-const version. A const member function promises never to change the logical state of its object, but a non-const member function makes no such promise.
 
-## 04 Make Sure the Objects are initialized before they are used
+### 🎼 Things to Remember
 
-### a. Member initialization list
-总是使用成员初始值列表.
+- Declaring something `const` helps compilers detect usage errors. `const` can be applied to objects at any scope, to function parameters and return types, and to member functions as a whole.
+- Compilers enforce bitwise constness, but you should program using logical constness.
+- When `const` and `non-const` member functions have essentially identical implementations, code duplication can be avoided by having the non-const version call the const version.
 
-C++有非常固定的 "成员初始化顺序" : base classes  更早于 derived classes 被初始化, 而 class 的成员变量总是以其声明的次序被初始化.
-当在成员初始值列中列出各个成员时, 最好**总是以其声明次序为次序**.
+## Term 04: Make Sure the Objects are initialized before they are used
 
-### b. Initialize static objects
+Always initialize objects before they are used.
 
-local static 对象指在函数内部定义的 static 对象; 其余 static 对象均为 non-local static 对象.  
-static 对象的寿命为从 "被构造出来" 到 "函数结束".
+### 🎼 Member initialization list
 
-不同编译单元中的 non-local static 对象由 imlicit template instantiation 形成, 不可能推断出正确的初始化次序.  
-因此若 A 是一个 non-local static 对象, 另一个 non-local static 对象 B 需要依赖已经初始化的 A 来初始化, 这时很可能出现错误.
+Always use the member initialization list to initialize member objects.
 
-一种手法可以避免这种错误: 将每个 non-local static 对象搬到自己的专属函数内, 这些函数返回一个 reference 指向所含的对象 (i.e., 用 local static 对象替换 non-local static 对象). 参考以下代码:
+One aspect of C++ that isn't fickle is the order in which an object's data is initialized. This order is always the same: base classes are initialized before derived classes (see also Item 12), and within a class, data members are initialized in the order in which they are declared.
+
+### 🎼 Initialize Static Objects
+
+A **static object** is one that exists from the time it's constructed until the end of the program. Stack and heap-based objects are thus excluded. 
+
+Included are:
+
+ - global objects
+ - objects defined at namespace scope
+ - objects declared static inside classes
+ - objects declared static inside functions
+ - objects declared static at file scope 
+
+Static objects inside functions are known as local static objects (because they're local to a function), and the other kinds of static objects are known as non-local static objects. 
+
+Static objects are destroyed when the program exits, i.e., their destructors are called when main finishes executing.
+
+⚠ **Warning**: If initialization of a non-local static object in one translation unit uses a non-local static object in a different translation unit, the object it uses could be uninitialized, because **the relative order of initialization of non-local static objects defined in different translation units is undefined**.
+
+> 💬 Multiple translation units and non-local static objects is generated through implicit template instantiations (which may themselves arise via implicit template instantiations). It's not only impossible to determine the right order of initialization, it's typically not even worth looking for special cases where it is possible to determine the right order.
+
+To avoid the problem of undefined initialization order, you can use **a function-local static object** instead of a non-local static object. These functions return references to the objects they contain. (Aficionados of design patterns will recognize this as a common implementation of the **Singleton Pattern**.)
+
+For example:
 
 ```cpp
 class FileSystem {...};
@@ -237,11 +288,14 @@ inline Directory& tempDir() {
 }
 ```
 
-只有当函数 `tempDir()` 首次被调用时, static 对象 `td` 才会被创建(初始化);  
-而 `td` 初始化时调用了函数 `tfs()` , 此时一定会创建对象 `fs` .
+This approach is founded on C++'s guarantee that **local static objects are initialized when the object's definition is first encountered during a call to that function**. So if you replace direct accesses to non-local static objects with calls to functions that return references to local static objects, you're guaranteed that the references you get back will refer to initialized objects. As a bonus, if you never call a function emulating a non-local static object, you never incur the cost of constructing and destructing the object, something that can't be said for true non-local static objects.
 
-这种手法的理论基础是: **C++ 保证, 函数内的 local static 对象会在 "该函数被调用期间" "首次遇上该对象的定义式" 时被初始化**.
+> However, the fact that these functions contain static objects makes them problematic **in multithreaded systems**. Then again, any kind of non-const static object — local or non-local — is trouble waiting to happen in the presence of multiple threads. 
+> 
+> One way to deal with such trouble is to **manually invoke all the reference-returning functions during the single-threaded startup portion of the program**. This eliminates initialization-related race conditions.
 
-由于以上例子中的函数 "内含 static 对象" , 在多线程系统中它们带有不确定性.  
-注意: 任何一种 non-const static 对象 (不论是 local 还是 non-local) , 在多线程环境下 "等待某事发生" 都会出现麻烦.  
-处理这个麻烦的一种做法是: 在程序的单线程启动阶段 (single-threaded startup portion) 手工调用所有 reference-returning 函数, 以便消除和初始化有关的 "竞速形式 (race conditions)" .
+### 🎼 Things to Remember
+
+- Manually initialize objects of built-in type, because C++ only sometimes initializes them itself.
+- In a constructor, prefer use of the member initialization list to assignment inside the body of the constructor. List data members in the initialization list in the same order they're declared in the class.
+- Avoid initialization order problems across translation units by replacing non-local static objects with local static objects.
