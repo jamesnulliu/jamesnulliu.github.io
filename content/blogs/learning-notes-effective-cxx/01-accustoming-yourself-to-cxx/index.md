@@ -6,7 +6,7 @@ draft: false
 author: ["jamesnulliu"]
 keywords: 
 categories:
-    - learn
+    - notes
 tags:
     - c/c++
 description: My learning notes of "Effective C++" by Scott Meyers.
@@ -24,23 +24,27 @@ cover:
 
 ## 01 View C++ as a federation of languages.
 
-C++是多重范型编程语言 (multiparadigm programming language) ,  
-同时支持过程形式 (procedural) , 面向对象形式 (object-oriented) , 函数形式 (functional) , 泛型形式 (generic) , 元编程形式 (metaprogramming) 的语言.  
+Today's C++ is a multiparadigm programming language, one supporting a combination of procedural, object-oriented, functional, generic, and metaprogramming features. 
+
 
 ## 02 Prefer consts, enums, inlines to #defines
-### a. 指针常量
-当希望在 header files 内定义一个指向常量的常量指针, 以 char*-based 字符串为例, 必须写 const 两次:
+
+The substitution of a macro could result in multiple copies of the object in your object code, while the use of the constant should never result in more than one copy.
+
+### constant pointer
+
+To define a constant char*-based string in a header file, for example, you have to write const twice:
 
 ```cpp
 // File header.h
 const char* const authorName = "Scott Meyers";
 ```
 
-**[note]** const 全局对象写入头文件并被不同 cpp 文件包含时, 不会出现 redefination 错误.
+> **note**: A constant object can be defined in a header file, and there will be no redefinition error when the header file is included in multiple source files.
 
-### b. class 的静态常量成员
+### b. static const members of a class
 
-当要声明一个 class 专属的常量, 则需要让它成为 class 的一个成员; 为确保此常量至多只有一份实体, 必须让它成为 static 成员:
+To limit the scope of a constant to a class, you must make it a member, and to ensure there's at most one copy of the constant, you must make it a static member:
 
 ```cpp
 // File GamePlayer.h
@@ -51,19 +55,18 @@ private:
 }
 ```
 
-**以上语句是声明式而非定义式.**  
+What you see above is a declaration for `NumTurns`, not a definition. 
 
-通常 C++ 要求你对使用的任何东西提供一个定义式,  
-但是如果你使用的是一个 class 的专属 static 常量, 并且还是一个整数类型 (intergral type, 例如 int, char, bool), 则可以只声明就使用.  
-但是你如果想**对 class 的专属整数类型 static 常量取地址**, 就必须对该常量提供一个额外的定义式:
+Usually, C++ requires that you provide a definition for anything you use, but classspecific constants that are **static and of integral type** (e.g., integers, chars, bools) are an exception. 
+
+As long as you don't take their address, you can declare them and use them without providing a definition. If you do take the address of a class constant, or if your compiler incorrectly insists on a definition even if you don't take the address, you should provide a separate definition like this:
 
 ```cpp
 // File GamePlayer.cpp
 const int GamePlayer::NumTurns;  // Definition of a const
 ```
 
-以上代码应写入一个 cpp 文件而非头文件.  
-由于 class 常量在声明时已经获得初始值, 因此定义时可以不再设置初始值.
+You put this in an implementation file, not a header file. Because the initial value of class constants is provided where the constant is declared (e.g., `NumTurns` is initialized to 5 when it is declared), no initial value is permitted at the point of definition.
 
 ## c. enum hack
 

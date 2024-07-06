@@ -6,7 +6,7 @@ draft: false
 author: ["jamesnulliu"]
 keywords: 
 categories:
-    - learn
+    - notes
 tags:
     - c/c++
 description: My learning notes of "Effective C++" by Scott Meyers.
