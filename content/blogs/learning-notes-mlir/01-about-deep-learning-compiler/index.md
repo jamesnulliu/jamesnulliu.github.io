@@ -63,13 +63,9 @@ The hardware-specific code generator targeting FPGA take the DL models or their 
 
 ## 3. COMMON DESIGN ARCHITECTURE OF DL COMPILERS
 
-<!-- ![Common Design Architecture of DL Compilers](./figures/common-design-architecture-of-dl-compiler.png) -->
+![fig-1](/imgs/mlir/common-design-architecture-of-dl-compiler.png)
 
-<p align="center">
-<img src="./figures/common-design-architecture-of-dl-compiler.png">
-<em>Fig 1. Common Design Architecture of DL Compilers</em>
-</p>
-
+*Figure 1. Common Design Architecture of DL Compilers.*
 
 ### 4.1. High-level IR
 
@@ -100,13 +96,10 @@ After constructing the computation graph, the frontend applies graph-level optim
 The frontend optimizations are usually defined by **passes**, and can be applied by traversing the nodes of the computation graph and performing the graph transformations: 
 1) Capture the specific features from the computation graph;
 2) Rewrite the graph for optimization.
-<!-- 
-![Computation Graph Optimization](./figures/computation-graph-optimization.png) -->
 
-<p align="center">
-<img src="./figures/computation-graph-optimization.png">
-<em>Fig 2. Example of computation graph optimizations, taken from the HLO graph of AlexNet on Volta GPU using TensorFlow XLA.</em>
-</p>
+![fig-2](/imgs/mlir/computation-graph-optimization.png)
+
+*Figure 2. Example of computation graph optimizations, taken from the HLO graph of AlexNet on Volta GPU using TensorFlow XLA.*
 
 #### 4.3.1. Node-level optimizations
 
@@ -143,10 +136,9 @@ This optimization sinks the operations such as transposes below operations such 
 
 The backends of DL compilers have commonly included various hardware-specific optimizations, auto-tuning techniques, and optimized kernel libraries. Hardware-specific optimizations enable efficient code generation for different hardware targets. Whereas, auto-tuning has been essential in the compiler backend to alleviate the manual efforts to derive the optimal parameter configurations. Besides, highly-optimized kernel libraries are also widely used on general-purpose processors and other customized DL accelerators.
 
-<p align="center">
-<img src="./figures/hardware-specific-optimization.png">
-<em>Fig. 4. Overview of hardware-specific optimizations applied in DL compilers.</em>
-</p>
+![fig-3](/imgs/mlir/hardware-specific-optimization.png)
+
+*Figure 3. Overview of hardware-specific optimizations applied in DL compilers.*
 
 ## 5. FUTURE DIRECTIONS
 

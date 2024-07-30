@@ -1,4 +1,4 @@
-baseURL: "https://www.autumnrivulet.com"  # Site Address
+baseURL: "https://www.autumnrivulet.com"
 title: "秋水|JamesNULLiu"
 languageCode: "en-us" 
 DefaultContentLanguage: "en-us"
@@ -50,7 +50,7 @@ params:
     enabled: true
     title: "Hi, I am JamesNULLiu" # optional default will be site title
     subtitle: "吾常见笑于大方之家 - 秋水"
-    imageUrl: "myself.jpg"
+    imageUrl: "imgs/me/myself.jpg"
     imageTitle: "JamesNULLiu"
     imageWidth: 150 # custom size
     imageHeight: 150 # custom size

@@ -18,7 +18,7 @@ hidemeta: false
 showbreadcrumbs: true
 nolisence: true
 cover:
-    image: "myself-large.jpg"
+    image: "/imgs/me/myself-large.jpg"
     caption: ""
     alt: ""
     relative: false 
