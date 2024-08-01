@@ -21,30 +21,42 @@ cover:
     hidden: true
 ---
 
-Follow the official guide: [Getting Started](https://mlir.llvm.org/getting_started/).
+To build MLIR, follow the official guide: [Getting Started](https://mlir.llvm.org/getting_started/).
 
-You can write a script to build the source code of MLIR in `/path/to/llvm-project/scripts/build-mlir.sh`:
+Set up some environment variables to make our life easier when working with MLIR:
 
 ```bash
-#!/bin/bash
-mkdir build
-cd build
+export LLVM_PROJ_HOME="/path/to/llvm-project"
+export MLIR_HOME="$LLVM_PROJ_HOME/mlir"
+```
 
+We will write a script to help build the source code of MLIR in `$LLVM_PROJ_HOME/scripts/build-mlir.sh`:
+
+```bash
+# @file $LLVM_PROJ_HOME/scripts/build-mlir.sh
+mkdir $LLVM_PROJ_HOME/build
+cd $LLVM_PROJ_HOME/build
 cmake -G Ninja ../llvm \
    -DLLVM_ENABLE_PROJECTS=mlir \
    -DLLVM_BUILD_EXAMPLES=ON \
    -DLLVM_TARGETS_TO_BUILD="Native;NVPTX;AMDGPU" \
    -DCMAKE_BUILD_TYPE=Release \
    -DLLVM_ENABLE_ASSERTIONS=ON \
-   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ENABLE_LLD=ON
-
+   -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+   -DCMAKE_C_COMPILER=clang \
+   -DCMAKE_CXX_COMPILER=clang++ \
+   -DLLVM_ENABLE_LLD=ON
 cmake --build . --target check-mlir -j $(nproc)
 ```
 
-Then, you can run the script to build the MLIR:
+Now we can run the script to build the MLIR easily:
 
 ```bash
-chmod +x /path/to/llvm-project/scripts/build-mlir.sh
+bash $LLVM_PROJ_HOME/scripts/build-mlir.sh
+```
 
-/path/to/llvm-project/scripts/build-mlir.sh
+The generated binary files are in `$LLVM_PROJ_HOME/build/bin`. When working with the **TOY**, it would be more convient to add the binary files to the `PATH`:
+
+```bash
+export PATH="$LLVM_PROJ_HOME/build/bin:$PATH"
 ```

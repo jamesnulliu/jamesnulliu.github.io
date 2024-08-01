@@ -21,21 +21,19 @@ cover:
     hidden: true
 ---
 
+> Reference: https://mlir.llvm.org/docs/Tutorials/Toy/Ch-2/  
+
+**Note**: Check [02 | Setupt the Environment of MLIR](../02-setup-the-environment-of-mlir/) for the environment setup.
+
 ## 1. Run Example
 
+Define a new env var:
+
 ```bash
-export LLVM_PROJ_HOME="/path/to/llvm-project"
-export MLIR_HOME="$LLVM_PROJ_HOME/mlir"
 export TOY_CH2_HOME="$MLIR_HOME/examples/toy/Ch2"
 ```
 
-Add built binary to `PATH`:
-
-```bash
-export PATH="/path/to/llvm-project/build/bin:$PATH"
-```
-
-Create a new file `$MLIR_HOME/input.toy` ; Add the following content to the file:
+Create a file `$TOY_CH2_HOME/input.toy` ; Add the following content to the file:
 
 ```toy
 # User defined generic function that operates on unknown shaped arguments.
@@ -52,16 +50,16 @@ def main() {
 }
 ```
 
-Generate MLIR (Multi-Level Intermediate Representation):
-
-```bash
-toyc-ch2 $TOY_CH2_HOME/input.toy -emit=mlir
-```
-
-Generate AST (Abstract Syntax Tree):
+Emit to AST (Abstract Syntax Tree):
 
 ```bash
 toy-ch2 $TOY_CH2_HOME/input.toy -emit=ast
+```
+
+Emit to MLIR (Multi-Level Intermediate Representation):
+
+```bash
+toyc-ch2 $TOY_CH2_HOME/input.toy -emit=mlir
 ```
 
 ## 2. Add an Operator
@@ -92,10 +90,10 @@ def SubtractOp : Toy_Op<"subtract"> {
 }
 ```
 
-Build the MLIR with the script provided in [02 | Setupt the Environment of MLIR]():
+Build MLIR again to imply the modifications:
 
 ```bash
-$LLVM_PROJ_HOME/scripts/build-mlir.sh
+bash $LLVM_PROJ_HOME/scripts/build-mlir.sh
 ```
 
 Build errors pop out, because:
@@ -103,7 +101,9 @@ Build errors pop out, because:
 - `hasCustomAssemblyFormat` is assigned with `1`, but the custom parser and printer method is not implemented.
 - `OpBuilder` is not implemented.
 
-Dpn't be worried. These errors will be handled later. Instead, note that the C++ implementation of class `SubtractOp` has been generated in `$LLVM_PROJ_HOME/build/tools/mlir/examples/toy/Ch2/include/toy/Ops.h.inc`, and as a result, you are now able to use the `SubtractOp` in other source files.
+Dpn't worry. These errors will be handled later. 
+
+Note that the C++ implementation of class `SubtractOp` has been generated in `$LLVM_PROJ_HOME/build/tools/mlir/examples/toy/Ch2/include/toy/Ops.h.inc`, and as a result, you are now able to use the `SubtractOp` in other source files.
 
 ### 2.2. Implement the Operations
 
