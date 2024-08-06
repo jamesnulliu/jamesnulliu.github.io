@@ -1,5 +1,5 @@
 ---
-title: "01 | Review: The Deep Learning Compiler: A Comprehensive Survey"
+title: "Paper Review: The Deep Learning Compiler: A Comprehensive Survey"
 date: 2024-07-29T11:07:00+08:00
 lastmod: 2024-07-29T12:07:00+08:00
 draft: false

@@ -1,5 +1,5 @@
 ---
-title: "03 | Emitting Basic MLIR"
+title: "Toy Ch2 | Emitting Basic MLIR"
 date: 2024-07-30T14:45:00+08:00
 lastmod: 2024-07-30T15:54:00+08:00
 draft: false
@@ -23,7 +23,7 @@ cover:
 
 > Reference: https://mlir.llvm.org/docs/Tutorials/Toy/Ch-2/  
 
-**Note**: Check [02 | Setupt the Environment of MLIR](../02-setup-the-environment-of-mlir/) for the environment setup.
+**Note**: Check [Setup the Environment of MLIR](../setup-the-environment-of-mlir/) for the environment setup.
 
 ## 1. Run Example
 
@@ -101,9 +101,9 @@ Build errors pop out, because:
 - `hasCustomAssemblyFormat` is assigned with `1`, but the custom parser and printer method is not implemented.
 - `OpBuilder` is not implemented.
 
-Dpn't worry. These errors will be handled later. 
+These errors will be handled later. 
 
-Note that the C++ implementation of class `SubtractOp` has been generated in `$LLVM_PROJ_HOME/build/tools/mlir/examples/toy/Ch2/include/toy/Ops.h.inc`, and as a result, you are now able to use the `SubtractOp` in other source files.
+Note that the C++ implementation of class `SubtractOp` has been generated in `$LLVM_PROJ_HOME/build/tools/mlir/examples/toy/Ch2/include/toy/Ops.h.inc`, and as a result, you are now able to use class `SubtractOp` with code completion and syntax highlighting of clangd.
 
 ### 2.2. Implement the Operations
 
@@ -143,7 +143,7 @@ mlir::Value mlirGen(BinaryExprAST &binop) {
 }
 ```
 
-Rebuild the MLIR with the script provided in [02 | Setupt the Environment of MLIR]():
+Rebuild the MLIR:
 
 ```bash
 $LLVM_PROJ_HOME/scripts/build-mlir.sh

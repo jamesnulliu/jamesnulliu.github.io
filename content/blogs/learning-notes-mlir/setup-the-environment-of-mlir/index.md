@@ -1,5 +1,5 @@
 ---
-title: "02 | Setupt the Environment of MLIR"
+title: "Setup the Environment of MLIR"
 date: 2024-07-30T10:45:00+08:00
 lastmod: 2024-07-30T10:45:00+08:00
 draft: false
@@ -30,7 +30,7 @@ export LLVM_PROJ_HOME="/path/to/llvm-project"
 export MLIR_HOME="$LLVM_PROJ_HOME/mlir"
 ```
 
-We will write a script to help build the source code of MLIR in `$LLVM_PROJ_HOME/scripts/build-mlir.sh`:
+Write a script to help build the source code of MLIR in `$LLVM_PROJ_HOME/scripts/build-mlir.sh`:
 
 ```bash
 # @file $LLVM_PROJ_HOME/scripts/build-mlir.sh

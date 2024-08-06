@@ -1,5 +1,5 @@
 ---
-title: "05 | Enabling Generic Transformation with Interfaces"
+title: "Toy Ch4 | Enabling Generic Transformation with Interfaces"
 date: 2024-08-01T11:11:11+08:00
 lastmod: 2024-08-01T15:06:11+08:00
 draft: false
@@ -23,7 +23,7 @@ cover:
 
 > Reference: https://mlir.llvm.org/docs/Tutorials/Toy/Ch-4/  
 
-**Note**: Check [02 | Setupt the Environment of MLIR](../02-setup-the-environment-of-mlir/) for the environment setup.
+**Note**: Check [Setup the Environment of MLIR](../setup-the-environment-of-mlir/) for the environment setup.
 
 
 ## 1. Introduction
