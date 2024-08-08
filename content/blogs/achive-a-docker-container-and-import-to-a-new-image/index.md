@@ -22,16 +22,28 @@ cover:
     hidden: true
 ---
 
-Start the container which you want to archive:
+Create a container from a Docker image:
+
+```bash
+docker run \
+    -it  \
+    --gpus all \
+    --name <container_name> \
+    -v $HOME/data:/root/data \
+    -p <container_port>:<host_port> \
+    --entrypoint /bin/bash \
+    --shm-size <shm-size>G \
+    <image_name>:<tag>
+# Now you are in the container.
+```
+
+Or start the container which you want to archive:
 
 ```bash
 docker start <container_name>
-```
-
-Attach to the container:
-
-```bash
+# Attach to the container:
 docker exec -it <container_name> bash
+# Now you are in the container.
 ```
 
 Clean some temporary files and cache to reduce the size of the image.
