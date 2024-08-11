@@ -111,8 +111,7 @@ menu:
 markup:
   highlight:
     noClasses: false
-    # anchorLineNos: true
     codeFences: true
     guessSyntax: true
-    lineNos: true
+    linenos: true
     style: monokai

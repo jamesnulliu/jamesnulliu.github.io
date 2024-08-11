@@ -8,6 +8,7 @@ keywords:
     - docker
 categories:
     - system
+    - software
 tags:
     - docker
 description: How to archive a Docker container and import to a new image.
@@ -25,12 +26,13 @@ cover:
 Create a container from a Docker image:
 
 ```bash
+# You need to choose a host port that is not used.
 docker run \
     -it  \
     --gpus all \
     --name <container_name> \
     -v $HOME/data:/root/data \
-    -p <container_port>:<host_port> \
+    -p <host_port>:<container_port> \
     --entrypoint /bin/bash \
     --shm-size <shm-size>G \
     <image_name>:<tag>
