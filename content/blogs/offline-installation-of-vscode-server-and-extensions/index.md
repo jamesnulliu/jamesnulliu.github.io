@@ -1,7 +1,7 @@
 ---
 title: "Offline Installation of vscode-server and Extensions"
 date: 2024-08-08T11:34:00+08:00
-lastmod: 2024-08-08T22:06:00+08:00
+lastmod: 2024-08-20T17:28:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -31,29 +31,37 @@ cover:
 
 ## 1. Install vscode-server on the Server
 
-Open vscode, click `Help` => `About`, find the commit id in the pop-up window, e.g., `Commit: b1c0a14de1414fcdaa400695b4db1c0799bc3124`.
+Open vscode, click `Help` => `About`, find the commit id in the pop-up window:
 
-Download `vscode-server-linux-x64.tar.gz` with the following link:
+![fig-1](/imgs/blogs/offline-installation-of-vscode-server-and-extensions/commit-id.png)
+
+Download `vscode-server-linux-x64` with the following link and send it to the server:
 
 ```bash
-https://update.code.visualstudio.com/commit:<commit-id>/server-linux-x64/stable
+wget https://update.code.visualstudio.com/commit:<commit-id>/server-linux-x64/stable
+scp -P <port> ./stable <username>@<server-ip>:~/vscode-server
+rm ./stable
 ```
 
-Send the downloaded file to the Server:
+Download `vscode-cli` with the following link and send it to the server:
 
 ```bash
-scp -P <port> vscode-server-linux-x64.tar.gz <username>@<server-ip>:~/
+wget https://update.code.visualstudio.com/commit:<commit-id>/cli-alpine-x64/stable
+scp -P <port> ./stable <username>@<server-ip>:~/vscode-cli
+rm ./stable
 ```
 
-On the Server, create a foler with your commit id, and extract the file into it:
+On the Server:
 
 ```bash
-# Make directory
-mkdir -p ~/.vscode-server/bin/<commit-id>/
-# Extract the file
-tar -xzf vscode-server-linux-x64.tar.gz -C ~/.vscode-server/bin/<commit-id>/ --strip 1
-# Create a file to indicate the installation is done
-touch ~/.vscode-server/bin/<commit-id>/0 
+mkdir -p ~/.vscode-server/bin/
+cd ~/.vscode-server/bin/
+tar -xzf ~/vscode-server
+mv ./vscode-server-linux-x64 ./<commit-id>
+
+cd ~/.vscode-server
+tar -xzf ~/vscode-cli
+mv ./code ./code-<commit-id>
 ```
 
 ## 2. Install extensions
