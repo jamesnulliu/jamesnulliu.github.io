@@ -27,15 +27,17 @@ Create a container from a Docker image:
 
 ```bash
 # You need to choose a host port that is not used.
-docker run \
-    -it  \
-    --gpus all \
-    --name <container_name> \
-    -v $HOME/data:/root/data \
+docker run -it --gpus all --name <container_name> \
+    -v /proc:/proc \
+    -v /sys:/sys \
+    -v /dev:/dev \
+    -v /var/lock:/var/lock \
+    -v /var/log:/var/log \
     -p <host_port>:<container_port> \
     --entrypoint /bin/bash \
     --shm-size <shm-size>G \
     <image_name>:<tag>
+
 # Now you are in the container.
 ```
 
@@ -51,9 +53,8 @@ docker exec -it <container_name> bash
 Clean some temporary files and cache to reduce the size of the image.
 
 ```bash
-apt-get clean
+apt clean
 rm -rf /var/lib/apt/lists/*
-rm -rf /tmp/*
 rm -rf ~/.cache/*
 # ...
 ```
