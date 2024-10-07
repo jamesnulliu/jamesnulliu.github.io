@@ -25,6 +25,7 @@ outputs:
     - RSS 
 
 params:
+  math: true
   ShowFullTextinRSS: true 
   env: production
   defaultTheme: auto
@@ -114,4 +115,19 @@ markup:
     codeFences: true
     guessSyntax: true
     linenos: true
-    style: monokai
+    style: monospace
+
+markup:
+  goldmark:
+    extensions:
+      passthrough:
+        delimiters:
+          block:
+          - - \[
+            - \]
+          - - $$
+            - $$
+          inline:
+          - - \(
+            - \)
+        enable: true
