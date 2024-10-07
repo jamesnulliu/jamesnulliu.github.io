@@ -1,7 +1,7 @@
 ---
 title: "Setup the Environment of MLIR"
 date: 2024-07-30T10:45:00+08:00
-lastmod: 2024-07-30T10:45:00+08:00
+lastmod: 2024-08-28T10:45:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -30,22 +30,24 @@ export LLVM_PROJ_HOME="/path/to/llvm-project"
 export MLIR_HOME="$LLVM_PROJ_HOME/mlir"
 ```
 
-Write a script to help build the source code of MLIR in `$LLVM_PROJ_HOME/scripts/build-mlir.sh`:
+Write a script to help build MLIR from source:
 
 ```bash
 # @file $LLVM_PROJ_HOME/scripts/build-mlir.sh
-mkdir $LLVM_PROJ_HOME/build
-cd $LLVM_PROJ_HOME/build
-cmake -G Ninja ../llvm \
-   -DLLVM_ENABLE_PROJECTS=mlir \
-   -DLLVM_BUILD_EXAMPLES=ON \
-   -DLLVM_TARGETS_TO_BUILD="Native;NVPTX;AMDGPU" \
-   -DCMAKE_BUILD_TYPE=Release \
-   -DLLVM_ENABLE_ASSERTIONS=ON \
-   -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-   -DCMAKE_C_COMPILER=clang \
-   -DCMAKE_CXX_COMPILER=clang++ \
-   -DLLVM_ENABLE_LLD=ON
+
+cd $LLVM_PROJ_HOME
+
+CC=clang CXX=clang++ \
+cmake -S . -B ./build -G Ninja ./llvm \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLVM_ENABLE_PROJECTS=mlir \
+    -DLLVM_BUILD_EXAMPLES=ON \
+    -DLLVM_TARGETS_TO_BUILD="Native;NVPTX;AMDGPU" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DLLVM_ENABLE_LLD=ON
+
 cmake --build . --target check-mlir -j $(nproc)
 ```
 
@@ -55,7 +57,9 @@ Now we can run the script to build the MLIR easily:
 bash $LLVM_PROJ_HOME/scripts/build-mlir.sh
 ```
 
-The generated binary files are in `$LLVM_PROJ_HOME/build/bin`. When working with the **TOY**, it would be more convient to add the binary files to the `PATH`:
+The generated binary files are in `$LLVM_PROJ_HOME/build/bin`. 
+
+It would be more convenient to add this directory to `PATH` when working with MLIR:
 
 ```bash
 export PATH="$LLVM_PROJ_HOME/build/bin:$PATH"
