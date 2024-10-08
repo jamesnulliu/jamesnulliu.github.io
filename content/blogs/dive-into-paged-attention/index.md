@@ -26,37 +26,37 @@ cover:
     hidden: true
 ---
 
-## 1. 证明 Attention 的 \(O_i\) 只与 \(Q_i\) 有关
+## 1. 证明 Attention 的 $O_i$ 只与 $Q_i$ 有关
 
 Attention 的公式如下:
 
-\[
+$$
 O=Attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V
-\]
+$$
 
-假设 \(Q=\begin{bmatrix}Q_0\\Q_1\end{bmatrix}\), \(K=\begin{bmatrix}K_0\\K_1\end{bmatrix}\)
+假设 $Q=\begin{bmatrix}Q_0\\Q_1\end{bmatrix}$, $K=\begin{bmatrix}K_0\\K_1\end{bmatrix}$
 
 那么:
 
-\[
+$$
 O=softmax(\frac{\begin{bmatrix}Q_0K_0^T&Q_0K_1^T\\Q_1K_0^T&Q_1K_1^T\end{bmatrix}}{\sqrt{d_k}})V
-\]
+$$
 
 令:
 
-\[
+$$
 A=\begin{bmatrix}A_0\\A_1\end{bmatrix}=\begin{bmatrix}Q_0K_0^T&Q_0K_1^T\\Q_1K_0^T&Q_1K_1^T\end{bmatrix},f(x)=\frac{softmax(x)}{\sqrt{d_k}}
-\]
+$$
 
-此时, \(A_1\) 只和 \(Q_1\) 有关, 和 \(Q_0\) 无关, 那么:
+此时, $A_1$ 只和 $Q_1$ 有关, 和 $Q_0$ 无关, 那么:
 
-\[
+$$
 \begin{bmatrix}O_0\\O_1\end{bmatrix}=O=\begin{bmatrix}f(A_0)\\f(A_1)\end{bmatrix}V=\begin{bmatrix}f(A_0)V\\f(A_1)V\end{bmatrix}
-\]
+$$
 
-因此, \(O_i\) 只和  \(A_i\) 相关, 而根据 \(A\) 的设定, \(A_i\) 只和 \(Q_i\) 相关, 即:
+因此, $O_i$ 只和  $A_i$ 相关, 而根据 $A$ 的设定, $A_i$ 只和 $Q_i$ 相关, 即:
 
-Attention 矩阵的第 \(i\) 个输出只和第 \(i\) 个 \(Q\) 有关, 和之前的 \(Q\) 无关.
+Attention 矩阵的第 $i$ 个输出只和第 $i$ 个 $Q$ 有关, 和之前的 $Q$ 无关.
 
 **总结**:
 
@@ -316,7 +316,7 @@ __syncthreads();  // TODO(naed90): possible speedup if this is replaced with a
 
 图 1 中上面部分 K 矩阵部分描述了从显存读取 K Cache 到寄存器的过程。每个序列的 K Cache 包含 `cxt_length * num_kv_heads * head_size` 个元素，**但由于采用了页式内存管理，这些元素在内存中的存储并不连续**。
 
-每个 CUDA thread block 只负责计算一个 sequence 一个 head 的 \(QK^T\)，因此只需要`ctx_length * head_size` 个 K Cache 元素。然而，由于 `ctx_length` 维度的存储是不连续的，并且以 `blk_size` 个 token 为粒度分布在不同的内存地址，我们需要根据 query 的 `head_idx` 和 `seq_idx` 访问 `block_table` 以找到 K Cache 的 `physical_block_num`。为了方便后续的描述，我们可以将 K Cache 视为 `(:, headSize)` 的形状，其中 `head_size` 个元素组成一行。
+每个 CUDA thread block 只负责计算一个 sequence 一个 head 的 $QK^T$，因此只需要`ctx_length * head_size` 个 K Cache 元素。然而，由于 `ctx_length` 维度的存储是不连续的，并且以 `blk_size` 个 token 为粒度分布在不同的内存地址，我们需要根据 query 的 `head_idx` 和 `seq_idx` 访问 `block_table` 以找到 K Cache 的 `physical_block_num`。为了方便后续的描述，我们可以将 K Cache 视为 `(:, headSize)` 的形状，其中 `head_size` 个元素组成一行。
 
 ```cpp
 // Iterate over the key blocks.
@@ -350,7 +350,7 @@ if (thread_group_offset == 0) {
 }
 ```
 
-在代码实现中，访问 K 矩阵需要一个循环，该循环使得 CUDA 线程块中的所有 WARP 依次访问 `num_block` 个页面。在每次循环迭代中，每个 WARP 负责访问连续的 `block_size` 个 K Cache 行，这涉及到的数据量为 `blk_size * head_size` 个元素。同时，每个 thread group 负责访问 K Cache 的一行，将 `head_size` 个元素加载到自己的寄存器中。接着，寄存器中的Q和K数据元素立即进行点乘运算，运算结果被写入 shared memory 中。因此，线程块的 shared memory 存储了一行 \(QK^T\) 的结果，包含 `ctx_length` 个元素。这种实现方式充分利用了 CUDA 的并行计算能力，以提高数据处理的效率。
+在代码实现中，访问 K 矩阵需要一个循环，该循环使得 CUDA 线程块中的所有 WARP 依次访问 `num_block` 个页面。在每次循环迭代中，每个 WARP 负责访问连续的 `block_size` 个 K Cache 行，这涉及到的数据量为 `blk_size * head_size` 个元素。同时，每个 thread group 负责访问 K Cache 的一行，将 `head_size` 个元素加载到自己的寄存器中。接着，寄存器中的Q和K数据元素立即进行点乘运算，运算结果被写入 shared memory 中。因此，线程块的 shared memory 存储了一行 $QK^T$ 的结果，包含 `ctx_length` 个元素。这种实现方式充分利用了 CUDA 的并行计算能力，以提高数据处理的效率。
 
 然后，thread block 对 shared memory 中元素进行 max，sum 方式 reduction，然后计算得到 softmax 结果。
 
@@ -372,11 +372,11 @@ for (int i = thread_idx; i < num_tokens; i += NUM_THREADS) {
 __syncthreads();
 ```
   
-图 1 右边 V 矩阵部分描述从显存读 V Cache 到寄存器过程。和 K Cache 一样，CUDA thread block 依次访问 `num_blk` 个物理块到寄存器，每个 warp 负责 `blk_size` 个 token 的 page 内存，page 的真实物理地址同样需要进行索引。不过这里不需要以 thread group 为单位访问 16 字节，而是每个 thread 访问 16 字节的元素。访问完就可以与 shared memory 的 \(softmax(QK^T)\) 中间结果对应位置 16 字节的数据进行点乘，得到一个 float 结果，写到 output 对应位置中。  
+图 1 右边 V 矩阵部分描述从显存读 V Cache 到寄存器过程。和 K Cache 一样，CUDA thread block 依次访问 `num_blk` 个物理块到寄存器，每个 warp 负责 `blk_size` 个 token 的 page 内存，page 的真实物理地址同样需要进行索引。不过这里不需要以 thread group 为单位访问 16 字节，而是每个 thread 访问 16 字节的元素。访问完就可以与 shared memory 的 $softmax(QK^T)$ 中间结果对应位置 16 字节的数据进行点乘，得到一个 float 结果，写到 output 对应位置中。  
   
 为什么 V Cache 的 layout 是 `[num_blocks, num_kv_heads, head_size, block_size]`，和 K Cache layout 不一样？ 这是因为 V 要去做点乘的对象在 shared memory，只需要读，不涉及并行写的问题。
 
-和 FlashAttention（FA）有什么不同？结合我的图和中间 FAv2 的流程图对比就一目了然了。FA 用了两层循环，每次写一个 Tile 的 output tensor，而 PA 一直只有一层循环，每次写一行 output tensor。因为每次都有整行的 \(QK^T\) 中间结果，不需要 online softmax 这种花哨技巧。
+和 FlashAttention（FA）有什么不同？结合我的图和中间 FAv2 的流程图对比就一目了然了。FA 用了两层循环，每次写一个 Tile 的 output tensor，而 PA 一直只有一层循环，每次写一行 output tensor。因为每次都有整行的 $QK^T$ 中间结果，不需要 online softmax 这种花哨技巧。
 
 ![flash-attention.webp](/imgs/blogs/dive-into-paged-attention/flash-attention.webp)
 

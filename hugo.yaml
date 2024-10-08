@@ -130,4 +130,6 @@ markup:
           inline:
           - - \(
             - \)
+          - - $
+            - $
         enable: true
