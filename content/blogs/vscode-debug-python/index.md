@@ -1,7 +1,7 @@
 ---
 title: "VSCode: Debug Python"
 date: 2024-10-09T10:40:00+08:00
-lastmod: 2024-10-09T14:06:00+08:00
+lastmod: 2024-10-09T12:41:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -27,7 +27,7 @@ cover:
 ---
 
 
-Add the following code to "./.vscode/launch.json" (create the file if it does not exist):
+First, add the following code to "./.vscode/launch.json" (create the file if it does not exist):
 
 ```json
 {
@@ -48,7 +48,8 @@ Add the following code to "./.vscode/launch.json" (create the file if it does no
             // Arguments to pass to the program
             "args": [
                 "arg1",
-                "arg2"
+                "arg2",
+                // ...
             ]
         },
         // Other configurations...,
@@ -56,4 +57,4 @@ Add the following code to "./.vscode/launch.json" (create the file if it does no
 }
 ```
 
-Click on the "Run and Debug" icon on the left sidebar, then click on the green play button to start debugging.
+Next, click on the "Run and Debug" icon on the left sidebar, choose the configuration with the name you specified in "launch.json", then click on the green play button to start debugging.
