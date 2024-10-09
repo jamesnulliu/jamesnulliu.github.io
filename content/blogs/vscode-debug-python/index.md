@@ -38,7 +38,9 @@ First, add the following code to "./.vscode/launch.json" (create the file if it 
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
-            // Path to the Python file to debug
+            // Path to the Python file to debug;
+            // If set to "${file}", the debugger will run the currently open 
+            // file
             "program": "${file}",
             "console": "integratedTerminal",
             // Environment variables
