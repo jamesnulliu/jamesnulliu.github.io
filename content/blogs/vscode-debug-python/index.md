@@ -1,7 +1,7 @@
 ---
 title: "VSCode: Debug Python"
 date: 2024-10-09T10:40:00+08:00
-lastmod: 2024-10-09T12:41:00+08:00
+lastmod: 2024-10-12T10:45:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -35,24 +35,25 @@ First, add the following code to "./.vscode/launch.json" (create the file if it 
     "configurations": [
         // Other configurations...,
         {
-            "name": "Python Debugger: Current File",
+            "name": "DebugPy: Current File",
             "type": "debugpy",
             "request": "launch",
-            // Path to the Python file to debug;
-            // If set to "${file}", the debugger will run the currently open 
-            // file
-            "program": "${file}",
             "console": "integratedTerminal",
-            // Environment variables
-            "env": {
-                "YOUR_ENV_VAR": "VALUE"
-            },
+            // Whether to jump to external code when debugging
+            "justMyCode": true,
+            // Path to the Python file to debug; If set to "${file}", it will 
+            // use the currently opened file
+            "program": "${file}",
             // Arguments to pass to the program
             "args": [
                 "arg1",
                 "arg2",
                 // ...
-            ]
+            ],
+            // Environment variables
+            "env": {
+                "YOUR_ENV_VAR": "VALUE"
+            },
         },
         // Other configurations...,
     ]
