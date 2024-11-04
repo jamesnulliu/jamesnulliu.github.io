@@ -336,8 +336,8 @@ constexpr int NUM_ELEMS_PER_THREAD = HEAD_SIZE / THREAD_GROUP_SIZE;
 constexpr int NUM_VECS_PER_THREAD = NUM_ELEMS_PER_THREAD / VEC_SIZE;
 ```
 
-- `THREAD_GROUP_SIZE`: 每个 thread group 中的 thread 数量. 注意, 一个 cuda block 中有 `NUM_THREADS` 个 thread, `NUM_THREAD_GROUPS` 个 thread group.
-- `NUM_VECS_PER_THREAD`: `HEAD_SIZE` 能被分成多少个 16B. (😓我个人认为这个变量的命名很不合适, 或许叫 `NUM_16B_A_HEAD` 更合适.)
+- `THREAD_GROUP_SIZE`: 每个 thread group 中的 thread 数量. 注意, 一个 cuda block 中有 `NUM_THREADS` 个 thread, `NUM_THREAD_GROUPS` 个 thread group. `THREAD_GROUP_SIZE = MAX(WARP_SIZE/BLOCK_SIZE, 1)`.
+- `NUM_VECS_PER_THREAD`: `HEAD_SIZE` 能被分成多少个 16B. (😓我个人认为这个变量的命名很不合适, 或许叫 `NUM_16B_A_HEAD` 更合适. 这个变量这么命名的理由是后面读取 K 的时候每个 thread 会往自己的寄存器内读 `NUM_VECS_PER_THREAD` 个 k_vec.)
 
 > 证明: `q_vecs` 覆盖 Q 的一个 head, 并且 `NUM_VECS_PER_THREAD` 表示 Q 的一个 head 被分成多少个 16B.  
 > => `THREAD_GROUP_SIZE` * `VEC_SIZE` = 16B / `sizeof(scalar_t)`;  
@@ -493,6 +493,9 @@ K_vec k_vecs[NUM_VECS_PER_THREAD];
 
 🤔 **看到这里读者可能有一个问题: 一个 token 的 K cache 应该对应多个 head, 为什么上面说一个 thread group 只负责一个 head?**  
 答: 因为实际计算的时候, 一个 cuda block 只负责计算一个 head, 对应到 K Cache 乃至后面 V Cache 的位置也是一样的.
+
+> 这里额外说一下, 读 K 的 head 的一个目标应该是在尽量少的 register 中装下一个 head 的所有元素, 这样后续和 shared memory 中的 Q 做点乘并规约的速度更快. 假设一个 head 有 128 个 float16, 则占用 256B, 而 A100 中一个 thread 最多能有 255 个 32-bit register (也就是 1020B), 此时可以认为一个 thread 能装下一个 head 的所有元素.  
+> 但是由于目前 PA kernel 在 `BLOCK_SIZE` 为 16 的情况下 `THREAD_GROUP_SIZE` 等于 2, 因此一个 thread 只会装一个 head 的一半元素, 这样可能会导致 register 的使用率不高.
 
 ---
 
