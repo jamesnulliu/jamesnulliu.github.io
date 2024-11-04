@@ -1,7 +1,7 @@
 ---
 title: "Dive into Paged Attention"
 date: 2024-10-07T12:00:00+08:00
-lastmod: 2024-11-01T13:00:00+08:00
+lastmod: 2024-11-04T12:12:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -428,7 +428,7 @@ const int num_blocks = end_block_idx - start_block_idx;
 ```
 用文字描述就是:
 
-- `blk_idx` 表示当前 thread 所在 warp 需要处理的 PA block 的索引.
+- `blk_idx` 表示当前 thread 所在 warp 需要处理的 PA block 的在 `block_table` 中索引 (逻辑上的索引).
 - `start_block_idx` 和 `end_block_idx` 表示当前 cuda block 需要处理的 block 范围.
 - `num_blocks` 表示当前 cuda block 需要处理的 block 数量.
 - `NUM_WARPS` 表示当前 cuda block 中 warp 的数量. 一个 warp 包含 32 个 thread.
@@ -442,7 +442,12 @@ const int num_blocks = end_block_idx - start_block_idx;
 
 所以说这个循环和上面读取 Q 的循环一个尿性🤮, 不过是以 warp 的粒度处理数据;  
 
-进入了第一个循环内部, 第一步当然是计算当前 thread 对应的 warp 应该计算哪个 PA block, 因此得到了 `physical_block_number`.
+进入了第一个循环内部, 第一步当然是计算当前 thread 对应的 warp 应该计算哪个 PA block (物理上的索引), 因此得到了 `physical_block_number`.
+
+```cpp
+const int64_t physical_block_number =
+    static_cast<int64_t>(block_table[block_idx]);
+```
 
 ---
 
@@ -466,7 +471,9 @@ for (int block_idx = start_block_idx + warp_idx; block_idx < end_block_idx;
 }
 ```
 
-从 kernel 角度看, 每个 thread 需要辅助当前 warp 计算自己负责的一整个 PA block (包含 `BLOCK_SIZE` 个 token), 而我们把这个过程拆分为 Loop 2 中的 `NUM_TOKEN_PER_THREAD_GROUP` (也就是 `ceil(BLOCK_SIZE / 32)`) 次循环; 说人话就是如果 BLOCK SIZE 太大了后面每个 thread 向后偏移 `i * WARP_SIZE` 个 token 继续狠狠算🤣.
+从 kernel 角度看, 每个 thread 需要辅助当前 warp 计算自己负责的一整个 PA block (包含 `BLOCK_SIZE` 个 token), 而我们把这个过程拆分为 Loop 2 中的 `NUM_TOKEN_PER_THREAD_GROUP` (也就是 `ceil(BLOCK_SIZE / 32)`) 次循环; 
+
+说人话就是**一个 thread group 对应一个 token 中的一个 head**, 如果 BLOCK SIZE 太大了后面每个 thread 向后偏移 `i * WARP_SIZE` 个 token 继续狠狠算🤣.
 
 也因此第二个循环内部一上来先计算了几个偏移量, 并且申请了 thread 内部私有的 `k_vecs` 数组:
 
@@ -476,15 +483,16 @@ const int token_idx = block_idx * BLOCK_SIZE + physical_block_offset;
 K_vec k_vecs[NUM_VECS_PER_THREAD];
 ```
 
-- 一个 thread group 在一次循环中负责 fetch 一个 PA block 中 K cache 的一个 token 中**自己负责的 head**.
-- 一个 thread group 负责计算一个 qk 值; 这个值显然是由一个 Q head 和一个 K head 点积得到的.
-- `physical_block_offset` 表示当前要算的 token 在当前 PA block 中的偏移量.
+- `thread_group_idx` 表示当前 thread group 在整个 cuda block 中的索引.
+- ☢️ 一个 thread group 在一次循环中负责 fetch 一个 PA block 中 K cache 的一个 token 中**自己负责的 head**.
+- ☢️ 一个 thread group 负责计算一个 qk 值; 这个值显然是由一个 Q head 和一个 K head 点积得到的.
+- `physical_block_offset` 表示当前要算的 token 在当前 PA block 中的偏移量 (注意和前面的 `physical_block_number` 区分).
 - 加 `i * WARP_SIZE` 的原因是如果 `BLOCK_SIZE` 大于 32, 那么一个 warp 要多次循环才能处理完一个 PA block 中的所有 token, 对应 `thread_group_idx` 需要做偏移.
 - `token_idx` 表示当前要算的 token 在整个 seq 的 KV cache 中的索引.
 - `k_vecs` 中能存放 `NUM_VECS_PER_THREAD` 个 VEC, 而一整个 thread group 中所有的 thread 的 `k_vecs` 合起来才能组成一个 K 的 head (推导参考上面 Q 的 😇). 这就是为什么后面算 QK 的时候要 reduce.
 
-> 看到这里读者可能有一个问题: 一个 token 的 K cache 应该对应多个 head, 为什么上面说一个 thread group 只负责一个 head?  
-> 答: 因为实际计算的时候, 一个 cuda block 只负责计算一个 head, 对应到 K Cache 乃至后面 V Cache 的位置也是一样的.
+🤔 **看到这里读者可能有一个问题: 一个 token 的 K cache 应该对应多个 head, 为什么上面说一个 thread group 只负责一个 head?**  
+答: 因为实际计算的时候, 一个 cuda block 只负责计算一个 head, 对应到 K Cache 乃至后面 V Cache 的位置也是一样的.
 
 ---
 
@@ -536,9 +544,12 @@ for (int block_idx = start_block_idx + warp_idx; block_idx < end_block_idx;
 - 在 MHSA 中, `num_kv_heads` 等于 `num_heads`; 而在 GQA, MQA 中, `num_kv_heads` 小于 `num_heads`.
 - (1) 负责找到当前 thread 属于的 warp 要处理哪个 PA block.
 - (2) 负责找到当前 thread 要计算的 head 在 K cache 中的位置. 这个 head 的索引和 Q 中 head 的索引在 MHSA 中相同.
-- (3) 负责找到当前 thread group 在需要读取的 head (蓝色长方体) 中的偏移; 如果一个 head 需要一个 thread group 读多次, 利用 `j` 进行循环, 参考 Q 的 load.
-- (5) 负责找到当前 thread 要计算的 token 在当前 PA block 中的位置.
+- (3) 负责找到当前 thread group 要计算的 token 在当前 PA block 中的位置.
+- (5) 负责找到当前 thread 在需要读取的 head (蓝色长方体) 中的偏移, 通过 `j` 进行迭代读取.
 - (6) 负责找到当前 thread 在 thread gruop 中读取的 x 中的偏移, thread 一次读取一个 VEC.
+
+🤔 **为什么 (5) 在实际寻址时需要 `* BLOCK_SIZE * x` ?**  
+答: 这是根据 `k_cache` 的 layout 得到的 stride. 同理 (3) `* x` 也是 stride.
 
 第 3 个循环结束时当前 warp 负责的每个 token 中需要的 K cache head 已经全被加载入 thread 本地的 `k_vecs` 中了. 
 
