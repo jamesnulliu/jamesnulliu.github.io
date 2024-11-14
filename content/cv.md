@@ -1,7 +1,7 @@
 ---
 title: "CV"
 date: 2024-06-29T00:00:00+08:00
-lastmod: 2024-06-29T00:00:00+08:00
+lastmod: 2024-11-15T00:47:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords:

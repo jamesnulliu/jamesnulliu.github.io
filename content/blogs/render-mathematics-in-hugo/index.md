@@ -1,7 +1,7 @@
 ---
 title: "Render Mathematics in Hugo"
 date: 2024-10-08T13:39:00+08:00
-lastmod: 2024-10-09T13:03:00+08:00
+lastmod: 2024-11-15T00:47:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -65,9 +65,9 @@ Second, create a new file `layouts/partials/extend_head.html`:
 
 > Note that name and path of the created file is based on your theme configuration.  
 >
-> For example, in theme PaperMode (which I use), there is a file "[extend_head.html](https://github.com/adityatelange/hugo-PaperMod/blob/master/layouts/partials/extend_head.html#L3)" indicating that, to extend the head, I can create a file named `extend_head.html` in `./layouts/partials` (so-called **global layouts**, without modifying layouts inside theme, which commonly being a git submodule).  
+> For example, in theme PaperMode (which I use), "[extend_head.html](https://github.com/adityatelange/hugo-PaperMod/blob/master/layouts/partials/extend_head.html#L3)" indicates that, to extend the head, I can create a file named `extend_head.html` in `./layouts/partials/` (so-called **global layouts**, without modifying layouts inside the theme).  
 >
-> In other words, if your theme does not support this feature, you may need to copy the `head.html` from the theme to global layouts and modify it, or simply modify the theme directly (but rememenber that modifications in git submodules will not be committed and pushed to the remote repository).
+> In other words, if your theme does not support this feature, you may need to copy the `head.html` from the theme to global layouts and modify it, or simply modify the theme directly (but rememenber that modifications in git submodules will not be committed to the remote repository).
 
 Next, create a new file `layouts/partials/math.html`:
 

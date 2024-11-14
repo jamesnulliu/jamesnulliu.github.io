@@ -1,7 +1,7 @@
 ---
 title: "Offline Installation of vscode-server and Extensions"
 date: 2024-08-08T11:34:00+08:00
-lastmod: 2024-08-20T17:28:00+08:00
+lastmod: 2024-11-15T00:47:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -31,55 +31,101 @@ cover:
 
 ## 1. Install vscode-server on the Server
 
-Open vscode, click `Help` => `About`, find the commit id in the pop-up window:
+### 1.1. VSCode Version and Commit ID
+
+If your vscode binary is in `env:PATH`, you can get the version and commit id by running the following command:
+
+```bash
+code --version
+```
+
+Or if not, open vscode, click `Help` => `About`, find the version and commit id in the pop-up window:
 
 ![fig-1](/imgs/blogs/offline-installation-of-vscode-server-and-extensions/commit-id.png)
+
+### 1.2. If Your VSCode Version is Less than `1.19` (e.g, `1.18.1`)
+
 
 Download `vscode-server-linux-x64` with the following link and send it to the server:
 
 ```bash
+# If Linux
 wget https://update.code.visualstudio.com/commit:<commit-id>/server-linux-x64/stable
-scp -P <port> ./stable <username>@<server-ip>:~/vscode-server
-rm ./stable
-```
-
-Download `vscode-cli` with the following link and send it to the server:
-
-```bash
-wget https://update.code.visualstudio.com/commit:<commit-id>/cli-alpine-x64/stable
-scp -P <port> ./stable <username>@<server-ip>:~/vscode-cli
-rm ./stable
+# Or Windows
+curl -O https://update.code.visualstudio.com/commit:<commit-id>/server-linux-x64/stable
+# Send "./stable" from host to "~" on server and rename it to "~/vscode-server.tar.gz"
+scp -P <port> ./stable <username>@<server-ip>:~/vscode-server.tar.gz
 ```
 
 On the Server:
 
 ```bash
-mkdir -p ~/.vscode-server/bin/
-cd ~/.vscode-server/bin/
-tar -xzf ~/vscode-server
+# Create directory "~/.vscode-server/bin"
+mkdir -p ~/.vscode-server/bin 
+# Extract "~/vscode-server.tar.gz" to "~/.vscode-server/bin"
+cd ~/.vscode-server/bin/ && tar -xzf ~/vscode-server.tar.gz
+# Rename the extracted directory to "~/.vscode-server/bin/<commit-id>"
 mv ./vscode-server-linux-x64 ./<commit-id>
-
-cd ~/.vscode-server
-tar -xzf ~/vscode-cli
-mv ./code ./code-<commit-id>
 ```
+
+Go back to host and connect to your server again, and everything should be okay.
+
+### 1.3. If Your VSCode Version is Greater than `1.19`
+
+Download `vscode-server-linux-x64` with the following link and send it to the server:
+
+```bash
+# If Linux
+wget https://update.code.visualstudio.com/commit:<commit-id>/server-linux-x64/stable
+# Or Windows
+curl -O https://update.code.visualstudio.com/commit:<commit-id>/server-linux-x64/stable
+# Send "./stable" from host to "~" on server and rename it to "~/vscode-server.tar.gz"
+scp -P <port> ./stable <username>@<server-ip>:~/vscode-server.tar.gz
+```
+
+Download `vscode-cli` with the following link and send it to the server:
+
+```bash
+# If Linux
+wget https://update.code.visualstudio.com/commit:<commit-id>/cli-alpine-x64/stable
+# Or Windows
+curl -O https://update.code.visualstudio.com/commit:<commit-id>/cli-alpine-x64/stable
+# Send "./stable" from host to "~" on server and rename it to "~/vscode-cli.tar.gz"
+scp -P <port> ./stable <username>@<server-ip>:~/vscode-cli.tar.gz
+```
+
+On the Server:
+
+```bash
+# Create directory "~/.vscode-server/cli/servers/Stable-<commit-id>"
+mkdir -p ~/.vscode-server/cli/servers/Stable-<commit-id>
+# Extract "~/vscode-cli.tar.gz" to "~/.vscode-server"
+cd ~/.vscode-server && tar -xzf ~/vscode-cli.tar.gz
+# Rename the extracted binary to "~/.vscode-server/code-<commit-id>"
+mv ./code ./code-<commit-id>
+# Extract "~/vscode-server.tar.gz" to "~/.vscode-server/cli/servers/Stable-<commit-id>"
+cd ~/.vscode-server/cli/servers/Stable-<commit-id> && tar -xzf ~/vscode-server.tar.gz
+# Rename ".../vscode-server-linux-x64" to ".../server"
+mv ./vscode-server-linux-x64 ./server
+```
+
+Go back to host and connect to your server again, and everything should be okay.
 
 ## 2. Install extensions
 
-On the Host, archive the local extensions in `~/.vscode/extensions/` to be `extensions.zip`.
-
-Send the file to the Server:
+On the host, compress the local extension directory `~/.vscode/extensions` and send it to the server.
 
 ```bash
-scp -P <port> extensions.zip <username>@<server-ip>:~/
+tar -cJf extensions.tar.xz ~/.vscode/extensions
+scp -P <port> extensions.tar.xz <username>@<server-ip>:~/
 ```
 
-On the Server, extract the file to `~/.vscode-server/extensions/`:
+On the Server, extract the archive to `~/.vscode-server/extensions/`:
 
 ```bash
-unzip extensions.zip -d ~/.vscode-server/extensions/
+tar -xf ~/extensions.tar.xz -C ~/.vscode-server/
 ```
 
 Modify `~/.vscode-server/extensions/extensions.json`, replace all the extention paths to `~/.vscode-server/extensions/`.
 
-Reconnect to the server, and you can use VSCode Server with all the extensions installed.
+Reconnect to the server, and you can use vscode server with all the extensions installed.
