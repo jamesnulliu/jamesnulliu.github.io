@@ -49,15 +49,15 @@ params:
   ShareButtons: ['telegram', 'twitter', 'reddit', 'linkedin', 'facebook']
   profileMode:
     enabled: true
-    title: "Hi, I am JamesNULLiu" # optional default will be site title
+    title: "Hi, I am JamesNULLiu"
     subtitle: "吾常见笑于大方之家 - 秋水"
     imageUrl: "imgs/me/myself.jpg"
     imageTitle: "JamesNULLiu"
     imageWidth: 150 # custom size
     imageHeight: 150 # custom size
     buttons:
-      - name: About
-        url: "/about/"
+      - name: "CV"
+        url: "/cv/"
       - name: Blogs
         url: "/blogs/"
       - name: Search
@@ -88,9 +88,9 @@ menu:
       name: Home
       url: /
       weight: 1
-    - identifier: about
-      name: About
-      url: /about/
+    - identifier: cv
+      name: CV
+      url: /cv/
       weight: 2
     - identifier: blogs
       name: Blogs
