@@ -3,8 +3,8 @@ title: "秋水|JamesNULLiu"
 languageCode: "en-us" 
 DefaultContentLanguage: "en-us"
 hasCJKLanguage: true
-paginate: 6 
-paginatePath: "page"
+pagination.pagerSize: 6 
+pagination.path: "page"
 permalinks:  
   post: /:slug/
   page: /:filename/

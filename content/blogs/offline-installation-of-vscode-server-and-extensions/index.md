@@ -29,17 +29,17 @@ cover:
 
 **Background**: Host is connected to internet, with VSCode and extensions (Remote - SSH, Remote - Containers, etc.) installed. Server is not connected to internet, but can be accessed by Host through SSH.
 
-## 1. Install vscode-server on the Server
+## 1. Offline Installation of vscode-server
 
-### 1.1. VSCode Version and Commit ID
+### 1.1. VSCode Version and Commit-ID
 
-If your vscode binary is in `env:PATH`, you can get the version and commit id by running the following command:
+If your vscode binary is in `env:PATH`, you can get the version and commit-id by running the following command:
 
 ```bash
 code --version
 ```
 
-Or if not, open vscode, click `Help` => `About`, find the version and commit id in the pop-up window:
+Or if not, open vscode, click `Help` => `About`, find the version and commit-id in the pop-up window:
 
 ![fig-1](/imgs/blogs/offline-installation-of-vscode-server-and-extensions/commit-id.png)
 
