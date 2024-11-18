@@ -1,7 +1,7 @@
 ---
 title: "Dive into Paged Attention"
 date: 2024-10-07T12:00:00+08:00
-lastmod: 2024-11-04T12:12:00+08:00
+lastmod: 2024-11-18T18:45:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -31,7 +31,7 @@ cover:
 Attention 的公式如下:
 
 $$
-O=Attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V
+O=Attention(Q,K,V)=softmax\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 $$
 
 假设 $Q=\begin{bmatrix}Q_0\\Q_1\end{bmatrix}$, $K=\begin{bmatrix}K_0\\K_1\end{bmatrix}$
@@ -75,13 +75,9 @@ Attention 矩阵的第 $i$ 个输出只和第 $i$ 个 $Q$ 有关, 和之前的 $
 在预测下一个 token 时，不需要对整个序列再进行完整的 `Q`、`K`、`V` 计算，而是只需对新生成的 token 进行一次增量计算。这时的操作流程如下：
 
 1. **输入新的 token**：将已经生成的 token（其形状为 `(embed_dim,)`）作为输入，通过线性变换得到该 token 对应的 `Q_new`，形状为 `(embed_dim,)`。
-2. **与之前缓存的 `K` 和 `V` 进行注意力计算**：
-    - 使用 `Q_new` 与之前已经计算并缓存的 `K` 和 `V` 进行注意力计算。
-    - 这里的 `K_cache` 和 `V_cache` 分别是之前每次生成 token 时得到的 `K` 和 `V`，它们的形状是 `(seq_len, embed_dim)`，即缓存了从最初输入序列到当前已经生成的所有 token 的 `K` 和 `V`。
-    - `Q_new` 可以直接与 `K_cache` 进行点积，得到注意力分数，然后结合 `V_cache` 得到新的输出。
-3. **更新 `KV Cache`**：
-    - 新的 `K_new` 和 `V_new` 会通过线性变换得到（形状为 `(embed_dim,)`），并将它们添加到 `K_cache` 和 `V_cache` 的末尾，使得缓存的 `K_cache` 和 `V_cache` 不断增大，以备后续使用。
-4. **输出**：通过注意力计算后的输出形状为 `(embed_dim,)`，即新生成的 token。
+2. **与之前缓存的 `K` 和 `V` 进行注意力计算**：使用 `Q_new` 与之前已经计算并缓存的 `K_cache` 和 `V_cache` 进行注意力计算。这里的 `K_cache` 和 `V_cache` 分别是之前每次生成 token 时得到的 `K` 和 `V`，它们的形状是 `(seq_len, embed_dim)`，即缓存了从最初输入序列到当前已经生成的所有 token 的 `K` 和 `V`。`Q_new` 可以直接与 `K_cache` 进行点积，得到注意力分数，然后结合 `V_cache` 得到新的输出。
+3. **更新 `KV Cache`**：新的 `K_new` 和 `V_new` 会通过线性变换得到（形状为 `(embed_dim,)`），并将它们添加到 `K_cache` 和 `V_cache` 的末尾，使得缓存的 `K_cache` 和 `V_cache` 不断增大，以备后续使用。
+1. **输出**：通过注意力计算后的输出形状为 `(embed_dim,)`，即新生成的 token。
 
 
 ### 2.3. 简单的 Python 实现
@@ -200,7 +196,7 @@ for output in outputs:
 
 上图展示了 vLLM 用 Paged 管理内存具体怎么做的.
 
-简单来说, vLLM 在开始推理前为每个 Decoder Layer 申请两个巨长的 Tensor (`k_cache` 和 `v_cache`), 把 Tensor 分割成连续的 PA blocks; 每个 PA Block 能够存放 `BLOCK_SIZE` 个 token 的 K 或 V cache (每个 cache 的形状可以理解为 `(num_heads, head_size)`).
+简单来说, vLLM 在开始推理前为每个 Decoder Layer 申请两个巨长的 Tensor (`k_cache` 和 `v_cache`), 把 Tensor 分割成连续等长的 PA blocks (图中的一行为一个 PA Block); 每个 PA Block 能够存放 `BLOCK_SIZE` 个 token 的 K 或 V cache (每个 cache 的形状可以理解为 `(num_heads, head_size)`).
 
 因此, `k_cache` 和 `v_cache` 的形状可以理解为 `(num_blocks, num_heads, head_size)`.
 
@@ -304,14 +300,14 @@ const scalar_t* __restrict__ v_cache,   // [num_blocks, num_kv_heads, head_size,
 - `num_heads`: Q 的 head 数目
 - `num_kv_heads`: KV 的 head 数目, 对于 MHA 其值和 `num_heads` 相同; 如果是 GQA, MQA 则 `num_kv_heads` 小于 `num_head`.
 - `head_size`: 即 `HEAD_SIZE`
-- `k_cache: (num_blocks, num_kv_heads, head_size/x, block_size, x)`, 其中 `x` 表示一个 **Vec** 的大小 (即: `VEC_SIZE`[?])，如 `float16 -> 16 / sizeof(float16) = 8`.
+- `k_cache: (num_blocks, num_kv_heads, head_size/x, block_size, x)`, 其中 `x` 表示 `THREAD_GROUP_SIZE * VEC_SIZE` 的大小 (后面会细说).
 
-下面集合 GPU architecture 初步分析一下参数.
+下面结合 GPU architecture 初步分析一下参数.
 
 ![gpu-archi.png](/imgs/blogs/dive-into-paged-attention/gpu-archi.png)
 
 🧐 **为什么要分 thread group?**  
-- 因为当一个 cuda block 要取的数据比较少的时候 (计算 QK), 一个 thread group 取 16B; 当一个 cuda block 要取的数据比较多的时候 (计算 LV), 一个 thread 取 16B.
+- 因为当一个 cuda block 要取的数据比较少的时候 (计算 QK), 一个 thread group 分别一次取 Q 和 K 中 16B; 当一个 cuda block 要取的数据比较多的时候 (计算 LV), 一个 thread 取 16B.
 
 ### 5.2.Shared Memory: `q_vecs` 的写入
 
@@ -337,7 +333,7 @@ constexpr int NUM_VECS_PER_THREAD = NUM_ELEMS_PER_THREAD / VEC_SIZE;
 ```
 
 - `THREAD_GROUP_SIZE`: 每个 thread group 中的 thread 数量. 注意, 一个 cuda block 中有 `NUM_THREADS` 个 thread, `NUM_THREAD_GROUPS` 个 thread group. `THREAD_GROUP_SIZE = MAX(WARP_SIZE/BLOCK_SIZE, 1)`.
-- `NUM_VECS_PER_THREAD`: `HEAD_SIZE` 能被分成多少个 16B. (😓我个人认为这个变量的命名很不合适, 或许叫 `NUM_16B_A_HEAD` 更合适. 这个变量这么命名的理由是后面读取 K 的时候每个 thread 会往自己的寄存器内读 `NUM_VECS_PER_THREAD` 个 k_vec.)
+- `NUM_VECS_PER_THREAD`: `HEAD_SIZE` 能被分成多少个 16B. (这个变量这么命名的理由是后面读取 K 的时候每个 thread 会往自己的寄存器内读 `NUM_VECS_PER_THREAD` 个 k_vec.)
 
 > 证明: `q_vecs` 覆盖 Q 的一个 head, 并且 `NUM_VECS_PER_THREAD` 表示 Q 的一个 head 被分成多少个 16B.  
 > => `THREAD_GROUP_SIZE` * `VEC_SIZE` = 16B / `sizeof(scalar_t)`;  
@@ -359,7 +355,7 @@ for (int i = thread_group_idx; i < NUM_VECS_PER_THREAD;
 - `thread_group_idx` 表示当前 thread 属于当前 cuda block 中第几个 thread group.
 - `thread_group_offset` 表示当前 thread 在当前 thread group 中是第几个 thread.
 
-![pa-load-q-01.png](/imgs/blogs/dive-into-paged-attention/pa-load-q.png)
+![pa-load-q.png](/imgs/blogs/dive-into-paged-attention/pa-load-q.png)
 
 上图展示了循环具体是怎么跑的.  
 
@@ -379,7 +375,7 @@ for (int i = thread_group_idx; i < NUM_VECS_PER_THREAD;
 
 现在从 cuda block 的角度看, 当前 block 已经获得了自己要算的 Q 中的一个 head (形状为 `(1, head_size)`), 接下来就是计算 Q 和 K 的点积.
 
-点击过程是把当前 block 拥有的 Q head 和整个 K Cache (迭代地) 进行点积运算. 参考下图:
+点积过程是把当前 block 拥有的 Q head 和整个 K Cache (迭代地) 进行点积运算. 参考下图:
 
 ![pa-cal-kq-01.png](/imgs/blogs/dive-into-paged-attention/pa-cal-kq-01.png)
 
@@ -407,7 +403,7 @@ for (int block_idx = start_block_idx + warp_idx; block_idx < end_block_idx;
         qk += (alibi_slope != 0) ? alibi_slope * (token_idx - seq_len + 1) : 0;
         if (thread_group_offset == 0) {
             // Store the partial reductions to shared memory.
-            // Maks
+            // Mask
             // Update the max value.
         }
     }
@@ -442,7 +438,7 @@ const int num_blocks = end_block_idx - start_block_idx;
 
 所以说这个循环和上面读取 Q 的循环一个尿性🤮, 不过是以 warp 的粒度处理数据;  
 
-进入了第一个循环内部, 第一步当然是计算当前 thread 对应的 warp 应该计算哪个 PA block (物理上的索引), 因此得到了 `physical_block_number`.
+进入了第一个循环内部, 第一步当然是计算当前 thread 对应的 warp 应该计算哪个 PA block (物理上的索引), 因此得到了 `physical_block_number`:
 
 ```cpp
 const int64_t physical_block_number =
@@ -451,7 +447,7 @@ const int64_t physical_block_number =
 
 ---
 
-然后看第二个循环, 第二个循环的整体目标就是让当前 warp 计算好自己负责的 PA block 中 `BLOCK_SIZE` 个 token 的 QK 乘积. 
+然后解释第二个循环, 第二个循环的整体目标就是让当前 warp 计算好自己负责的 PA block 中 `BLOCK_SIZE` 个 token 的 QK 乘积. 
 
 先看一下 `i` 的上界:
 
@@ -548,7 +544,7 @@ for (int block_idx = start_block_idx + warp_idx; block_idx < end_block_idx;
 - (1) 负责找到当前 thread 属于的 warp 要处理哪个 PA block.
 - (2) 负责找到当前 thread 要计算的 head 在 K cache 中的位置. 这个 head 的索引和 Q 中 head 的索引在 MHSA 中相同.
 - (3) 负责找到当前 thread group 要计算的 token 在当前 PA block 中的位置.
-- (5) 负责找到当前 thread 在需要读取的 head (蓝色长方体) 中 x 的偏移, 通过 `j` 进行迭代读取. **开始时 thread group 中的所有 thread 紧密地指向前 `THREAD_GROUP_SIZE` 个 x.**
+- (5) 负责找到当前 thread 在需要读取的 head (蓝色长方体) 中 x 的偏移, 通过 `j` 进行迭代读取. **每次循环 thread group 中的所有 thread 取一个 x.**
 - (6) 负责找到当前 thread 在 thread gruop 中读取的 x 中 VEC 的偏移; thread 一次读取一个 VEC.
 
 🤔 **为什么 (5) 在实际寻址时需要 `* BLOCK_SIZE * x` ?**  
@@ -590,7 +586,7 @@ if (thread_group_offset == 0) {
 ```
 
 🧐 **为什么要做 mask?**
-- 因为一个 seq 的最后一个 block 可能覆盖不满 `BLOCK_SIZE` 个 token. 这里的 mask 就是把那部分 qk 置零.
+- 因为一个 seq 的最后一个 PA block 可能覆盖不满 `BLOCK_SIZE` 个 token. 这里的 mask 就是把那部分 qk 置零.
 
 ### 5.4. Softmax
 
