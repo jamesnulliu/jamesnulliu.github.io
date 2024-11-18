@@ -24,13 +24,13 @@ cover:
     relative: false 
 ---
 
-## 😋 About Me 
+## 👨‍💻 About Me 
 
 Hello, I am JamesNULLiu (Yanchen Liu, 刘彦辰).
 
-I am a fourth-year undergraduate student at the [School of Computer Engineering and Science](https://cs.shu.edu.cn/), [Shanghai University](https://www.shu.edu.cn/), now working as an intern in [Shanghai AI Laboratory](https://www.shlab.org.cn), mainly engaged in inference acceleration and graph optimization of large language models.
+I am a fourth-year undergraduate student at the [School of Computer Engineering and Science](https://cs.shu.edu.cn/), [Shanghai University](https://www.shu.edu.cn/), now working as an intern in [Shanghai AI Laboratory](https://www.shlab.org.cn), mainly engaged in **inference acceleration** and **graph optimization** of large language models.
 
-As the principal maintainer of [SHUSCT](https://github.com/SHUSCT) and a contributor to [SHUOSC](https://github.com/shuosc), my programming expertise encompasses **C++**, **Python**, **CUDA** and **MLIR**. I also possess proficient skills in building cross-platform applications and libraries using **CMake**, and I am adept at designing and implementing deep learning models with **PyTorch**. My experience also extends to **operating and maintaining high-performance computing clusters**, **optimizing complex computing tasks**, and **performance tuning**.
+As the principal maintainer of [SHUSCT](https://github.com/SHUSCT) and a contributor to [SHUOSC](https://github.com/shuosc), my programming expertise encompasses **C++**, **Python** and **CUDA**. I also possess proficient skills in building cross-platform applications and libraries using **CMake**, and I am adept at designing and implementing deep learning models with **PyTorch**. 
 
 I am passionate about learning and sharing knowledge, and I am always open to new opportunities and challenges. If you have any inquiries or are interested in collaboration, please feel free to contact me via email at jamesnulliu@gmail.com.
 
@@ -52,3 +52,9 @@ I am passionate about learning and sharing knowledge, and I am always open to ne
 
 - [2024.04] **First Prize** and **Group Competition Award** in [2024 ASC Student Supercomputer Challenge](http://www.asc-events.org/StudentChallenge/index.html#) Final Round.
 - [2022.06] **First-Class Academic Scholarship** for outstanding academic performance, Shanghai University.
+
+## 🤪 Hobbies
+
+- 🧙 Animations, Comics and Games
+- 🎸 Electric Guitar
+- 🎼 Jazz, Fusion, Metal, Core, Djent
