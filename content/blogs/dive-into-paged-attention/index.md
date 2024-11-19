@@ -14,8 +14,8 @@ tags:
     - python
     - vllm
     - attention
-description: Dive into the paged attention mechanism of VLLM.
-summary: Dive into the paged attention mechanism of VLLM.
+description: Dive into the paged attention mechanism of vLLM.
+summary: Dive into the paged attention mechanism of vLLM.
 comments: true
 images: 
 cover:
@@ -79,110 +79,7 @@ Attention 矩阵的第 $i$ 个输出只和第 $i$ 个 $Q$ 有关, 和之前的 $
 3. **更新 `KV Cache`**：新的 `K_new` 和 `V_new` 会通过线性变换得到（形状为 `(embed_dim,)`），并将它们添加到 `K_cache` 和 `V_cache` 的末尾，使得缓存的 `K_cache` 和 `V_cache` 不断增大，以备后续使用。
 1. **输出**：通过注意力计算后的输出形状为 `(embed_dim,)`，即新生成的 token。
 
-
-### 2.3. 简单的 Python 实现
-
-```python
-class CachedMHSA(nn.Module):
-    """
-    Cached Multi-Head Self Attention
-    """
-    def __init__(
-        self,
-        embed_dim,
-        num_heads,
-        k_cache: torch.Tensor,  # (cache_len, num_heads, head_size)
-        v_cache: torch.Tensor,  # (cache_len, num_heads, head_size)
-    ):
-        super(CachedMHSA, self).__init__()
-        self.embed_dim = embed_dim
-        self.num_heads = num_heads
-        self.head_size = embed_dim // num_heads
-        assert (
-            self.head_size * num_heads == embed_dim
-        ), "embed_dim should be divisible by num_heads"
-        self.wq = nn.Parameter(torch.randn(self.embed_dim, self.embed_dim))
-        self.wk = nn.Parameter(torch.randn(self.embed_dim, self.embed_dim))
-        self.wv = nn.Parameter(torch.randn(self.embed_dim, self.embed_dim))
-        self.k_cache = k_cache
-        self.v_cache = v_cache
-        self.wout = nn.Parameter(torch.randn(self.embed_dim, self.embed_dim))
-
-    def forward(self, x):
-        # x: (num_seqs, embed_dim)
-        num_seqs, embed_dim = x.size()
-        q = torch.matmul(x, self.wq)  # (num_seqs, embed_dim)
-        k = torch.matmul(x, self.wk)  # (num_seqs, embed_dim)
-        v = torch.matmul(x, self.wv)  # (num_seqs, embed_dim)
-
-        # q -> (num_heads, num_seqs, head_size)
-        q = q.view(num_seqs, self.num_heads, self.head_size).transpose(0, 1)
-        # k, v -> (num_seqs, num_heads, head_size)
-        k = k.view(num_seqs, self.num_heads, self.head_size)
-        v = v.view(num_seqs, self.num_heads, self.head_size)
-
-        # Now cache_len = cache_len + num_seqs
-        # k, v -> (num_heads, cache_len, head_size)
-        k = torch.cat([self.k_cache, k], dim=0).transpose(0, 1) 
-        v = torch.cat([self.v_cache, v], dim=0).transpose(0, 1)
-
-        # logits: (num_heads, num_seqs, cache_len)
-        logits = (torch.matmul(q, k.transpose(-2, -1))) / (self.head_size**0.5)
-        # attn_weights: (num_heads, num_seqs, cache_len)
-        logits = torch.softmax(logits, dim=-1)
-        # attn_output: (num_heads, num_seqs, head_size)
-        attn_output = torch.matmul(logits, v)
-        # attn_output: (num_seqs, num_heads, head_size)
-        attn_output = (
-            attn_output.transpose(0, 1)  # (num_seqs, num_heads, head_size)
-            .contiguous()  # Make sure the memory is contiguous
-            .view(num_seqs, embed_dim)  # (num_seqs, embed_dim)
-        )
-        # out: (num_seqs, embed_dim)
-        out = torch.matmul(attn_output, self.wout)
-        return out
-```
-
-## 3. 使用 vLLM 的 Example
-
-### 3.1. 离线推理
-
-示例:
-
-```python
-# "examples/offline_inference.py"
-from vllm import LLM, SamplingParams
-
-# Sample prompts.
-prompts = [
-    "Hello, my name is",
-    "The president of the United States is",
-    "The capital of France is",
-     "The future of AI is",
-]
-
-# Create a sampling params object.
-sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
-# Create an LLM.
-llm = LLM(model="facebook/opt-125m")
-# Generate texts from the prompts. The output is a list of RequestOutput objects
-# that contain the prompt, generated text, and other information.
-outputs = llm.generate(prompts, sampling_params)
-# Print the outputs.
-for output in outputs:
-    prompt = output.prompt
-    generated_text = output.outputs[0].text
-    print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
-```
-
-### 3.2. 在线推理
-
-利用 `AsyncLLMEngine` 作为后端, vLLM 在系统后台运行, 用户可以通过 API 调用进行在线推理.
-
-
-## 4. vllm 的宏观推理过程
-
-> 参考: https://blog.csdn.net/qq_27590277/article/details/135710435
+## 4. vllm 中的 Paged Attention
 
 ### 4.1. 动机: Memory Wastes
 
@@ -204,52 +101,6 @@ for output in outputs:
 
 - 若是计算 prompt 的 Attention, 则先把传入的 K 和 V 按照 PA blocks 存入 `k_cache` 和 `v_cache` 中; 然后利用整段的 QKV 计算 attention.
 - 若是计算新 token, 则利用 Q 和 block table 计算 decode 阶段的 attntion; 此时访存的就是 `k_cache` 和 `v_cache` 中的 PA blocks.
-
-### 4.3. 初始化阶段
-
-![vllm-init.png](/imgs/blogs/dive-into-paged-attention/vllm-init.png)
-
-初始化阶段, 显示构造 LLM Engine 和其中的 Executor. 对于离线推理, 一定会构造 `vllm.LLMEngine` 而非 `vllm.AsyncLLMEngine`. 区别在于 `vllm.LLMEngine` 只有一个 scheduler, 因此不会做 pipeline parallelism.
-
-scheduler 后面会讲, 主要和他的 continuous batching 有关.
-
-Executor 是执行内存分配和推理的核心模块, 从构造角度说, 无论什么硬件, 只要支持 torch 就行.
-
-![vllm-init-executor.png](/imgs/blogs/dive-into-paged-attention/vllm-init-executor.png)
-
-在初始化 Executor 时, 会为每个 Decoder Layer 申请两个巨长的 Tensor (`k_cache` 和 `v_cache`):
-
-```python
-def _allocate_kv_cache(
-        self,
-        num_blocks: int,
-        device: str,
-    ) -> List[torch.Tensor]:
-        """Allocates KV cache on the specified device."""
-        kv_cache_shape = self.attn_backend.get_kv_cache_shape(
-            num_blocks, self.block_size, self.num_kv_heads, self.head_size)
-        pin_memory = is_pin_memory_available() if device == "cpu" else False
-        kv_cache: List[torch.Tensor] = []
-        for _ in range(self.num_attention_layers):
-            # null block in CpuGpuBlockAllocator requires at least that
-            # block to be zeroed-out.
-            # We zero-out everything for simplicity.
-            kv_cache.append(
-                torch.zeros(kv_cache_shape,
-                            dtype=self.dtype,
-                            pin_memory=pin_memory,
-                            device=device))
-        return kv_cache
-```
-
-### 4.4. 推理阶段
-
-我想把他分成两部分:
-
-1. 添加请求, 涉及到处理 Sequence 和 Batching.
-2. 运行引擎, 涉及到调度和模型的执行.
-
-来不及写了所以看我对着 Drawio 讲吧...
 
 ## 5. Paged Attention Kernel 详解
 

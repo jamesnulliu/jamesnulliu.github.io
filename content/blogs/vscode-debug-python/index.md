@@ -26,6 +26,7 @@ cover:
     hidden: true
 ---
 
+> Here is my template repository of building a Python project (with Pytorch and cutomized CUDA kernels): [VSC-Pytorch-Project-Template](https://github.com/jamesnulliu/VSC-Python-Project-Template) !
 
 First, add the following code to "./.vscode/launch.json" (create the file if it does not exist):
 
@@ -46,13 +47,13 @@ First, add the following code to "./.vscode/launch.json" (create the file if it 
             "program": "${file}",
             // Arguments to pass to the program
             "args": [
-                "arg1",
-                "arg2",
+                "<arg1>",
+                "<arg2>",
                 // ...
             ],
             // Environment variables
             "env": {
-                "YOUR_ENV_VAR": "VALUE"
+                "<YOUR_ENV_VAR>": "<VALUE>"
             },
         },
         // Other configurations...,

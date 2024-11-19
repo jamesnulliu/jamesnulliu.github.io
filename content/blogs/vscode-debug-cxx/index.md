@@ -26,9 +26,9 @@ cover:
     hidden: true
 ---
 
-To build the executable, first write all your build commands in a bash script.
+> Here is my template repository of building a CMake-CXX project (with CUDA): [VSC-CMake-CXX-Project-Template](https://github.com/jamesnulliu/VSC-CMake-CXX-Project-Template) !
 
-For example, create a new file "./scripts/build.sh":
+Suppose that you are managing your project with CMake. To build an executable, first write all your build commands in a bash script. For example, create a new file "./scripts/build.sh":
 
 ```bash
 build_type=$1

@@ -26,7 +26,7 @@ cover:
 
 ## 👨‍💻 About Me 
 
-Hello, I am JamesNULLiu (Yanchen Liu, 刘彦辰).
+Hello, I am JamesNULLiu (刘彦辰, Yanchen Liu).
 
 I am a fourth-year undergraduate student at the [School of Computer Engineering and Science](https://cs.shu.edu.cn/), [Shanghai University](https://www.shu.edu.cn/), now working as an intern in [Shanghai AI Laboratory](https://www.shlab.org.cn), mainly engaged in **inference acceleration** and **graph optimization** of large language models.
 
