@@ -1,7 +1,7 @@
 baseURL: "https://www.autumnrivulet.com"
 title: "秋水·JamesNULLiu"
 languageCode: "en-us" 
-DefaultContentLanguage: "en-us"
+DefaultContentLanguage: "en"
 hasCJKLanguage: true
 pagination.pagerSize: 6 
 pagination.path: "page"
@@ -24,29 +24,39 @@ outputs:
     - JSON
     - RSS 
 
+languages:
+  en:
+    languageName: 'English'
+    weight: 1
+    
+  zh:
+    languageName: '简体中文'
+    weight: 2
+
 params:
-  math: true
-  ShowFullTextinRSS: true 
-  env: production
+  comments: true 
   defaultTheme: auto
   disableScrollToTop: false
   disableThemeToggle: false
-  visitCount: true
-  hideFooter: false
+  disableLangToggle: true
+  displayFullLangName: true
   DateFormat: "Jan-02-2006"
+  env: production
+  hideFooter: false
+  hidemeta: false
+  math: true
+  mermaid: true
+  showToc: true
+  showbreadcrumbs: true
+  ShowFullTextinRSS: true 
   ShowWordCount: true
   ShowShareButtons: true
   ShowReadingTime: true
   ShowUpdateTime: true
-  comments: true 
-  showToc: true
-  TocOpen: false
-  hidemeta: false
-  showbreadcrumbs: true
-  mermaid: true
-  codeFont: "Cascadia Code"
   ShowCodeCopyButtons: true
   ShareButtons: ['telegram', 'twitter', 'reddit', 'linkedin', 'facebook']
+  TocOpen: true
+  visitCount: true
   profileMode:
     enabled: true
     title: "Hi, I am JamesNULLiu"
@@ -81,6 +91,8 @@ params:
     minMatchCharLength: 0
     # limit: 10 # refer: https://www.fusejs.io/api/methods.html#search
     keys: ["title", "permalink", "summary", "content"]
+
+
 
 menu:
   main:

@@ -1,7 +1,7 @@
 ---
 title: "User Management on Linux"
 date: 2024-07-06T07:04:00+08:00
-lastmod: 2024-07-06T07:12:00+08:00
+lastmod: 2024-11-21T13:54:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -22,24 +22,30 @@ cover:
     hidden: true
 ---
 
-## 1. Add/Remove a User
+## 1. List, Add and Remove a User
+
+List all users:
+
+```bash
+cat /etc/passwd
+```
 
 Add a new user:
 
 ```bash
-sudo useradd <username>
+useradd <username>
 ```
 
 Remove an existing user:
 
 ```bash
-sudo userdel <username>
+userdel <username>
 ```
 
 ## 2. Change the Password of a User
 
 ```bash
-sudo passwd <username>
+passwd <username>
 ```
 
 ## 3. Superuser
@@ -65,14 +71,26 @@ chmode u-w /etc/sudoers
 
 ## 4. User Groups
 
+List all user groups:
+
+```bash
+cat /etc/group
+```
+
+List the groups a user is in:
+
+```bash
+groups <username>
+```
+
 Create a new group:
 
 ```bash
-sudo groupadd <groupname>
+groupadd <groupname>
 ```
 
 Add a user to a group:
 
 ```bash
-sudo usermod -aG <groupname> <username>
+usermod -aG <groupname> <username>
 ```
