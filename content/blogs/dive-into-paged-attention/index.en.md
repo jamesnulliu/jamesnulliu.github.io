@@ -2,7 +2,7 @@
 title: "Dive into Paged Attention"
 date: 2024-10-07T12:00:00+08:00
 lastmod: 2024-11-18T18:45:00+08:00
-draft: false
+draft: true
 author: ["jamesnulliu"]
 keywords: 
     - vllm
@@ -78,6 +78,10 @@ Attention 矩阵的第 $i$ 个输出只和第 $i$ 个 $Q$ 有关, 和之前的 $
 2. **与之前缓存的 `K` 和 `V` 进行注意力计算**：使用 `Q_new` 与之前已经计算并缓存的 `K_cache` 和 `V_cache` 进行注意力计算。这里的 `K_cache` 和 `V_cache` 分别是之前每次生成 token 时得到的 `K` 和 `V`，它们的形状是 `(seq_len, embed_dim)`，即缓存了从最初输入序列到当前已经生成的所有 token 的 `K` 和 `V`。`Q_new` 可以直接与 `K_cache` 进行点积，得到注意力分数，然后结合 `V_cache` 得到新的输出。
 3. **更新 `KV Cache`**：新的 `K_new` 和 `V_new` 会通过线性变换得到（形状为 `(embed_dim,)`），并将它们添加到 `K_cache` 和 `V_cache` 的末尾，使得缓存的 `K_cache` 和 `V_cache` 不断增大，以备后续使用。
 1. **输出**：通过注意力计算后的输出形状为 `(embed_dim,)`，即新生成的 token。
+
+- When predicting the next token, we only need to calculate the corresponding `Q_new` for the new token and perform attention calculation with the previously cached `K_cache` and `V_cache`.
+- The new `K_new` and `V_new` will be added to the cache to provide the foundation for the next token generation.
+- This process avoids repeated calculations for all historical tokens, greatly improving efficiency.
 
 ## 4. vllm 中的 Paged Attention
 

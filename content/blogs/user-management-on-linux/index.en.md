@@ -1,7 +1,7 @@
 ---
 title: "User Management on Linux"
 date: 2024-07-06T07:04:00+08:00
-lastmod: 2024-11-21T13:54:00+08:00
+lastmod: 2024-12-03T15:30:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -93,4 +93,71 @@ Add a user to a group:
 
 ```bash
 usermod -aG <groupname> <username>
+```
+
+## 5. Onwership and Permission of Files and Directories
+
+To check the owership and the permission of a file or directory:
+
+```bash
+# File:
+ls -l <filename>
+# Directory:
+ls -ld <dirname>
+# List all files including the hidden ones
+ls -la
+```
+
+Output example:
+
+```bash
+# Permision|*|owner|group|bytes|   date    |file/dirname
+drwxr-xr-x  2 james james 4096  Dec 2 11:02 example-dir/
+# *: Number of subdirectories.
+#    If file, usually starts at 1; Numbers higher than 1 indicate how many hard 
+#    links point to this file.
+#    If directory, the minimum value is 2 ("." and "..").
+```
+
+To break down `drwxr-xr-x`: 
+
+```
+d | rwx | r-x | r-x
+↓   ↓     ↓     ↓
+|   |     |     └── Others permissions (last 3 chars), 101=5
+|   |     └──────── Group permissions (middle 3), 101=5
+|   └────────────── Owner permissions (first 3), 111=7
+└────────────────── File type, d = directory; - = regular file; l = symbolic 
+                    link; b = block device; c = character device
+```
+
+
+To change the ownership:
+
+```bash
+chown [-R] <user>:<group> <filename/dirname>
+chown [-R] :<group> <filename/dirname>
+```
+
+To change the permission using numeric mode:
+
+```bash
+chmod [-R] 764 <filename/dirname>
+```
+
+Where:
+- `7=0b100+0b010+0b001`, owner can Read Write Execute.
+- `6=0b100+0b010+0b000`, group can Read Write.
+- `4=0b100+0b000+0b000`, other can Read.
+
+To change the permission using symbolic mode:
+
+```bash
+chmod +r foldername       # Add read for everyone
+chmod a+r foldername      # Add read for everyone
+chmod u+r foldername      # Add read for owner only
+chmod g+r foldername      # Add read for group only
+chmod o+r foldername      # Add read for others only
+chmod a-rwx file          # Remove all permissions from all
+# ...
 ```
