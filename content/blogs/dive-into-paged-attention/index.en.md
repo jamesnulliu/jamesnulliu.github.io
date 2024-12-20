@@ -2,7 +2,7 @@
 title: "Dive into Paged Attention"
 date: 2024-10-07T12:00:00+08:00
 lastmod: 2024-11-18T18:45:00+08:00
-draft: true
+draft: false
 author: ["jamesnulliu"]
 keywords: 
     - vllm
@@ -26,62 +26,59 @@ cover:
     hidden: true
 ---
 
-## 1. 证明 Attention 的 $O_i$ 只与 $Q_i$ 有关
+## 1. Proving that Attention's $O_i$ only depends on $Q_i$
 
-Attention 的公式如下:
+The Attention formula is:
 
 $$
 O=Attention(Q,K,V)=softmax\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 $$
 
-假设 $Q=\begin{bmatrix}Q_0\\Q_1\end{bmatrix}$, $K=\begin{bmatrix}K_0\\K_1\end{bmatrix}$
+Assume $Q=\begin{bmatrix}Q_0\\Q_1\end{bmatrix}$, $K=\begin{bmatrix}K_0\\K_1\end{bmatrix}$
 
-那么:
+Then:
 
 $$
 O=softmax(\frac{\begin{bmatrix}Q_0K_0^T&Q_0K_1^T\\Q_1K_0^T&Q_1K_1^T\end{bmatrix}}{\sqrt{d_k}})V
 $$
 
-令:
+Let:
 
 $$
 A=\begin{bmatrix}A_0\\A_1\end{bmatrix}=\begin{bmatrix}Q_0K_0^T&Q_0K_1^T\\Q_1K_0^T&Q_1K_1^T\end{bmatrix},f(x)=\frac{softmax(x)}{\sqrt{d_k}}
 $$
 
-此时, $A_1$ 只和 $Q_1$ 有关, 和 $Q_0$ 无关, 那么:
+At this point, $A_1$ only depends on $Q_1$ and is independent of $Q_0$, so:
 
 $$
 \begin{bmatrix}O_0\\O_1\end{bmatrix}=O=\begin{bmatrix}f(A_0)\\f(A_1)\end{bmatrix}V=\begin{bmatrix}f(A_0)V\\f(A_1)V\end{bmatrix}
 $$
 
-因此, $O_i$ 只和  $A_i$ 相关, 而根据 $A$ 的设定, $A_i$ 只和 $Q_i$ 相关, 即:
+Therefore, $O_i$ only depends on $A_i$, and according to the definition of $A$, $A_i$ only depends on $Q_i$, meaning:
 
-Attention 矩阵的第 $i$ 个输出只和第 $i$ 个 $Q$ 有关, 和之前的 $Q$ 无关.
+The $i$-th output of the Attention matrix only depends on the $i$-th $Q$ and is independent of previous $Q$s.
 
-**总结**:
-
-- 在预测下一个 token 时，只需对新 token 计算对应的 `Q_new`，并与之前已经缓存的 `K_cache` 和 `V_cache` 进行注意力计算。
-- 新的 `K_new` 和 `V_new` 会被加入到缓存中，继续为下一个 token 生成提供基础。
-- 整个过程避免了对所有历史 token 的重复计算，大幅提高了效率。
-
-## 2. KV Cache 的增量过程
-### 2.1. 初始输入（完整序列）计算：
-
-- 对于初始的输入序列 `(seq_len, embed_dim)`，我们通过线性变换得到 `Q`、`K` 和 `V`，它们的形状都是 `(seq_len, embed_dim)`。
-- 使用 `Q` 和 `K` 进行点积计算注意力分数，然后结合 `V` 计算得到输出 `(seq_len, embed_dim)`，这是第一次对初始序列的完整计算。
-
-### 2.2. 预测下一个 token 时的增量计算：
-
-在预测下一个 token 时，不需要对整个序列再进行完整的 `Q`、`K`、`V` 计算，而是只需对新生成的 token 进行一次增量计算。这时的操作流程如下：
-
-1. **输入新的 token**：将已经生成的 token（其形状为 `(embed_dim,)`）作为输入，通过线性变换得到该 token 对应的 `Q_new`，形状为 `(embed_dim,)`。
-2. **与之前缓存的 `K` 和 `V` 进行注意力计算**：使用 `Q_new` 与之前已经计算并缓存的 `K_cache` 和 `V_cache` 进行注意力计算。这里的 `K_cache` 和 `V_cache` 分别是之前每次生成 token 时得到的 `K` 和 `V`，它们的形状是 `(seq_len, embed_dim)`，即缓存了从最初输入序列到当前已经生成的所有 token 的 `K` 和 `V`。`Q_new` 可以直接与 `K_cache` 进行点积，得到注意力分数，然后结合 `V_cache` 得到新的输出。
-3. **更新 `KV Cache`**：新的 `K_new` 和 `V_new` 会通过线性变换得到（形状为 `(embed_dim,)`），并将它们添加到 `K_cache` 和 `V_cache` 的末尾，使得缓存的 `K_cache` 和 `V_cache` 不断增大，以备后续使用。
-1. **输出**：通过注意力计算后的输出形状为 `(embed_dim,)`，即新生成的 token。
+**Summary**:
 
 - When predicting the next token, we only need to calculate the corresponding `Q_new` for the new token and perform attention calculation with the previously cached `K_cache` and `V_cache`.
 - The new `K_new` and `V_new` will be added to the cache to provide the foundation for the next token generation.
 - This process avoids repeated calculations for all historical tokens, greatly improving efficiency.
+
+## 2. KV Cache Incremental Process
+### 2.1. Prefilling: Initial Input (Complete Sequence) Calculation 
+
+- For the initial input sequence `(seq_len, vocab_size)`, we obtain `Q`, `K`, and `V` through linear transformations, all with shape `(seq_len, embed_dim)`.
+- Using `Q` and `K` to calculate attention scores through dot product, then combining with `V` to compute the output `(seq_len, embed_dim)`, this is the first complete calculation for the initial sequence.
+
+### 2.2. Decoding: Incremental Calculation When Predicting Next Token:
+
+When predicting the next token, there's no need to perform complete `Q`, `K`, `V` calculations for the entire sequence. Instead, only an incremental calculation for the newly generated token is required. The process is as follows:
+
+1. **Input New Token**: Take the generated token (with shape `(vocab_size,)`) as input, obtain `Q_new`, `K_new` and `V_new` through linear transformation, with shape `(embed_dim,)`.
+4. **Update KV Cache**: `K_new` and `V_new` are added to the end of `K_cache` and `V_cache`, making them two `(seq_len + 1, embed_dim)` vectors.
+3. **Attention Calculation with Updated `K_cache` and `V_cache`**: Use `Q_new` to perform attention calculation with updated `K_cache` and `V_cache`. `Q_new` can directly perform dot product with `K_cache` to get attention scores, then combine with `V_cache` to get new output.
+5. **Output**: The output after attention calculation has shape `(embed_dim,)`, which is the newly generated token.
+
 
 ## 4. vllm 中的 Paged Attention
 
