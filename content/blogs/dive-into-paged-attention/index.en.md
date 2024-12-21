@@ -26,7 +26,7 @@ cover:
     hidden: true
 ---
 
-## 1. Proving that Attention's $O_i$ only depends on $Q_i$
+## 1. Why Attention's $O_i$ only depends on $Q_i$
 
 The Attention formula is:
 
@@ -65,10 +65,245 @@ The $i$-th output of the Attention matrix only depends on the $i$-th $Q$ and is 
 - This process avoids repeated calculations for all historical tokens, greatly improving efficiency.
 
 ## 2. KV Cache Incremental Process
+
+Example code:
+
+{{< details >}}
+
+```python {linenos=true}
+import torch
+from torch import nn
+
+
+class MultiHeadAttentionKernel(nn.Module):
+    def __init__(self, embed_dim: int, num_heads: int):
+        super().__init__()
+
+        self.embed_dim: int = embed_dim
+        self.num_heads: int = num_heads
+        self.head_size: int = embed_dim // num_heads
+
+    def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor):
+        """
+        Calculates softmax(Q * KT / sqrt(dk)) * V .
+
+        Parameters
+        ----------
+        q : torch.Tensor; Shape: (q_len, embed_dim)
+
+        k : torch.Tensor; Shape: (kv_len, embed_dim)
+
+        v : torch.Tensor; Shape: (kv_len, embed_dim)
+
+        Note
+        ----
+        When prefilling, q_len equals to seq_len (number of tokens in the input 
+        seq);
+        When decoding, q_len equals to 1, refering to the newly generated token. 
+        (Based on different sampling strategies, q_len could be larger than 1.)
+        """
+
+        q_len, kv_len = q.size(0), k.size(0)
+        # q: (num_heads, q_len, head_size)
+        q = q.view(q_len, self.num_heads, self.head_size).transpose(0, 1)
+        # k: (num_heads, kv_len, head_size)
+        k = k.view(kv_len, self.num_heads, self.head_size).transpose(0, 1)
+        # v: (num_heads, kv_len, head_size)
+        v = v.view(kv_len, self.num_heads, self.head_size).transpose(0, 1)
+
+        attn_weights = torch.matmul(q, k.transpose(-1, -2)) / torch.sqrt(
+            torch.tensor(self.head_size, dtype=torch.float32)
+        )
+
+        # logits: (num_heads, q_len, kv_len)
+        logits = torch.softmax(attn_weights, dim=-1)
+
+        # out: (num_head, q_len, head_size)
+        out = torch.matmul(logits, v)
+        # out: (q_len, embed_dim)
+        out = out.transpose(0, 1).reshape(q_len, self.embed_dim)
+
+        return out
+
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, embed_dim: int, num_heads: int):
+        super().__init__()
+
+        self.embed_dim: int = embed_dim
+        self.num_heads: int = num_heads
+
+        self.Wq = nn.Linear(embed_dim, embed_dim)
+        self.Wk = nn.Linear(embed_dim, embed_dim)
+        self.Wv = nn.Linear(embed_dim, embed_dim)
+        self.Wo = nn.Linear(embed_dim, embed_dim)
+
+        self.attn_kernel = MultiHeadAttentionKernel(embed_dim, num_heads)
+
+    def forward(self, seq: torch.Tensor):
+        """
+        Parameters
+        ----------
+        seq : torch.Tensor; Shape: (seq_len, embed_dim)
+            Input sequnce, containing `seq_len` tokens, and each token have been 
+            embedded to a `(embed_dim,)` tensor.
+
+        Returns
+        -------
+        tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+            Attention output, cached K and cached V.
+        """
+
+        # q: (seq_len, embed_dim)
+        q = self.Wq(seq)
+        # k: (seq_len, embed_dim)
+        k = self.Wk(seq)
+        # v: (seq_len, embed_dim)
+        v = self.Wv(seq)
+
+        # out: (seq_len, embed_dim)
+        out = self.Wo(self.attn_kernel(q, k, v))
+
+        return out, k, v
+
+
+class CachedMultiHeadAttention(nn.Module):
+
+    def __init__(self, embed_dim: int, num_heads: int):
+        super().__init__()
+
+        self.embed_dim: int = embed_dim
+        self.num_heads: int = num_heads
+
+        self.Wq = nn.Linear(embed_dim, embed_dim)
+        self.Wk = nn.Linear(embed_dim, embed_dim)
+        self.Wv = nn.Linear(embed_dim, embed_dim)
+
+        self.attn_kernel = MultiHeadAttentionKernel(embed_dim, num_heads)
+
+    def forward(
+        self, seq: torch.Tensor, k_cached: torch.Tensor, v_cached: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Parameters
+        ----------
+        seq : torch.Tensor; Shape: (1, embed_dim)
+            Input sequnce, containing only ONE newly generated token.
+        k_cached : torch.Tensor; Shape: (kv_len, embed_dim)
+            Cached K.
+        v_cached : torch.Tensor; Shape: (kv_len, embed_dim)
+            Cached V.
+
+        Returns
+        -------
+        tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+            Attention output, cached K and cached V.
+
+        Note
+        ----
+            When decoing, the input seq only has ONE newly generated token.
+        """
+
+        # q: (1, embed_dim)
+        q = self.Wq(seq)
+        # k: (1, embed_dim)
+        k = self.Wk(seq)
+        # v: (1, embed_dim)
+        v = self.Wv(seq)
+
+        # k_cached: (kv_len + 1, embed_dim)
+        k_cached = torch.cat([k_cached, k], dim=0)
+        # v_cached: (kv_len + 1, embed_dim)
+        v_cached = torch.cat([v_cached, v], dim=0)
+
+        # out: (seq_len, embed_dim)
+        out = self.Wq(self.attn_kernel(q, k_cached, v_cached))
+
+        return out, k_cached, v_cached
+
+
+if __name__ == "__main__":
+    seq_len = 64
+    vocab_size = 1024
+    embed_dim = 128
+    num_heads = 32
+
+    # This embedder map any integeral scalar in [0, vocab_size) to a vector with 
+    # shape (embed_dim, ), i.e., embedder((1,)) -> (embed_dim,)
+    embedder = nn.Embedding(vocab_size, embed_dim)
+    
+    # This projection is used to map a vector with shape (embed_dim,) to a vector 
+    # with shape (vocab_size,) where the ith element inside represents the 
+    # probability of this vector being the ith word in the vocabulary bank 
+    # (containing vocab_size words).
+    proj_to_vocab = nn.Linear(embed_dim, vocab_size)
+
+    # mha is used at prefilling stage.
+    mha = MultiHeadAttention(embed_dim=embed_dim, num_heads=num_heads)
+
+    # cached_mha is used at decoding stage.
+    cached_mha = CachedMultiHeadAttention(embed_dim=embed_dim, num_heads=num_heads)
+
+    # prompt is a sentence including seq_len words, and each word can be represented 
+    # with one (or multiple) integers each in range [0, vocab_size).
+    # For example, prompt of ["fly", "me", "to", "the"] may be [1, 0, 1023, 5].
+    prompt = torch.randint(0, vocab_size, (seq_len,))
+    print(f"Original prompt shape: {prompt.shape}")  # (seq_len, )
+
+    # Embed each word from an integeral scalar to a vector with size embed_dim, so 
+    # now we have a new vector with shape (seq_len, embed_dim).
+    prompt = embedder(prompt)
+    print(f"Embedded prompt shape: {prompt.shape}")  # (seq_len, embed_dim)
+
+    # Prefilling ===================================================================
+    # + Input the whole seq and use MHA to calculate out, k and v.
+    # Here we omit the other parts of the model only keeping one Attention layer in 
+    # one Transformer layer.
+    out, k, v = mha(prompt)
+    # out, k, v: (seq_len, embed_dim).
+    print(f"Out shape: {out.shape}, k shape: {k.shape}, v shape: {v.shape}")
+
+    # Use the last (embed_dim,) vector (i.e., out[-1]) as the output.
+    # logits: (vocab_size,)
+    logits = proj_to_vocab(out[-1])
+    # probs: (vocab_size,)
+    probs = torch.softmax(logits, dim=-1)
+    # NOTE:
+    #   After mapping to (vocab_size,) and applying softmax, the ith value in probs
+    #   is now representing the probabiliy of "the predicted token being the ith
+    #   word in the vocabulary bank".
+    #   For example, if vocab_size is 5, probs could be [0.3, 0.2, 0.4, 0.1, 0.0],
+    #   showing that the probability of "the predicted token being value 0" is 0.3, 
+    #   and the probability of "the predicted token being value 2" is "0.4", etc.
+    # Get the most probable word.
+    # next_token: (1,)
+    next_token = torch.argmax(probs)
+    print(f"Next token from prefilling: {next_token}")
+
+    # Decoding =====================================================================
+    # + Use cached k and v, input only the new generated token from last round. This 
+    # + procedure can be a loop.
+    # prompt: (1, embed_dim)
+    prompt = embedder(next_token)
+    # out: (1, embed_dim)
+    # updated_k, updated_v: (seq_len + 1, embed_dim)
+    out, updated_k, updated_v = cached_mha(prompt, k, v)
+    print(
+        f"Out shape: {out.shape}, updated k shape: {updated_k.shape}, "
+        f"updated v shape: {updated_v.shape}"
+    )
+
+    # next_token: (1,)
+    next_token = torch.argmax(torch.softmax(logits(proj_to_vocab[out[-1]]), dim=-1))
+    print(f"Next token from decoding: {next_token}")
+```
+
+{{< /details >}}
+
 ### 2.1. Prefilling: Initial Input (Complete Sequence) Calculation 
 
-- For the initial input sequence `(seq_len, vocab_size)`, we obtain `Q`, `K`, and `V` through linear transformations, all with shape `(seq_len, embed_dim)`.
-- Using `Q` and `K` to calculate attention scores through dot product, then combining with `V` to compute the output `(seq_len, embed_dim)`, this is the first complete calculation for the initial sequence.
+- For the initial input sequence `(seq_len, vocab_size)`, we obtain `Q`, `K`, and `V` through linear transformations, all with shape `(seq_len, embed_dim)` (*see [this]()*).
+- Using `Q` and `K` to calculate attention scores through dot product, then combining with `V` to compute the output `(seq_len, embed_dim)` (*see [this]()*), this is the first complete calculation for the initial sequence.
 
 ### 2.2. Decoding: Incremental Calculation When Predicting Next Token:
 
@@ -80,30 +315,30 @@ When predicting the next token, there's no need to perform complete `Q`, `K`, `V
 5. **Output**: The output after attention calculation has shape `(embed_dim,)`, which is the newly generated token.
 
 
-## 4. vllm 中的 Paged Attention
+## 3. Paged Attention in vllm
 
-### 4.1. 动机: Memory Wastes
+### 3.1. Motivation: Memory Wastes
 
 ![memory-wastes.png](/imgs/blogs/dive-into-paged-attention/memory-wastes.png)
 
-上图展示了可能的内存浪费情况, 主要时输入 sequence 不知道 eos 在哪里, 如果随机申请内存, 可能导致大量内存碎片, 因此吞吐量下降.
+The above figure shows possible memory waste scenarios. The main issue is that we don't know where the EOS (end of sequence) token is. Random memory allocation may lead to significant memory fragmentation, resulting in reduced throughput.
 
-### 4.2. 解决方案: 用 Page 管理内存
+### 3.2. Solution: Managing Caches with Pages
 
 ![paged-attention-animation.webp](/imgs/blogs/dive-into-paged-attention/paged-attention-animation.webp)
 
-上图展示了 vLLM 用 Paged 管理内存具体怎么做的.
+The above figure demonstrates how vLLM manages memory using Paged Attention.
 
-简单来说, vLLM 在开始推理前为每个 Decoder Layer 申请两个巨长的 Tensor (`k_cache` 和 `v_cache`), 把 Tensor 分割成连续等长的 PA blocks (图中的一行为一个 PA Block); 每个 PA Block 能够存放 `BLOCK_SIZE` 个 token 的 K 或 V cache (每个 cache 的形状可以理解为 `(num_heads, head_size)`).
+In simple terms, before inference begins, vLLM allocates two long Tensors (`k_cache` and `v_cache`) for each Decoder Layer, dividing these Tensors into continuous equal-length PA blocks (each row in the figure represents one PA Block). Each PA Block can store K or V cache for `BLOCK_SIZE` tokens (each token's shape can be recognized as `(num_heads, head_size)`).
 
-因此, `k_cache` 和 `v_cache` 的形状可以理解为 `(num_blocks, num_heads, head_size)`.
+Therefore, the shapes of `k_cache` and `v_cache` can be recognized as `(num_blocks, block_size, num_heads, head_size)`.
 
-对于一个连续的 sequnce, 在 prefill 阶段前就会分配好它的 PA blocks, 之后推理时:
+For a continuous sequence, PA blocks are allocated before the prefilling stage, and during inference:
 
-- 若是计算 prompt 的 Attention, 则先把传入的 K 和 V 按照 PA blocks 存入 `k_cache` 和 `v_cache` 中; 然后利用整段的 QKV 计算 attention.
-- 若是计算新 token, 则利用 Q 和 block table 计算 decode 阶段的 attntion; 此时访存的就是 `k_cache` 和 `v_cache` 中的 PA blocks.
+- When computing prompt attention, the input K and V are first stored in `k_cache` and `v_cache` according to PA blocks; then attention is calculated using the entire QKV.
+- When computing new tokens, Q and the block table are used to calculate attention during the decode phase; at this point, the memory access is to the PA blocks in `k_cache` and `v_cache`.
 
-## 5. Paged Attention Kernel 详解
+## 5. Paged Attention Kernel in Details
 
 > References:
 >   - [vLLM Paged Attention](https://docs.vllm.ai/en/latest/dev/kernel/paged_attention.html)
