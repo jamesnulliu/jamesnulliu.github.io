@@ -12,7 +12,7 @@ categories:
 tags:
     - python
     - pytorch
-description: How to build simple Pytorch trainpipeline.
+description: How to build a simple Pytorch trainpipeline.
 summary: How to build a simple Pytorch trainpipeline.
 comments: true
 images: 
@@ -39,7 +39,7 @@ In general, you will need these things to train a model:
 
 We will build a simple model for demonstration. The model takes a tensor of shape `(batch_size, 10)` as input and outputs a tensor of shape `(batch_size, 2)`.
 
-```python
+```python {linenos=true}
 # @file simple_model.py
 import torch
 import torch.nn as nn
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
 You can run the script to check how the model works:
 
-```bash
+```bash {linenos=true}
 python simple_model.py
 ```
 
@@ -69,7 +69,7 @@ python simple_model.py
 
 We will build a simple dataset for demonstration. The dataset generates random data and labels.
 
-```python
+```python {linenos=true}
 # @file simple_dataset.py
 import torch
 from torch.utils.data import Dataset
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
 You can run the script to check how the dataset works:
 
-```bash
+```bash {linenos=true}
 python simple_dataset.py
 ```
 
@@ -104,7 +104,7 @@ As long as the dataset is built, creating a dataloader is quite easy.
 
 A dataloader will provide `batch_size` samples in each iteration. For example:
 
-```python
+```python {linenos=true}
 # @file temp.py
 from torch.utils.data import DataLoader
 from simple_dataset import SimpleDataset
@@ -122,7 +122,7 @@ for i, (x, y) in enumerate(dataloader):
 
 You can run the script to check how the dataloader works:
 
-```bash
+```bash {linenos=true}
 python temp.py
 ```
 
@@ -140,7 +140,7 @@ We will use `torch.optim.SGD` as the optimizer. `torch.optim.Adam` is also a goo
 
 Now we can build the trainpipeline. The trainpipeline will train the model on the dataset.
 
-```python
+```python {linenos=true}
 # @file trainpipeline.py
 import torch
 import torch.nn as nn
@@ -202,6 +202,6 @@ if __name__ == "__main__":
 
 You can run the script to check how the trainpipeline works:
 
-```bash
+```bash {linenos=true}
 python trainpipeline.py
 ```

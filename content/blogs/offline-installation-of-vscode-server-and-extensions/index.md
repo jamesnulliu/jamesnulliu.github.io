@@ -35,7 +35,7 @@ cover:
 
 If your vscode binary is in `env:PATH`, you can get the version and commit-id by running the following command:
 
-```bash
+```bash {linenos=true}
 code --version
 ```
 
@@ -48,7 +48,7 @@ Or if not, open vscode, click `Help` => `About`, find the version and commit-id 
 
 Download `vscode-server-linux-x64` with the following link and send it to the server:
 
-```bash
+```bash {linenos=true}
 # If Linux
 wget https://update.code.visualstudio.com/commit:<commit-id>/server-linux-x64/stable
 # Or Windows
@@ -59,7 +59,7 @@ scp -P <port> ./stable <username>@<server-ip>:~/vscode-server.tar.gz
 
 On the Server:
 
-```bash
+```bash {linenos=true}
 # Create directory "~/.vscode-server/bin"
 mkdir -p ~/.vscode-server/bin 
 # Extract "~/vscode-server.tar.gz" to "~/.vscode-server/bin"
@@ -74,7 +74,7 @@ Go back to host and connect to your server again, and everything should be okay.
 
 Download `vscode-server-linux-x64` with the following link and send it to the server:
 
-```bash
+```bash {linenos=true}
 # If Linux
 wget https://update.code.visualstudio.com/commit:<commit-id>/server-linux-x64/stable
 # Or Windows
@@ -85,7 +85,7 @@ scp -P <port> ./stable <username>@<server-ip>:~/vscode-server.tar.gz
 
 Download `vscode-cli` with the following link and send it to the server:
 
-```bash
+```bash {linenos=true}
 # If Linux
 wget https://update.code.visualstudio.com/commit:<commit-id>/cli-alpine-x64/stable
 # Or Windows
@@ -96,7 +96,7 @@ scp -P <port> ./stable <username>@<server-ip>:~/vscode-cli.tar.gz
 
 On the Server:
 
-```bash
+```bash {linenos=true}
 # Create directory "~/.vscode-server/cli/servers/Stable-<commit-id>"
 mkdir -p ~/.vscode-server/cli/servers/Stable-<commit-id>
 # Extract "~/vscode-cli.tar.gz" to "~/.vscode-server"
@@ -115,14 +115,14 @@ Go back to host and connect to your server again, and everything should be okay.
 
 On the host, compress the local extension directory `~/.vscode/extensions` and send it to the server.
 
-```bash
+```bash {linenos=true}
 tar -cJf extensions.tar.xz ~/.vscode/extensions
 scp -P <port> extensions.tar.xz <username>@<server-ip>:~/
 ```
 
 On the Server, extract the archive to `~/.vscode-server/extensions/`:
 
-```bash
+```bash {linenos=true}
 tar -xf ~/extensions.tar.xz -C ~/.vscode-server/
 ```
 

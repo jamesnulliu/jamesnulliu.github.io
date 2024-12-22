@@ -31,7 +31,7 @@ cover:
 
 First, add following code to `hugo.yaml`:
 
-```yaml
+```yaml {linenos=true}
 params:
   # ...
   math: true
@@ -71,7 +71,7 @@ Second, create a new file `layouts/partials/extend_head.html`:
 
 Next, create a new file `layouts/partials/math.html`:
 
-```html
+```html {linenos=true}
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 <script>
   MathJax = {
@@ -85,7 +85,7 @@ Next, create a new file `layouts/partials/math.html`:
 
 Now, you can render both block and inline mathematics in your content files. For example, the following code renders the equation $O=Attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V$:
 
-```markdown
+```markdown {linenos=true}
 $$
 O=Attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V
 $$

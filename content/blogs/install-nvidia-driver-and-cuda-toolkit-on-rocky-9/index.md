@@ -28,14 +28,14 @@ cover:
 
 To stop and disable gdm service (which is the default display manager):
 
-```bash
+```bash {linenos=true}
 sudo systemctl disable gdm
 sudo systemctl stop gdm
 ```
 
 To disable the default nouveau driver:
 
-```bash
+```bash {linenos=true}
 sudo bash -c "echo blacklist nouveau > /etc/modprobe.d/blacklist-nvidia-nouveau.conf"
 sudo bash -c "echo options nouveau modeset=0 >> /etc/modprobe.d/blacklist-nvidia-nouveau.conf"
 # Update the kernel initramfs
@@ -46,7 +46,7 @@ sudo reboot
 
 Install epel-release and dkms:
 
-```bash
+```bash {linenos=true}
 sudo dnf install epel-release
 sudo dnf install dkms
 ```
@@ -57,7 +57,7 @@ Download the installation **LOCAL RUN FILE** of **THE LATEST** CUDA Toolkit (>=1
 
 To enable and start gdm service:
 
-```bash
+```bash {linenos=true}
 sudo systemctl enable gdm
 sudo systemctl start gdm
 ```

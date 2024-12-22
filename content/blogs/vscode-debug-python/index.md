@@ -30,7 +30,7 @@ cover:
 
 First, add the following code to "./.vscode/launch.json" (create the file if it does not exist):
 
-```json
+```json {linenos=true}
 {
     "version": "0.2.0",
     "configurations": [

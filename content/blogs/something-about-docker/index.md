@@ -161,7 +161,7 @@ Additional Options:
 
 Example:
 
-```bash
+```bash {linenos=true}
 # Create and run a container from <image-name>:<image-tag>
 docker run -it \
     --gpus all \
@@ -179,31 +179,31 @@ To exit container and return to host, run `exit`, which will stop the containter
 
 Start a container:
 
-```bash
+```bash {linenos=true}
 docker start <container-name>
 ```
 
 Attach to a container:
 
-```bash
+```bash {linenos=true}
 docker exec -it <container-name> bash
 ```
 
 Stop a container:
 
-```bash
+```bash {linenos=true}
 docker stop <contianer-name>
 ```
 
 Remove a container:
 
-```bash
+```bash {linenos=true}
 docker rm <container-name>
 ```
 
 Rename a container:
 
-```bash
+```bash {linenos=true}
 docker rename <container-id> <new-name>
 # or
 docker rename <old-name> <new-name>
@@ -213,7 +213,7 @@ docker rename <old-name> <new-name>
 
 Note that `docker export` only exports the container's filesystem without layer information. It is more recommended to use `docker save` to save a image to a tar file (see [1.5. Save an Image to a tar File](#15-save-an-image-to-a-tar-file)).
 
-```bash
+```bash {linenos=true}
 docker export <container-id> > <some-name>.tar
 ```
 See [1.6. Load an Image](#16-load-an-image) to load the generated tar file to an image.
@@ -222,25 +222,25 @@ See [1.6. Load an Image](#16-load-an-image) to load the generated tar file to an
 
 Check current docker root directory:
 
-```bash
+```bash {linenos=true}
 docker info | grep "Docker Root Dir"
 ```
 
 Stop docker daemon:
 
-```bash
+```bash {linenos=true}
 systemctl stop docker
 ```
 
 Edit (or create) the docker configuration file:
 
-```bash
+```bash {linenos=true}
 vim /etc/docker/daemon.json
 ```
 
 Add or modify the configuration:
 
-```json
+```json {linenos=true}
 {
     "data-root": "<target-docker-root>"
 }
@@ -248,19 +248,19 @@ Add or modify the configuration:
 
 Copy the existing docker data to target location:
 
-```bash
+```bash {linenos=true}
 rsync -aP <current-docker-root> <target-docker-root>
 ```
 
 Restart docker daemon:
 
-```bash
+```bash {linenos=true}
 systemctl daemon-reload
 systemctl start docker
 ```
 
 Verify the new location:
 
-```bash
+```bash {linenos=true}
 docker info | grep "Docker Root Dir"
 ```

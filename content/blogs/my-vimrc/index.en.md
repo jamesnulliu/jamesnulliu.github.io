@@ -92,6 +92,12 @@ set smartindent
 set cindent
 filetype indent on
 
+" Set the menu & message to English
+set langmenu=en_US
+let $LANG='en_US'
+source $VIMRUNTIME/delmenu.vim
+source $VIMRUNTIME/menu.vim
+
 augroup numbertoggle
   autocmd!
   autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if &nu && mode() != "i" | set rnu   | endif

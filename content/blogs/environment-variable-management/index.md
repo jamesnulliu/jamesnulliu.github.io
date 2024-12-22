@@ -28,7 +28,7 @@ Open `~/.bashrc` file.
 
 Create 2 functions to load and unload environment variables:
 
-```bash
+```bash {linenos=true}
 env_load() {
     local env_var=$1
     local path=$2
@@ -55,7 +55,7 @@ Now, you can use `env_load` and `env_unload` to manage environment variables.
 
 For example, to manage CUDA environment, add these lines to `~/.bashrc`:
 
-```bash
+```bash {linenos=true}
 export CUDA_HOME="/usr/local/cuda-12.1"
 alias LOAD_CUDA="env_load PATH $CUDA_HOME/bin; env_load LD_LIBRARY_PATH $CUDA_HOME/lib64"
 alias UNLOAD_CUDA="env_unload PATH $CUDA_HOME/bin; env_unload LD_LIBRARY_PATH $CUDA_HOME/lib64"

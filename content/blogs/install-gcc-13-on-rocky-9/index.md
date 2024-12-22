@@ -11,7 +11,7 @@ categories:
     - software
 tags:
     - gcc
-    - c/c++
+    - c++
     - rocky
 description: How to install GCC-13 in Rocky 9.
 summary: How to install GCC-13 in Rocky 9.
@@ -27,13 +27,13 @@ cover:
 
 Install build essentials.
 
-```bash
+```bash {linenos=true}
 sudo dnf groupinstall "Development Tools"  # gcc-11 is installed by default
 ```
 
 Enable devel repository and install gcc toolset 13:
 
-```bash
+```bash {linenos=true}
 sudo dnf config-manager --set-enabled devel
 sudo dnf update
 sudo dnf install gcc-toolset-13
@@ -41,12 +41,12 @@ sudo dnf install gcc-toolset-13
 
 To enable gcc-13:
 
-```bash
+```bash {linenos=true}
 scl enable gcc-toolset-13 bash
 ```
 
 To disable gcc-13, just exit the shell:
 
-```bash
+```bash {linenos=true}
 exit
 ```

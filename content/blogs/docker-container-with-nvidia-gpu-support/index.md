@@ -35,7 +35,7 @@ cover:
 
 For Ubuntu/Debian:
 
-```bash
+```bash {linenos=true}
 # Uninstall old versions
 sudo apt-get remove docker.io docker-doc docker-compose docker-compose-v2 \
     podman-docker containerd runc
@@ -47,7 +47,7 @@ sudo apt-get purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin \
 
 For CentOS/RHEL:
 
-```bash
+```bash {linenos=true}
 # Uninstall old versions
 sudo yum remove docker docker-client docker-client-latest docker-common \
     docker-latest docker-latest-logrotate docker-logrotate docker-engine
@@ -64,7 +64,7 @@ sudo rm -rf /var/lib/containerd
 
 For Ubuntu/Debian:
 
-```bash
+```bash {linenos=true}
 # Add Docker's official GPG key:
 sudo apt-get update
 sudo apt-get install ca-certificates curl
@@ -91,7 +91,7 @@ sudo systemctl start docker
 
 For CentOS/RHEL:
 
-```bash
+```bash {linenos=true}
 sudo yum install -y yum-utils
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
@@ -106,7 +106,7 @@ sudo systemctl start docker
 
 For Ubuntu/Debian:
 
-```bash
+```bash {linenos=true}
 curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
   && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
@@ -124,7 +124,7 @@ sudo systemctl restart docker
 
 For CentOS/RHEL:
 
-```bash
+```bash {linenos=true}
 curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo | \
   sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
 
@@ -140,7 +140,7 @@ sudo systemctl restart docker
 
 Choose a base image that supports Nvidia GPU in doker hub of [nvidia/cuda](https://hub.docker.com/r/nvidia/cuda/), run the following command to create a container:
 
-```bash
+```bash {linenos=true}
 docker run \
     -it  \
     --gpus all \

@@ -26,25 +26,25 @@ cover:
 
 List all users:
 
-```bash
+```bash {linenos=true}
 cat /etc/passwd
 ```
 
 Add a new user:
 
-```bash
+```bash {linenos=true}
 useradd <username>
 ```
 
 Remove an existing user:
 
-```bash
+```bash {linenos=true}
 userdel <username>
 ```
 
 ## 2. Change the Password of a User
 
-```bash
+```bash {linenos=true}
 passwd <username>
 ```
 
@@ -52,7 +52,7 @@ passwd <username>
 
 Grant write permission to `/etc/sudoers`:
 
-```bash
+```bash {linenos=true}
 chmode u+w /etc/sudoers
 ```
 
@@ -65,7 +65,7 @@ There are four ways to make a user a superuser:
 
 Return the file `/etc/sudoers` to read-only mode:
 
-```bash
+```bash {linenos=true}
 chmode u-w /etc/sudoers
 ```
 
@@ -73,25 +73,25 @@ chmode u-w /etc/sudoers
 
 List all user groups:
 
-```bash
+```bash {linenos=true}
 cat /etc/group
 ```
 
 List the groups a user is in:
 
-```bash
+```bash {linenos=true}
 groups <username>
 ```
 
 Create a new group:
 
-```bash
+```bash {linenos=true}
 groupadd <groupname>
 ```
 
 Add a user to a group:
 
-```bash
+```bash {linenos=true}
 usermod -aG <groupname> <username>
 ```
 
@@ -99,7 +99,7 @@ usermod -aG <groupname> <username>
 
 To check the owership and the permission of a file or directory:
 
-```bash
+```bash {linenos=true}
 # File:
 ls -l <filename>
 # Directory:
@@ -110,7 +110,7 @@ ls -la
 
 Output example:
 
-```bash
+```bash {linenos=true}
 # Permision|*|owner|group|bytes|   date    |file/dirname
 drwxr-xr-x  2 james james 4096  Dec 2 11:02 example-dir/
 # *: Number of subdirectories.
@@ -121,7 +121,7 @@ drwxr-xr-x  2 james james 4096  Dec 2 11:02 example-dir/
 
 To break down `drwxr-xr-x`: 
 
-```
+```txt {linenos=true}
 d | rwx | r-x | r-x
 ↓   ↓     ↓     ↓
 |   |     |     └── Others permissions (last 3 chars), 101=5
@@ -134,14 +134,14 @@ d | rwx | r-x | r-x
 
 To change the ownership:
 
-```bash
+```bash {linenos=true}
 chown [-R] <user>:<group> <filename/dirname>
 chown [-R] :<group> <filename/dirname>
 ```
 
 To change the permission using numeric mode:
 
-```bash
+```bash {linenos=true}
 chmod [-R] 764 <filename/dirname>
 ```
 
@@ -152,7 +152,7 @@ Where:
 
 To change the permission using symbolic mode:
 
-```bash
+```bash {linenos=true}
 chmod +r foldername       # Add read for everyone
 chmod a+r foldername      # Add read for everyone
 chmod u+r foldername      # Add read for owner only

@@ -25,7 +25,7 @@ cover:
 
 The buzzer is a small speaker that emits a beep sound. It is used to notify the user of system events. However, sometimes the beep sound is annoying. To close the buzzer on Linux system, execute the following command:
 
-```bash
+```bash {linenos=true}
 sudo bash -c "echo blacklist pcspkr > /etc/modprobe.d/blacklist-pcspkr.conf"
 # Reboot
 sudo reboot

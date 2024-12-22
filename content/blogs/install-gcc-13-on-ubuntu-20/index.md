@@ -11,7 +11,7 @@ categories:
     - software
 tags:
     - gcc
-    - c/c++
+    - c++
     - ubuntu
 description: This blog is a tutorial on how to install GCC-13 in Ubuntu 20 (or earlier).
 summary: How to install GCC-13 in Ubuntu 20 (or earlier).
@@ -28,27 +28,27 @@ cover:
 
 Install build essentials.
 
-```bash
+```bash {linenos=true}
 sudo apt install build-essential
 ```
 
 
 Check which version of gcc and g++ is installed on your system:
 
-```bash
+```bash {linenos=true}
 gcc -v  # or g++ -v
 ```
 
 **Suppose** that your currently installed gcc and g++ version is 11, you should be able to find gcc-11 and g++-11 under "/usr/bin/":
 
-```bash
+```bash {linenos=true}
 ls /usr/bin
 # All files under "/usr/bin" would be listd.
 ```
 
 Now, install gcc-13 and g++-13, while keeping older version existed:
 
-```bash
+```bash {linenos=true}
 # Install gcc-13 and g++-13
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get update

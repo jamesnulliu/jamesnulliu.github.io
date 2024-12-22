@@ -85,7 +85,7 @@ class MultiHeadAttentionKernel(nn.Module):
 
     def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor):
         """
-        Calculates softmax(Q * KT / sqrt(dk)) * V .
+        Calculates softmax(Q @ KT / sqrt(dk)) @ V .
 
         Parameters
         ----------

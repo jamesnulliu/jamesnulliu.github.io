@@ -28,7 +28,7 @@ cover:
 
 FFmpeg is a powerful tool for video processing. It supports a wide range of codecs and formats. In this post, I will show you how to build FFmpeg with NVENC support.
 
-```bash
+```bash {linenos=true}
 # Install cuda 12.2 first
 
 sudo apt update

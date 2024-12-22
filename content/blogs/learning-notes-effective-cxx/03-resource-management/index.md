@@ -8,7 +8,7 @@ keywords:
 categories:
     - notes
 tags:
-    - c/c++
+    - c++
 description: My learning notes of "Effective C++" by Scott Meyers.
 summary: My learning notes of "Effective C++" by Scott Meyers. 
 comments: true

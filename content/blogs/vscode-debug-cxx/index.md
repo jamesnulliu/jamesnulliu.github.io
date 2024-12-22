@@ -30,7 +30,7 @@ cover:
 
 Suppose that you are managing your project with CMake. To build an executable, first write all your build commands in a bash script. For example, create a new file "./scripts/build.sh":
 
-```bash
+```bash {linenos=true}
 build_type=$1
 cmake -S . -B ./build -DCMAKE_BUILD_TYPE=$build_type
 cmake --build ./build -j $(nproc)
@@ -38,7 +38,7 @@ cmake --build ./build -j $(nproc)
 
 Second, add the following code to "./.vscode/tasks.json" (create the file if it does not exist):
 
-```json
+```json {linenos=true}
 {
     "version": "2.0.0",
     "tasks": [
@@ -66,7 +66,7 @@ Second, add the following code to "./.vscode/tasks.json" (create the file if it 
 
 Next, add the following code to "./.vscode/launch.json" (create the file if it does not exist):
 
-```json
+```json {linenos=true}
 {
     "version": "0.2.0",
     "configurations": [
