@@ -228,44 +228,39 @@ if __name__ == "__main__":
     embed_dim = 128
     num_heads = 32
 
-    # This embedder map any integeral scalar in [0, vocab_size) to a vector with 
-    # shape (embed_dim, ), i.e., embedder((1,)) -> (embed_dim,)
-    embedder = nn.Embedding(vocab_size, embed_dim)
-    
-    # This projection is used to map a vector with shape (embed_dim,) to a vector 
-    # with shape (vocab_size,) where the ith element inside represents the 
-    # probability of this vector being the ith word in the vocabulary bank 
-    # (containing vocab_size words).
-    proj_to_vocab = nn.Linear(embed_dim, vocab_size)
-
-    # mha is used at prefilling stage.
-    mha = MultiHeadAttention(embed_dim=embed_dim, num_heads=num_heads)
-
-    # cached_mha is used at decoding stage.
-    cached_mha = CachedMultiHeadAttention(embed_dim=embed_dim, num_heads=num_heads)
-
     # prompt is a sentence including seq_len words, and each word can be represented 
     # with one (or multiple) integers each in range [0, vocab_size).
     # For example, prompt of ["fly", "me", "to", "the"] may be [1, 0, 1023, 5].
     prompt = torch.randint(0, vocab_size, (seq_len,))
     print(f"Original prompt shape: {prompt.shape}")  # (seq_len, )
 
+    # This embed_layer maps any integeral scalar (in [0, vocab_size)) to a vector 
+    # with shape (embed_dim, ), i.e., embed_layer((4,)) -> (4, embed_dim)
+    embed_layer = nn.Embedding(vocab_size, embed_dim)
+
     # Embed each word from an integeral scalar to a vector with size embed_dim, so 
     # now we have a new vector with shape (seq_len, embed_dim).
-    prompt = embedder(prompt)
+    prompt = embed_layer(prompt)
     print(f"Embedded prompt shape: {prompt.shape}")  # (seq_len, embed_dim)
 
     # Prefilling ===================================================================
     # + Input the whole seq and use MHA to calculate out, k and v.
     # Here we omit the other parts of the model only keeping one Attention layer in 
     # one Transformer layer.
-    out, k, v = mha(prompt)
+    mha_layer = MultiHeadAttention(embed_dim=embed_dim, num_heads=num_heads)
+    out, k, v = mha_layer(prompt)
     # out, k, v: (seq_len, embed_dim).
     print(f"Out shape: {out.shape}, k shape: {k.shape}, v shape: {v.shape}")
+    
+    # This projection is used to map a vector with shape (embed_dim,) to a vector 
+    # with shape (vocab_size,) where the ith element inside represents the 
+    # probability of this vector being the ith word in the vocabulary bank (the 
+    # bank contains vocab_size words in total).
+    proj_to_vocab_layer = nn.Linear(embed_dim, vocab_size)
 
     # Use the last (embed_dim,) vector (i.e., out[-1]) as the output.
     # logits: (vocab_size,)
-    logits = proj_to_vocab(out[-1])
+    logits = proj_to_vocab_layer(out[-1])
     # probs: (vocab_size,)
     probs = torch.softmax(logits, dim=-1)
     # NOTE:
@@ -284,17 +279,22 @@ if __name__ == "__main__":
     # + Use cached k and v, input only the new generated token from last round. This 
     # + procedure can be a loop.
     # prompt: (1, embed_dim)
-    prompt = embedder(next_token)
+    prompt = embed_layer(next_token)
+    cached_mha_layer = CachedMultiHeadAttention(
+        embed_dim=embed_dim, num_heads=num_heads
+    )
     # out: (1, embed_dim)
     # updated_k, updated_v: (seq_len + 1, embed_dim)
-    out, updated_k, updated_v = cached_mha(prompt, k, v)
+    out, updated_k, updated_v = cached_mha_layer(prompt, k, v)
     print(
         f"Out shape: {out.shape}, updated k shape: {updated_k.shape}, "
         f"updated v shape: {updated_v.shape}"
     )
 
     # next_token: (1,)
-    next_token = torch.argmax(torch.softmax(logits(proj_to_vocab[out[-1]]), dim=-1))
+    next_token = torch.argmax(
+        torch.softmax(proj_to_vocab_layer[out[-1]], dim=-1)
+    )
     print(f"Next token from decoding: {next_token}")
 ```
 

@@ -1,5 +1,5 @@
 ---
-title: "Environment Variable Management"
+title: "Environment Variable Management on Linux"
 date: 2024-07-31T14:51:00+08:00
 lastmod: 2024-07-31T14:51:00+08:00
 draft: false
@@ -15,6 +15,7 @@ tags:
 description: An easy way to manage environment variables on Linux using load and unload.
 summary: An easy way to manage environment variables on Linux using load and unload.
 comments: true
+showToc: false
 images: 
 cover:
     image: ""
@@ -61,3 +62,6 @@ alias LOAD_CUDA="env_load PATH $CUDA_HOME/bin; env_load LD_LIBRARY_PATH $CUDA_HO
 alias UNLOAD_CUDA="env_unload PATH $CUDA_HOME/bin; env_unload LD_LIBRARY_PATH $CUDA_HOME/lib64"
 ```
 
+## Related Blogs
+
+- [User Management on Linux](/blogs/user-management-on-linux)

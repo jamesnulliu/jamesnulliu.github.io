@@ -161,3 +161,7 @@ chmod o+r foldername      # Add read for others only
 chmod a-rwx file          # Remove all permissions from all
 # ...
 ```
+
+## 6. Related Blogs
+
+- [Environment Varialble Management on Linux](/blogs/environment-variable-management-on-linux)
