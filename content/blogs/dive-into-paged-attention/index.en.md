@@ -73,6 +73,20 @@ Example code:
 ```python {linenos=true}
 import torch
 from torch import nn
+import numpy as np
+
+
+def set_random_seed(
+    seed: int, rank: int = 0, force_deterministic: bool = False
+) -> None:
+    """
+    Set the random seed for torch and numpy.
+    """
+    np.random.seed(seed + rank)
+    torch.manual_seed(seed + rank)
+    if force_deterministic:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
 
 class MultiHeadAttentionKernel(nn.Module):
@@ -97,10 +111,11 @@ class MultiHeadAttentionKernel(nn.Module):
 
         Note
         ----
-        When prefilling, q_len equals to seq_len (number of tokens in the input 
+        When prefilling, q_len equals to seq_len (number of tokens in the input
         seq);
-        When decoding, q_len equals to 1, refering to the newly generated token. 
-        (Based on different sampling strategies, q_len could be larger than 1.)
+        When decoding, q_len equals to 1, refering to the newly generated
+        token. (Based on different sampling strategies, q_len could be larger
+        than 1.)
         """
 
         q_len, kv_len = q.size(0), k.size(0)
@@ -145,8 +160,8 @@ class MultiHeadAttention(nn.Module):
         Parameters
         ----------
         seq : torch.Tensor; Shape: (seq_len, embed_dim)
-            Input sequnce, containing `seq_len` tokens, and each token have been 
-            embedded to a `(embed_dim,)` tensor.
+            Input sequnce, containing `seq_len` tokens, and each token have
+            been embedded to a `(embed_dim,)` tensor.
 
         Returns
         -------
@@ -178,20 +193,21 @@ class CachedMultiHeadAttention(nn.Module):
         self.Wq = nn.Linear(embed_dim, embed_dim)
         self.Wk = nn.Linear(embed_dim, embed_dim)
         self.Wv = nn.Linear(embed_dim, embed_dim)
+        self.Wo = nn.Linear(embed_dim, embed_dim)
 
         self.attn_kernel = MultiHeadAttentionKernel(embed_dim, num_heads)
 
     def forward(
-        self, seq: torch.Tensor, k_cached: torch.Tensor, v_cached: torch.Tensor
+        self, seq: torch.Tensor, k_cache: torch.Tensor, v_cache: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Parameters
         ----------
         seq : torch.Tensor; Shape: (1, embed_dim)
             Input sequnce, containing only ONE newly generated token.
-        k_cached : torch.Tensor; Shape: (kv_len, embed_dim)
+        k_cache : torch.Tensor; Shape: (kv_len, embed_dim)
             Cached K.
-        v_cached : torch.Tensor; Shape: (kv_len, embed_dim)
+        v_cache : torch.Tensor; Shape: (kv_len, embed_dim)
             Cached V.
 
         Returns
@@ -211,91 +227,111 @@ class CachedMultiHeadAttention(nn.Module):
         # v: (1, embed_dim)
         v = self.Wv(seq)
 
-        # k_cached: (kv_len + 1, embed_dim)
-        k_cached = torch.cat([k_cached, k], dim=0)
-        # v_cached: (kv_len + 1, embed_dim)
-        v_cached = torch.cat([v_cached, v], dim=0)
+        # k_cache: (kv_len + 1, embed_dim)
+        k_cache = torch.cat([k_cache, k.detach()], dim=0)
+        # v_cache: (kv_len + 1, embed_dim)
+        v_cache = torch.cat([v_cache, v.detach()], dim=0)
 
         # out: (seq_len, embed_dim)
-        out = self.Wq(self.attn_kernel(q, k_cached, v_cached))
+        out = self.Wo(self.attn_kernel(q, k_cache, v_cache))
 
-        return out, k_cached, v_cached
+        return out, k_cache, v_cache
+
+
+class SimpleLM(nn.Module):
+    def __init__(
+        self,
+        vocab_size: int,
+        embed_dim: int,
+        num_heads: int,
+    ):
+        super().__init__()
+
+        self.vocab_size = vocab_size
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+
+        self.embed = nn.Embedding(vocab_size, embed_dim)
+
+        self.mha = MultiHeadAttention(embed_dim, num_heads)
+
+        self.cached_mha = CachedMultiHeadAttention(embed_dim, num_heads)
+
+        self.proj_to_vocab = nn.Linear(embed_dim, vocab_size)
+
+        self.register_buffer("k_cache", None)
+        self.register_buffer("v_cache", None)
+
+    def forward(self, prompt: torch.Tensor, is_prefilling: bool = True):
+        """
+        Parameters
+        ----------
+        prompt : torch.Tensor; Shape: (seq_len,)
+            Input prompt.
+            When prefilling, a prompt is an input sequence, containing
+            `seq_len` tokens.
+            When decoding, a prompt is a single token generated from the last
+            step, which means `seq_len` should equal to `1`.
+        """
+
+        # embedded_prompt: (seq_len, embed_dim)
+        embedded_prompt = self.embed(prompt)
+
+        if is_prefilling:
+            # out: (seq_len, embed_dim)
+            # k: (seq_len, embed_dim)
+            # v: (seq_len, embed_dim)
+            out, k, v = self.mha(embedded_prompt)
+        else:
+            # out: (seq_len, embed_dim)
+            # k: (kv_len, embed_dim)
+            # v: (kv_len, embed_dim)
+            out, k, v = self.cached_mha(
+                embedded_prompt, self.k_cache, self.v_cache
+            )
+
+        # Update k cache and v cache
+        self.k_cache = k.detach()
+        self.v_cache = v.detach()
+
+        # Use the last token to calculate the probability of each word in the
+        # vocabulary bank:
+        # probs: (vocab_size,)
+        probs = torch.softmax(self.proj_to_vocab(out[-1]), dim=-1)
+
+        return probs
 
 
 if __name__ == "__main__":
-    seq_len = 64
+    set_random_seed(114514)
+
+    seq_len = 4
     vocab_size = 1024
     embed_dim = 128
-    num_heads = 32
+    num_heads = 4
+    n_generate = 3
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # prompt is a sentence including seq_len words, and each word can be represented 
-    # with one (or multiple) integers each in range [0, vocab_size).
-    # For example, prompt of ["fly", "me", "to", "the"] may be [1, 0, 1023, 5].
-    prompt = torch.randint(0, vocab_size, (seq_len,))
+    lm = SimpleLM(vocab_size, embed_dim, num_heads).to(device)
+
+    prompt = torch.randint(0, vocab_size, (seq_len,), device=device)
+    print(prompt.shape)
     print(f"Original prompt shape: {prompt.shape}")  # (seq_len, )
+    probs = lm(prompt, is_prefilling=True)
+    token = torch.argmax(probs, dim=-1, keepdim=True)
+    print(token)
+    print(token.shape)
+    print(lm.k_cache.shape)
+    print(lm.v_cache.shape)
 
-    # This embed_layer maps any integeral scalar (in [0, vocab_size)) to a vector 
-    # with shape (embed_dim, ), i.e., embed_layer((4,)) -> (4, embed_dim)
-    embed_layer = nn.Embedding(vocab_size, embed_dim)
-
-    # Embed each word from an integeral scalar to a vector with size embed_dim, so 
-    # now we have a new vector with shape (seq_len, embed_dim).
-    prompt = embed_layer(prompt)
-    print(f"Embedded prompt shape: {prompt.shape}")  # (seq_len, embed_dim)
-
-    # Prefilling ===================================================================
-    # + Input the whole seq and use MHA to calculate out, k and v.
-    # Here we omit the other parts of the model only keeping one Attention layer in 
-    # one Transformer layer.
-    mha_layer = MultiHeadAttention(embed_dim=embed_dim, num_heads=num_heads)
-    out, k, v = mha_layer(prompt)
-    # out, k, v: (seq_len, embed_dim).
-    print(f"Out shape: {out.shape}, k shape: {k.shape}, v shape: {v.shape}")
-    
-    # This projection is used to map a vector with shape (embed_dim,) to a vector 
-    # with shape (vocab_size,) where the ith element inside represents the 
-    # probability of this vector being the ith word in the vocabulary bank (the 
-    # bank contains vocab_size words in total).
-    proj_to_vocab_layer = nn.Linear(embed_dim, vocab_size)
-
-    # Use the last (embed_dim,) vector (i.e., out[-1]) as the output.
-    # logits: (vocab_size,)
-    logits = proj_to_vocab_layer(out[-1])
-    # probs: (vocab_size,)
-    probs = torch.softmax(logits, dim=-1)
-    # NOTE:
-    #   After mapping to (vocab_size,) and applying softmax, the ith value in probs
-    #   is now representing the probabiliy of "the predicted token being the ith
-    #   word in the vocabulary bank".
-    #   For example, if vocab_size is 5, probs could be [0.3, 0.2, 0.4, 0.1, 0.0],
-    #   showing that the probability of "the predicted token being value 0" is 0.3, 
-    #   and the probability of "the predicted token being value 2" is "0.4", etc.
-    # Get the most probable word.
-    # next_token: (1,)
-    next_token = torch.argmax(probs)
-    print(f"Next token from prefilling: {next_token}")
-
-    # Decoding =====================================================================
-    # + Use cached k and v, input only the new generated token from last round. This 
-    # + procedure can be a loop.
-    # prompt: (1, embed_dim)
-    prompt = embed_layer(next_token)
-    cached_mha_layer = CachedMultiHeadAttention(
-        embed_dim=embed_dim, num_heads=num_heads
-    )
-    # out: (1, embed_dim)
-    # updated_k, updated_v: (seq_len + 1, embed_dim)
-    out, updated_k, updated_v = cached_mha_layer(prompt, k, v)
-    print(
-        f"Out shape: {out.shape}, updated k shape: {updated_k.shape}, "
-        f"updated v shape: {updated_v.shape}"
-    )
-
-    # next_token: (1,)
-    next_token = torch.argmax(
-        torch.softmax(proj_to_vocab_layer[out[-1]], dim=-1)
-    )
-    print(f"Next token from decoding: {next_token}")
+    for i in range(1, n_generate):
+        print(f"The {i}th token:")
+        probs = lm(token, is_prefilling=False)
+        token = torch.argmax(probs, dim=-1, keepdim=True)
+        print(token)
+        print(token.shape)
+        print(lm.k_cache.shape)
+        print(lm.v_cache.shape)
 ```
 
 {{< /details >}}
