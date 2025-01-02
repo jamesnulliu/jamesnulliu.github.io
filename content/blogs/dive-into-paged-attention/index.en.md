@@ -80,7 +80,7 @@ def set_random_seed(
     seed: int, rank: int = 0, force_deterministic: bool = False
 ) -> None:
     """
-    Set the random seed for torch and numpy.
+    Set the random seed for numpy and torch.
     """
     np.random.seed(seed + rank)
     torch.manual_seed(seed + rank)
@@ -259,8 +259,8 @@ class SimpleLM(nn.Module):
 
         self.proj_to_vocab = nn.Linear(embed_dim, vocab_size)
 
-        self.register_buffer("k_cache", None)
-        self.register_buffer("v_cache", None)
+        self.k_cache = nn.Buffer(torch.zeros(size=(0, embed_dim)))
+        self.v_cache = nn.Buffer(torch.zeros(size=(0, embed_dim)))
 
     def forward(self, prompt: torch.Tensor, is_prefilling: bool = True):
         """
@@ -268,8 +268,10 @@ class SimpleLM(nn.Module):
         ----------
         prompt : torch.Tensor; Shape: (seq_len,)
             Input prompt.
+
             When prefilling, a prompt is an input sequence, containing
             `seq_len` tokens.
+
             When decoding, a prompt is a single token generated from the last
             step, which means `seq_len` should equal to `1`.
         """
@@ -291,6 +293,9 @@ class SimpleLM(nn.Module):
             )
 
         # Update k cache and v cache
+        # [NOTE]
+        # | We use `detach()` frist to detach k and v from computation graph,
+        # | and then assign them to `self.k_cache` and `self.v_cache`.
         self.k_cache = k.detach()
         self.v_cache = v.detach()
 
@@ -314,24 +319,44 @@ if __name__ == "__main__":
 
     lm = SimpleLM(vocab_size, embed_dim, num_heads).to(device)
 
+    # Create a random prompt (for prefilling), containing `seq_len` tokens;
+    # Each token is a random integer from 0 to `vocab_size`.
+    # For example, prompt of "fly me to the" may be [0, 1023, 512, 100].
     prompt = torch.randint(0, vocab_size, (seq_len,), device=device)
-    print(prompt.shape)
     print(f"Original prompt shape: {prompt.shape}")  # (seq_len, )
-    probs = lm(prompt, is_prefilling=True)
-    token = torch.argmax(probs, dim=-1, keepdim=True)
-    print(token)
-    print(token.shape)
-    print(lm.k_cache.shape)
-    print(lm.v_cache.shape)
 
+    # Prefilling ==============================================================
+    # At prefilling stage, we feed the model with a complete prompt of shape
+    # (seq_len, ), and ask the model to predict the next token (word).
+    # The model will returns a tensor of shape (vocab_size, ), representing the
+    # probability of the next token being each word in the vocabulary bank.
+    # For example, `probs` can be [0.1, 0.5, 0.05, ...], which means the
+    # probability of the next token being the 1st word is 0.1 and 2nd is 0.5.
+    probs = lm(prompt, is_prefilling=True)
+
+    # We pick the word with the highest probability as the next token.
+    # Here `keepdim` is set to `True` to keep the shape of `token` as (1, ),
+    # which is consistent with the shape of the input prompt (seq_len, ). If
+    # set to `False`, the shape of `token` will be (), i.e., scalar, and you
+    # have to reshape it to (1, ) manually before the next round of generation.
+    token = torch.argmax(probs, dim=-1, keepdim=True)
+    print(f"The 1th predicted token: {token}")
+    print(f"|- Token Shape: {token.shape}")
+    print(f"|- K Cache Shape: {lm.k_cache.shape}")
+    print(f"|- V Cache Shape: {lm.v_cache.shape}")
+
+    # Decoding ================================================================
+    # At decoding stage, we feed the model with a token generated from the last
+    # round, and since the shape of `token` is (1, ), you can also consider it 
+    # "an input sequnce with only one token".
     for i in range(1, n_generate):
-        print(f"The {i}th token:")
         probs = lm(token, is_prefilling=False)
         token = torch.argmax(probs, dim=-1, keepdim=True)
-        print(token)
-        print(token.shape)
-        print(lm.k_cache.shape)
-        print(lm.v_cache.shape)
+        print(f"The {i+1}th predicted token: {token}")
+        print(f"|- Token Shape: {token.shape}")
+        print(f"|- K Cache Shape: {lm.k_cache.shape}")
+        print(f"|- V Cache Shape: {lm.v_cache.shape}")
+
 ```
 
 {{< /details >}}
