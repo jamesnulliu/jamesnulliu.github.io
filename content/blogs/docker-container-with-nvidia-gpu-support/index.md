@@ -25,7 +25,7 @@ cover:
     hidden: true
 ---
 
-> Reference:  
+> Offical Docs:  
 > 1. [Install Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
 > 2. [Install Docker Engine on CentOS](https://docs.docker.com/engine/install/centos/)
 > 3. [Installing the NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)  
@@ -151,3 +151,5 @@ docker run \
     --shm-size <shm-size>G \
     <image_name>:<tag>
 ```
+
+If you need a concise mannual for docker images and containers, see this blog: [Something about Docker](/blogs/something-about-docker)

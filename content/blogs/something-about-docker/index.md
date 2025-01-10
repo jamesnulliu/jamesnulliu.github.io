@@ -152,7 +152,7 @@ Additional Options:
 - `--gpus all`: [Optional] Give container access to all GPUs (requires nvidia-docker)
 - `-v <host-path>:<container-path>`: Mount host directory into container
 - `-e KEY=VALUE`: Set environment variables
-- `--network=host`: Use host network stack
+- `--network=host`: Use host network stack; If set, `-p` is not needed, and you can access host services directly with `localhost`
 - `--ipc=host`: Use host IPC namespace
 - `--privileged`: Give extended privileges to container
 - `-u $(id -u):$(id -g)`: Run as current user instead of root
