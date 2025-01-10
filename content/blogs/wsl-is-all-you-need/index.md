@@ -30,7 +30,7 @@ cover:
 
 ## 1. Motivation
 
-Coding on Windows feels like a nightmare, but most games can't be played on Linux, and I hate MacOS from many aspects.
+Coding on Windows feels like a nightmare, but most games do not run on Linux, and I hate MacOS 🤢🤮 from many aspects.
 
 After trying many ways, now I firmly believe that WSL (as a Docker launcher 🤣) is the best solution if:
 
@@ -80,7 +80,7 @@ Shutdown WSL service:
 wsl --shutdown
 ```
 
-Export a distribution:
+Export a WSL distribution:
 
 ```
 wsl --export <distro-name> <path-to-exported-tar>.tar
@@ -109,7 +109,7 @@ wsl -d <distro-name>
 Open a directory in WSL with VSCode:
 
 ```
-code <path-to-the-directory>
+code <path-to-a-directory-in-wsl>
 ```
 
 ## 5. Install Docker in WSL
@@ -120,9 +120,17 @@ If you want to play with cuda and deep learning in your WSL, see this blog: [Doc
 
 If you need a concise mannual for docker images and containers, see this blog: [Something about Docker](/blogs/something-about-docker)
 
-Install extension `ms-vscode-remote.remote-containers` in vscode to open a directory inside a running container with VSCode. All you need to do is:
+To open a directory inside a running container with VSCode, install extension `ms-vscode-remote.remote-containers`, and:
 
-1. Open a directory in WSL (where you installed docker and running containers as the host) with VSCode following [3. Work with VSCode](#3-work-with-vscode).
+1. Open a directory in a WSL (where you installed docker and ran containers) with VSCode following [3. Work with VSCode](#3-work-with-vscode).
 2. Press `ctrl` + `shift` + `p`, search for command "Dev Containers: Attach to Running Container...".
 3. Choose and click the container you want to open.
 4. That's it.
+
+## 6. Networking
+
+### 6.1. Proxy
+
+Somethimes you may need to set the proxy for your subsystem.
+
+From my experience, the easiest way is to turn on `System Proxy` and `TUN Mode` in clash or v2ray on windows, and your WSL and the running containers will automatically use the proxy.
