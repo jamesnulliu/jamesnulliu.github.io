@@ -68,13 +68,13 @@ params:
     imageTitle: "JamesNULLiu"
     imageWidth: 150 # custom size
     imageHeight: 150 # custom size
-    buttons:
-      - name: "CV"
-        url: "/cv/"
-      - name: Blogs
-        url: "/blogs/"
-      - name: Search
-        url: "/search/"
+    # buttons:
+    #   - name: "Blogs"
+    #     url: "/blogs/"
+    #   - name: "Categories"
+    #     url: "/categories/"
+    #   - name: "Tags"
+    #     url: "/tags/"
   socialIcons:
     - name: 'github'
       url: https://www.github.com/jamesnulliu
@@ -84,7 +84,6 @@ params:
       url: https://t.me/jamesnulliu
     - name: 'email'
       url: "mailto:jamesnulliu@gmail.com"
-
   fuseOpts:
     isCaseSensitive: false
     shouldSort: true
@@ -126,6 +125,10 @@ menu:
       name: Search
       url: /search/
       weight: 7
+    - identifier: friends
+      name: Friends
+      url: /friends/
+      weight: 8
 
 markup:
   highlight:

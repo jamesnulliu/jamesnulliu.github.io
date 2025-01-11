@@ -38,9 +38,8 @@ I am passionate about learning and sharing knowledge, and I am always open to ne
 
 - Training and Inference Acceleration
 - Graph Compilation and Optimization
-- Computer Vision
+- Machine Learning Systems
 - High Performance Computing
-- Computer Architecture
 
 ## 📰 Publications
 
