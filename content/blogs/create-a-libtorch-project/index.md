@@ -2,7 +2,7 @@
 title: "Create A LibTorch Project"
 date: 2024-12-23T01:00:00+08:00
 lastmod: 2025-01-10T13:25:00+08:00
-draft: true
+draft: false
 author: ["jamesnulliu"]
 keywords: 
     - pytorch
@@ -35,32 +35,34 @@ I generated my project using [this template](https://github.com/jamesnulliu/VSC-
 **So the purpose of this blog is to provide a guide to:** 
 
 1. Build a C++, CUDA and LibTorch library, test it with gtest.
-2. Load the library into torch, call the operates in Python.
+2. Load the library into torch, call the operaters in Python.
 3. Resolve problems when linking all the libraries.
 
 > ⚠️**WARNING**  
-> You should find some tutorials on how to use cmake and vcpkg before reading this blog, or you definitely will get lost.
+> You should find some tutorials on how to use cmake and vcpkg before reading this blog.
 
 ## 1. Environment
 
-Managing python environment with miniconda is always a good choice. Check [this website](https://docs.anaconda.com/miniconda/install/#quick-command-line-install) for an installation guide.
+Managing python environment with miniconda is always a good choice. Check [the official website](https://docs.anaconda.com/miniconda/install/#quick-command-line-install) for an installation guide.
 
-After installation, create a new virtual environment named `PMPP`:
+After installation, create a new virtual environment named `PMPP` (or whatever you like) and activate it:
 
 ```bash {linenos=true}
 conda create -n PMPP python=3.12
 conda activate PMPP  # Activate this environment
 ```
 
-Install pytorch following the steps on [this website](https://pytorch.org/get-started/locally/#start-locally). In my case I installed **torch-2.5.1 with cuda 12.4** both on Linux and Windows.
+Install pytorch following the steps on [the official website](https://pytorch.org/get-started/locally/#start-locally). In my case I installed **torch-2.5.1 with cuda 12.4** both on Linux (and Windows).
 
+> 📝**NOTE**  
 > All the python packages you installed can be found under the directory of `$CONDA_PREFIX/lib/python3.12/site-packages`.
 
-Of course you also need to install cuda toolkit on your system. Usually, even if you installed **torch-2.5.1 with cuda 12.4**, using **cuda 12.6** or **cuda 12.1** can run torch in python without any mistakes. But in some cases, you still have to use **cuda 12.4** to exactly match the torch you chose.
+Of course you also need to install **cuda toolkit** on your system. Usually, even if you installed **torch-2.5.1 with cuda 12.4**, using **cuda 12.6** or **cuda 12.1** can run torch in python without any mistakes. But in some cases, you still have to use **cuda 12.4** to exactly match the torch you chose.
 
 You can find all versions of cuda in [this website](https://developer.nvidia.com/cuda-toolkit-archive). Installing and using multiple versions of cuda is possible by managing the `PATH` and `LD_LIBRARY_PATH` environment variables on linux, and you can do this manually or refering to my methods in [this blog](/blogs/environment-variable-management).
 
-> Or if you are a docker user, just pull the image that contains the cuda version you need.
+> Or if you are a docker user, just pull the image that contains the cuda version you need.  
+> You may check [this blog: Docker Container with Nvidia GPU Support](/blogs/docker-container-with-nvidia-gpu-support) if you want to have a try.
 
 ## 2. Create a C++, CUDA and LibTorch Project
 
@@ -72,7 +74,7 @@ Moreover, vcpkg is used to manage the dependencies of the project. I am not goin
 
 ### 2.1. How to Link against LibTorch
 
-Since you have installed pytorch in [1. Environment](#1-environment), now you actually have libtorch installed in your virtural environment. Try this command, and you will get the cmake prefix path of pytorch.
+Since you have installed pytorch in [1. Environment](#1-environment), now you actually already have libtorch installed in your virtural environment. Try this command, and you will get the cmake prefix path of pytorch.
 
 ```bash
 python -c "import torch;print(torch.utils.cmake_prefix_path)"
@@ -91,8 +93,29 @@ However, libtorch is compiled with `_GLIBCXX_USE_CXX11_ABI=0` to use legacy ABI 
 
 ### 2.3. Write and Register Custom Torch Operators
 
+In order to register a custom torch operator, what you need to do basically is to write a **function** that usually takes several `torch::Tensor` as input and returns a `torch::Tensor` as output, and then register this function to torch.
+
+For example, I implemented `pmpp::ops::cpu::launchVecAdd` in [this cpp file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/vecAdd/op.cpp) and `pmpp::ops::cuda::launchVecAdd` in [this cu file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/vecAdd/op.cu) and provide the corresponding torch implentations `pmpp::ops::cpu::vectorAddImpl` and `pmpp::ops::cuda::vectorAddImpl` in [this file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/vecAdd/torch_impl.cpp). 
+
+> 🤔 I didn't add any of those function declarations in hpp files under "./include", because I don't think they should be exposed to the users of the library. For the testing part, I will get and test the functions using `torch::Dispatcher` which aligns with the operaters invoked in python.
+
+To register these implementations as an operater into pytorch, see [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/torch_bind.cpp#L10), [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/torch_bind.cpp#L19), and [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/torch_bind.cpp#L25), where I:
+
+1. Define a python function `vector_add` with signature: `vector_add(Tensor a, Tensor b) -> Tensor`.
+2. Register the CPU implementation of the function.
+3. Register the CUDA implementation of the function.
+
+Now `vector_add` is a custom torch operator which can be called in both C++ and Python. All you need to do is to build these codes into a shared library like what I did [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/CMakeLists.txt#L8) in cmake and wait for users to call it.
+
 ### 2.4. Test the Custom Torch Operators in C++
 
+As long as a custom torch operator is registered, normally one or multiple shared libraries will be generated. For C++ users, you should link against libtorch and those shared libraries so that those registered operators can be called. Since I linked libtorch as `PUBLIC` in [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/CMakeLists.txt#L18), the test target will link against libtorch automatically as long as it links against the shared libraries, see [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/test/CMakeLists.txt#L12).
+
+You may be confused about why `-Wl,--no-as-needed` is added before `${PROJECT_NAMESPACE}pmpp-torch-ops`. This is because the shared libraries are not directly used in the test target (an opearter is register in the library but not called directly in the executable), and the linker will not link against them by default. This flag will force the linker to link against the shared libraries even if they are not directly used.
+
+The registered operators can be dispatched in a not-so-intuitional way 🤣 based on the official documentation, see [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/test/test_ops/vecAdd.cpp#L18-L21), but I think it is reasonable and can be understood with little mental burden.
+
+Now the only thing is to test the operators in C++ using gtest, but this is not the focus of this blog. So let's move on to the next part.
 
 
 ## 3. Create and Package a Python Project
@@ -105,13 +128,13 @@ Particularly, "[./pyproject.toml](https://github.com/jamesnulliu/Learning-Progra
 
 You can easily understand what I did by reading the source code of these two files. And there is only one thing I want to mention here.
 
-Based on [2. Create a C++, CUDA and LibTorch Project](#2-create-a-c-cuda-and-libtorch-project), you should find that the generated shared library is under `./build/lib` ending with `.so` on linux or `.dll` on windows. Additionally, I added an install procedure [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/setup.py#L60-L66) which will copy the shared libraries to "./src/pmpp/_torch_ops". "[./src/pmpp](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/tree/cf690614d004aa647aefccb8db3eac83255cb99e/src/pmpp)" is already existing being the root directory of the actual python package, and "_torch_ops" will be created automatically when installing the shared libraries.
+Based on [2. Create a C++, CUDA and LibTorch Project](#2-create-a-c-cuda-and-libtorch-project), you should find that the generated shared library is under `./build/lib` ending with `.so` on linux or `.dll` on windows. Additionally, I added an install procedure [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/setup.py#L60-L66) which will copy the shared libraries to "./src/pmpp/_torch_ops". "[./src/pmpp](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/tree/cf690614d004aa647aefccb8db3eac83255cb99e/src/pmpp)" is already an existing directory being the root of the actual python package, and "./src/pmpp/_torch_ops" will be created automatically while installing the shared libraries.
 
-The problem is that, when packaging the python project, only a directory containing "\_\_init\_\_.py" will be considered as a package (or module), and I don't want to add this file to "_torch_ops" because I would rather consider it a special directory. That is why I used `find_namespace_packages` instead of `find_packages` and speficied `package_data` to include the shared libraries [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/setup.py#L100-L102).
+The problem is that, when packaging the python project, only a directory containing "\_\_init\_\_.py" will be considered as a package (or module), and I don't want to add this file to "./src/pmpp/_torch_ops" due to my mysophobia 😷. That is why I used `find_namespace_packages` instead of `find_packages` and speficied `package_data` to include the shared libraries [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/setup.py#L100-L102).
 
 ### 3.2. Install the Python Package
 
-If you are planning to build your libraries with dependencies listed [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/pyproject.toml#L26-L31) while installing the python project, I really don't suggest install it in an isolated python environment (default behavior of setuptools). This is because you will have to re-install all packages listed [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/pyproject.toml#L2) and in our cases you need to at least append `torch` to that list. 
+If you are planning to build your libraries with dependencies listed [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/pyproject.toml#L26-L31) while installing the python project, I really don't suggest install it in an isolated python environment (which is the default behavior of setuptools).All packages listed [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/pyproject.toml#L2) have to be re-installed and in our case you need to at least append `torch` to that list. 
 
 Aternatively, try this command, which will directrly use the torch installed in current conda environment:
 
@@ -120,3 +143,7 @@ pip install --no-build-isolation -v .
 ```
 
 ### 3.3. Test the Custom Torch Operators in Python
+
+As long as you have the shared libraries built in [2. Create a C++, CUDA and LibTorch Project](#2-create-a-c-cuda-and-libtorch-project), all you need to do is to use `torch.ops.load_library` to load the shared libraries and call the registered operators.
+
+I write this process into "src/pmpp/\_\_init\_\_.py" [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/src/pmpp/__init__.py), so the time you import `pmpp` in python, your custom torch operators will be ready to use. See [this file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/test/test.py) for an example of testing the operators.
