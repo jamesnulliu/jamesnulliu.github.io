@@ -1,7 +1,7 @@
 ---
 title: "Create A LibTorch Project"
 date: 2024-12-23T01:00:00+08:00
-lastmod: 2025-01-10T13:25:00+08:00
+lastmod: 2025-01-13T15:31:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -61,16 +61,15 @@ Of course you also need to install **cuda toolkit** on your system. Usually, eve
 
 You can find all versions of cuda in [this website](https://developer.nvidia.com/cuda-toolkit-archive). Installing and using multiple versions of cuda is possible by managing the `PATH` and `LD_LIBRARY_PATH` environment variables on linux, and you can do this manually or refering to my methods in [this blog](/blogs/environment-variable-management).
 
-> Or if you are a docker user, just pull the image that contains the cuda version you need.  
-> You may check [this blog: Docker Container with Nvidia GPU Support](/blogs/docker-container-with-nvidia-gpu-support) if you want to have a try.
+> Or if you are a docker user, just pull the image that contains the cuda version you need. Check [Docker Container with Nvidia GPU Support](/blogs/docker-container-with-nvidia-gpu-support) if you need any help.
 
 ## 2. Create a C++, CUDA and LibTorch Project
 
-I put all C++ code in `./csrc/` and build them with cmake. The intermediate files should be generated in `./build/` and that is just about using some command-line arguments, see [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/scripts/build.sh#L39). 
+I put all C++ code in "./csrc/" and build them with cmake. The intermediate files should be generated in "./build/" and that is just about using some command-line arguments, see [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/scripts/build.sh#L39). 
 
 Moreover, vcpkg is used to manage the dependencies of the project. I am not going to teach you how to use vcpkg in this blog, but I will mention some traps I met when using it.
 
-> 😍️ I really enjoy building C++ projects with cmake and vcpkg.
+> 😍️ I really enjoy building C++ projects with cmake and vcpkg. Have a try if you haven't used them before.
 
 ### 2.1. How to Link against LibTorch
 
@@ -85,19 +84,21 @@ To integrate this into cmake, I created [this file](https://github.com/jamesnull
 Now you can link your targets against libtorch simply like what I did [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/CMakeLists.txt#L19).
 
 
-### 2.2. VCPKG Configuration
+### 2.2. CMake and VCPKG Configuration
 
-Currently, I am planning to use the packages listed in [this file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/vcpkg.json). I load the packages with [these lines](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/CMakeLists.txt#L30-L35) in "./csrc/CMakeLists.txt`". Then I link those packages to my targets [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/CMakeLists.txt#L20-L21) and [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/test/CMakeLists.txt#L13-L14).
+Currently, I am planning to use the packages listed in [this file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/vcpkg.json). I load the packages with [these lines](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/CMakeLists.txt#L30-L35) in "./csrc/CMakeLists.txt". Then I link those packages to my targets [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/CMakeLists.txt#L20-L21) and [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/test/CMakeLists.txt#L13-L14).
 
-However, libtorch is compiled with `_GLIBCXX_USE_CXX11_ABI=0` to use legacy ABI before C++11 (I really hope they change this in later releases), which conflitcs with the packages managed by vcpkg in default. Consequentially, you have to create a custom vcpkg triplet to control the behaviors when vcpkg actually build the packages. The triplet file is [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/cmake/vcpkg-triplets/x64-linux-no-cxx11abi.cmake) and is enabled when building the project by [these lines](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/scripts/build.sh#L44-L45).
+However, libtorch is compiled with `_GLIBCXX_USE_CXX11_ABI=0` to use legacy ABI before C++11 (I really hope they change this in future releases), which conflitcs with the packages managed by vcpkg in default. Consequentially, you have to create a custom vcpkg triplet to control the behaviors when vcpkg actually build the packages. The triplet file is [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/cmake/vcpkg-triplets/x64-linux-no-cxx11abi.cmake) and is enabled when building the project by [these lines](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/scripts/build.sh#L44-L45).
+
+I also set `CMAKE_CXX_SCAN_FOR_MODULES` to `OFF` on [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/cmake/compilers/cxx-compiler-configs.cmake#L14) because some compile errors occurs showing conflicts between the compiler and the libraries. This is a temporary solution but I am not planning to use modules from C++20 in this project, so just ignoring it.
 
 ### 2.3. Write and Register Custom Torch Operators
 
-In order to register a custom torch operator, what you need to do basically is to write a **function** that usually takes several `torch::Tensor` as input and returns a `torch::Tensor` as output, and then register this function to torch.
+In order to register a custom torch **operator**, basically what you need to do next is to write a **function** that usually takes several `torch::Tensor` as input and returns a `torch::Tensor` as output, and then register this function to torch.
 
-For example, I implemented `pmpp::ops::cpu::launchVecAdd` in [this cpp file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/vecAdd/op.cpp) and `pmpp::ops::cuda::launchVecAdd` in [this cu file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/vecAdd/op.cu) and provide the corresponding torch implentations `pmpp::ops::cpu::vectorAddImpl` and `pmpp::ops::cuda::vectorAddImpl` in [this file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/vecAdd/torch_impl.cpp). 
+For example, I implement `pmpp::ops::cpu::launchVecAdd` in [this cpp file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/vecAdd/op.cpp) and `pmpp::ops::cuda::launchVecAdd` in [this cu file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/vecAdd/op.cu) and provide the corresponding torch implentations `pmpp::ops::cpu::vectorAddImpl` and `pmpp::ops::cuda::vectorAddImpl` in [this file](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/vecAdd/torch_impl.cpp). 
 
-> 🤔 I didn't add any of those function declarations in hpp files under "./include", because I don't think they should be exposed to the users of the library. For the testing part, I will get and test the functions using `torch::Dispatcher` which aligns with the operaters invoked in python.
+> 🤔 I didn't add any of those function declarations in hpp files under "./include" because I don't think they should be exposed to the users of the library. For the testing part, I will get and test the functions using `torch::Dispatcher` which aligns with the operaters invoked in python.
 
 To register these implementations as an operater into pytorch, see [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/torch_bind.cpp#L10), [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/torch_bind.cpp#L19), and [this line](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/csrc/lib/ops/torch_bind.cpp#L25), where I:
 
@@ -126,7 +127,7 @@ In modern python, pyproject.toml is a de-facto standard configuration file for p
 
 Particularly, "[./pyproject.toml](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/pyproject.toml)" and "[./setup.py](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/setup.py)" defines what will happen when you run `pip install .` in the root directory of the project. I created `CMakeExtention` and `CMakeBuild` ([here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/setup.py#L23-L66)) and pass them to `setup` function ([here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/setup.py#L91-L99)) so that the C++ (under "./csrc/") will be built and installed before installing the python package.
 
-You can easily understand what I did by reading the source code of these two files. And there is only one thing I want to mention here.
+You can easily understand what I did by reading the source code of these two files 👀, and there is only one thing I want to mention here.
 
 Based on [2. Create a C++, CUDA and LibTorch Project](#2-create-a-c-cuda-and-libtorch-project), you should find that the generated shared library is under `./build/lib` ending with `.so` on linux or `.dll` on windows. Additionally, I added an install procedure [here](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/cf690614d004aa647aefccb8db3eac83255cb99e/setup.py#L60-L66) which will copy the shared libraries to "./src/pmpp/_torch_ops". "[./src/pmpp](https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/tree/cf690614d004aa647aefccb8db3eac83255cb99e/src/pmpp)" is already an existing directory being the root of the actual python package, and "./src/pmpp/_torch_ops" will be created automatically while installing the shared libraries.
 
