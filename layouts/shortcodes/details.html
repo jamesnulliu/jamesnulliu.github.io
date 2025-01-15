@@ -1,4 +1,6 @@
-<details>
-    <summary>{{ .Get "title" | default "Click to expand" | markdownify }}</summary>
+{{ $style := resources.Get "css/extended/details.css" }}
+<style>{{ $style.Content | safeCSS }}</style>
+<details class="custom-details">
+    <summary class="custom-summary">{{ .Get "title" | default "Click to expand" | markdownify }}</summary>
     <div>{{ .Inner | markdownify }}</div>
 </details>

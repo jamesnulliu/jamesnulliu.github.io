@@ -1,0 +1,6 @@
+{{- if .IsNamedParams -}}
+    <div class="image-container">
+        <img src="{{ .Get "src" }}" alt="{{ .Get "alt" }}" class="image" />
+        <div class="image-caption">{{ .Get "caption" }}</div>
+    </div>
+{{- end }}

@@ -1,0 +1,20 @@
+.image-container {
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.image-container img {
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.image-caption {
+  font-style: italic;
+  text-align: justify;
+  color: gray;
+  margin-top: 5px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
