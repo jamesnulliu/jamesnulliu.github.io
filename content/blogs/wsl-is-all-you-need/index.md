@@ -43,7 +43,7 @@ After trying many ways, now I firmly believe that WSL (as a Docker launcher 🤣
 
 ## 2. Installation
 
-> Official Doc: [How to install Linux on Windows with WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
+> Official Doc: {{<href text="How to install Linux on Windows with WSL" url="https://learn.microsoft.com/en-us/windows/wsl/install">}}
 
 > ⚠️**WARNING**  
 > If you are using scoop on Windows, make sure uninstall it before the first-time installation of a WSL distribution. You can reinstall scoop after the installation.
@@ -116,13 +116,13 @@ code <path-to-a-directory-in-wsl>
 
 Docker Desktop for Windows is a piece of shit. Instead, You can install Docker in WSL as you do in a normal Linux system.
 
-If you want to play with cuda and deep learning in your WSL, see this blog: [Docker Container with Nvidia GPU Support](/blogs/docker-container-with-nvidia-gpu-support) 
+If you want to play with cuda and deep learning in your WSL, see this blog: {{<href text="Docker Container with Nvidia GPU Support" url="/blogs/docker-container-with-nvidia-gpu-support">}} 
 
-If you need a concise mannual for docker images and containers, see this blog: [Something about Docker](/blogs/something-about-docker)
+If you need a concise mannual for docker images and containers, see this blog: {{<href text="Something about Docker" url="/blogs/something-about-docker">}}
 
 To open a directory inside a running container with VSCode, install extension `ms-vscode-remote.remote-containers`, and:
 
-1. Open a directory in a WSL (where you installed docker and ran containers) with VSCode following [3. Work with VSCode](#3-work-with-vscode).
+1. Open a directory in a WSL (where you installed docker and ran containers) with VSCode following {{<href text="3. Work with VSCode" url="#3-work-with-vscode" blank="false">}}.
 2. Press `ctrl` + `shift` + `p`, search for command "Dev Containers: Attach to Running Container...".
 3. Choose and click the container you want to open.
 4. That's it.
