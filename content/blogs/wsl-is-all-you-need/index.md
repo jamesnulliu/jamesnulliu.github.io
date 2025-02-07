@@ -122,7 +122,7 @@ If you need a concise mannual for docker images and containers, see this blog: {
 
 To open a directory inside a running container with VSCode, install extension `ms-vscode-remote.remote-containers`, and:
 
-1. Open a directory in a WSL (where you installed docker and ran containers) with VSCode following {{<href text="3. Work with VSCode" url="#3-work-with-vscode" blank="false">}}.
+1. Open a directory in a WSL (where you installed docker and ran containers) with VSCode following {{<href text="4. Work with VSCode" url="#4-work-with-vscode" blank="false">}}.
 2. Press `ctrl` + `shift` + `p`, search for command "Dev Containers: Attach to Running Container...".
 3. Choose and click the container you want to open.
 4. That's it.

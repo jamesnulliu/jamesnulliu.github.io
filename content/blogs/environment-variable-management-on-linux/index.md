@@ -64,4 +64,4 @@ alias UNLOAD_CUDA="env_unload PATH $CUDA_HOME/bin; env_unload LD_LIBRARY_PATH $C
 
 ## Related Blogs
 
-- [User Management on Linux](/blogs/user-management-on-linux)
+- {{<href text="User Management on Linux" url="/blogs/user-management-on-linux">}}

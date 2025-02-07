@@ -77,9 +77,7 @@ This design achieves automatic prefix caching without the need of maintaining a 
 
 ### 2.1. Introduction
 
-Speculative decoding {{<href text="Leviathan et al., 2023" url="https://arxiv.org/abs/2211.17192">}} is a key technique in reducing latency during token generation in large language models (LLMs). This approach leverages smaller models to handle simpler token predictions while utilizing larger models to verify or adjust those predictions. By doing this, speculative decoding accelerates generation without sacrificing accuracy, making it a lossless yet highly efficient method for optimizing LLM performance.
-
-Why can speculative decoding reduce latency? Traditionally, LLMs generate tokens one at a time in an autoregressive manner. For example, given a prompt, the model generates three tokens T1, T2, T3, each requiring a separate forward pass. Speculative decoding transforms this process by allowing multiple tokens to be proposed and verified in one forward pass.
+Traditionally, LLMs generate tokens one at a time in an autoregressive manner. For example, given a prompt, the model generates three tokens T1, T2, T3, each requiring a separate forward pass. Speculative decoding transforms this process by allowing multiple tokens to be proposed and verified in one forward pass.
 
 Here's how the process works:
 
@@ -147,17 +145,55 @@ caption=`An example of prompt lookup decoding. Given the prompt, we build all 2-
 
 Otherwise known as n-gram matching, this approach is effective for use cases like summarization and question-answering, where there is a significant overlap between the prompt and the answer. Instead of using a small model to propose tokens, the system speculates based on the information already available in the prompt. This works particularly well when the large model repeats parts of the prompt in its answers.
 
-#### 2.3.3. Medusa/Eagle/MLPSpeculator
+#### 2.3.3. MEDUSA
+
+- **MEDUSA Heads**
+
+MEDUSA heads are additional decoding heads appended to the last hidden states of the original model.
 
 {{<image
-src="/imgs/blogs/apc-sd-and-sf/medusa-eagle-mlpspeculator.png"
-width="80%"
-caption=`In the example, three heads are used to propose tokens for the following three positions. Head 1 is proposing ["is", "\'", "the"] for the first position. Head 2 is proposing ["difficult", "is", "\'"] for the second position. Head 3 is proposing ["not", "difficult", "a"] for the third position. All heads take the output of the last transformer block as the input. `
+src="/imgs/blogs/apc-sd-and-sf/medusa.png"
+width="70%"
+caption=`Three heads are used to propose tokens for the following three positions. Head 1 is proposing ["is", "\'", "the"] for the first position. Head 2 is proposing ["difficult", "is", "\'"] for the second position. Head 3 is proposing ["not", "difficult", "a"] for the third position. NOTE: All heads take the output of the last transformer block as the input.`
 >}}
 
-In this method, additional layers (or heads) are added to the large model itself, allowing it to predict multiple tokens in a single forward pass. This reduces the need for a separate draft model, instead leveraging the large model’s own capacity for parallel token generation. Though preliminary, this method shows promise for improving efficiency as more optimized kernels are developed.
+Specifically, given the original model’s last hidden states $h_t$ at position $t$, we add $K$ decoding heads to $h_t$. The $k$-th head is used to predict the token in the $(t + k + 1)$-th position of the next tokens (the original language model head is used to predict the $(t + 1)$-th position).
 
-#### 2.3.4. Speculative Decoding Performance Insights: Speedups and Trade-offs
+$$
+\begin{aligned}
+p_{t}^{(k)} & =\mathrm{softmax}\left(W_{2}^{(k)}\cdot\left(\mathrm{SiLU}(W_{1}^{(k)}\cdot h_{t})+h_{t}\right)\right), \\
+ & \mathrm{where~}W_{2}^{(k)}\in\mathbb{R}^{d\times V},W_{1}^{(k)}\in\mathbb{R}^{d\times d}.
+\end{aligned}
+$$
+
+Unlike a draft model, MEDUSA heads are trained in conjunction with the original backbone model, which can remain frozen during training (MEDUSA-1) or be trained together (MEDUSA-2).
+
+- **Tree Attention**
+
+{{<image
+src="/imgs/blogs/apc-sd-and-sf/tree-attn.png"
+width="70%"
+>}}
+
+The top-2 predictions from the first MEDUSA head and the top-3 from the second result in a total of $2 \times 3 = 6$ candidates. Each of these candidates corresponds to a distinct branch within the tree structure. 
+
+To guarantee that each token only accesses its predecessors, an attention mask is devised that exclusively permits attention flow from the current token back to its antecedent tokens.
+
+- **vLLM Implementation**
+
+1. {{<href text="[ISSUE] Can vLLM support medusa head? #1023" url="https://github.com/vllm-project/vllm/issues/1023">}}  
+1. {{<href text="[ISSUE] [Discussion] Will vLLM consider using Speculative Sampling to accelerating LLM decoding? #1171" url="https://github.com/vllm-project/vllm/issues/1171">}}
+1. {{<href text="[PR] [Speculative Decoding] Medusa Implementation with Top-1 proposer #4978" url="https://github.com/vllm-project/vllm/pull/4978">}}
+
+#### 2.3.4. EAGLE
+
+{{<image
+src="/imgs/blogs/apc-sd-and-sf/eagle-compare.png"
+width="80%"
+caption=`A comparison of the methods for drafting the fourth and fifth tokens, t4 and t5. t (represented by blue blocks) denotes tokens, and f (orange blocks) signifies the features, with subscripts indicating their positions in the sequence.  The red border indicates the predictions of the draft model. For simplicity, the n in the n-gram for Lookahead, as shown in the figure, has been set to 2.`
+>}}
+
+### 2.4. Speculative Decoding Performance Insights: Speedups and Trade-offs
 
 Speculative decoding offers significant performance benefits in **low-QPS (queries per second)** environments. For example, in testing on the ShareGPT dataset, vLLM demonstrated up to a 1.5x speedup in token generation when using draft model-based speculative decoding. Similarly, prompt lookup decoding has shown speedups of up to 2.8x when applied to summarization datasets, such as CNN/DailyMail.
 
@@ -173,9 +209,11 @@ src="/imgs/blogs/apc-sd-and-sf/sd-performance-high-qps.png"
 caption=`As high QPS, we see 1.4x slowdown Llama3-70B on ShareGPT with 4xH100, 1.8x slowdown Llama3-70B on CNN Dailymail with 4xH100`
 >}}
 
-#### 2.3.5 How to Use Speculative Decoding in vLLM
+
+### 2.5 How to Use Speculative Decoding in vLLM
 
 See: {{<href text="How to Use Speculative Decoding in vLLM" url="https://blog.vllm.ai/2024/10/17/spec-decode.html#how-to-use-speculative-decoding-in-vllm">}}.
+
 
 ---
 
@@ -184,4 +222,6 @@ See: {{<href text="How to Use Speculative Decoding in vLLM" url="https://blog.vl
 1. {{<href text="vLLM | Automatic Prefix Caching - Introduction" url="https://docs.vllm.ai/en/stable/automatic_prefix_caching/apc.html">}}
 1. {{<href text="vLLM | Automatic Prefix Caching - Implementation" url="https://docs.vllm.ai/en/stable/automatic_prefix_caching/details.html">}}
 1. {{<href text="How Speculative Decoding Boosts vLLM Performance by up to 2.8x" url="https://blog.vllm.ai/2024/10/17/spec-decode.html">}}
-1. {{<href text="PyTorch | A Hitchhiker's Guide to Speculative Decoding" url="https://pytorch.org/blog/hitchhikers-guide-speculative-decoding/">}}
+1. {{<href text="vLLM | Speculative Decoding" url="https://docs.vllm.ai/en/latest/features/spec_decode.html">}}
+1. {{<href text="PyTorch | A Hitchhiker's Guide to Speculative Decoding" url="https://pytorch.org/blog/hitchhikers-guide-speculative-decoding">}}
+1. {{<href text="Accelerating Production LLMs with Combined Token/Embedding Speculators" url="https://arxiv.org/abs/2404.19124">}}
