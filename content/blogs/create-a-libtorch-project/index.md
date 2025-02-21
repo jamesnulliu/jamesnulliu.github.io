@@ -26,6 +26,8 @@ cover:
     hidden: true
 ---
 
+## 0. Introduction
+
 These days I am reading *Programming Massively Parallel Processors: A Hands-on Approach, 4th Edition*, and created a {{<href text="project" url="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors">}} to store my notes as I learn. 
 
 One of the most important parts in the book is writing **cuda kernels**, so I decided to build all kernels into shared libraries and test those implementations both in C++ and Python. 
@@ -41,51 +43,9 @@ I generated my project using {{<href text="this template" url="https://github.co
 > ⚠️**WARNING**  
 > Find some tutorials on how to use cmake and vcpkg before reading this blog.
 
-## 1. Environment
+## 1. Environment and Quick Start
 
-> A list of softwares you need to install before starting the project:
-> - Miniconda/Anaconda
-> - [conda] Python >= 3.10, PyTorch >= 2.0
-> - gcc >= 12.0, nvcc >= 12.0
-> - CMake >= 3.30
-> - Ninja
-> - vcpkg, pkg-config
-> - [vcpkg] cxxopts, fmt, spdlog, proxy, gtest, yamel-cpp
-
-You should install all the softwares with corresponding versions listed above. The most simple way is to use my docker image {{<href text="jamesnulliu/deeplearning:latest" url="https://hub.docker.com/r/jamesnulliu/deeplearning">}} which contains all the softwares you need to build the project:
-
-```bash
-docker pull jamesnulliu/deeplearning:latest
-```
-
-> Check my blog: [Docker Container with Nvidia GPU Support](/blogs/docker-container-with-nvidia-gpu-support) if you need any help.
-
-If you are planing to build your own environment, here are some tips:
-
-**🎯Miniconda**
-
-Managing python environment with miniconda is always a good choice. Check {{<href text="the official website" url="https://docs.anaconda.com/miniconda/install/#quick-command-line-install">}} for an installation guide.
-
-After installation, create a new conda environment named `PMPP` (or whatever you like) and activate it:
-
-```bash {linenos=true}
-conda create -n PMPP python=3.12
-conda activate PMPP  # Activate this environment
-```
-
-**🎯PyTorch**
-
-Install pytorch following the steps on {{<href text="the official website" url="https://pytorch.org/get-started/locally/#start-locally">}}. In my case I installed `torch-2.6.0 + cuda 12.6`.
-
-> 📝**NOTE**  
-> All the python packages you installed can be found under the directory of `$CONDA_PREFIX/lib/python3.12/site-packages`.
-
-**🎯CUDA**
-
-To compile cuda code, you need to install **cuda toolkit** on your system. Usually, even if `torch-2.6.0 + cuda 12.6` is installed in your conda environment but `cuda 12.1` is installed on the system, you can run torch in python without any mistakes. But in some cases, you still have to install `cuda 12.6` to exactly match the torch you chose.
-
-You can find all versions of cuda on {{<href text="the official website" url="https://developer.nvidia.com/cuda-toolkit-archive">}}. Installing and using multiple versions of cuda is possible by managing the `PATH` and `LD_LIBRARY_PATH` environment variables on linux, and you can do this manually or refering to my methods in {{<href text="this blog" url="/blogs/environment-variable-management">}}.
-
+Check {{<href text="README.md" url="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/tree/c648649/README.md">}} of the project repository.
 
 ## 2. Create a C++, CUDA and LibTorch Project
 
@@ -97,7 +57,7 @@ Vcpkg is used to manage the dependencies of the project. I am not going to teach
 
 ### 2.1. How to Link against LibTorch
 
-Since you have installed pytorch in {{<href text="1. Environment" url="#1-environment" blank="false">}}, now you already have libtorch installed in your conda environment. Run this command, and you will get the cmake prefix path of pytorch:
+Since you have installed pytorch in {{<href text="1. Environment" url="#1-environment" blank="false">}}, now you already have libtorch installed in your conda environment. Run this command, and you will get the cmake prefix path of libtorch:
 
 ```bash {linenos=true}
 python -c "import torch;print(torch.utils.cmake_prefix_path)"
