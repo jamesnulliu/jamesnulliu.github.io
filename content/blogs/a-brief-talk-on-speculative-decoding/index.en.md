@@ -90,11 +90,6 @@ caption=`System architecture of speculative decoding in vLLM. `
 
 ### 3.1. Draft Model-Based Speculative Decoding
 
-{{<image
-src="/imgs/blogs/a-brief-talk-on-speculative-decoding/draft-model-based-sd.png"
-width="80%"
->}}
-
 This is the most commonly used form of speculative decoding, where a smaller model predicts the next tokens, and a larger model verifies them. A common example would be using a Llama 68M model to predict tokens for a Llama 2 70B model. This approach requires careful selection of the draft model to balance accuracy and overhead.
 
 Choosing the correct draft model is essential for maximizing the efficiency of speculative decoding. The draft model needs to be small enough to avoid creating significant overhead but still accurate enough to provide a meaningful performance boost.

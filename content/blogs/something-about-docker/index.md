@@ -1,7 +1,7 @@
 ---
 title: "Something about Docker"
 date: 2024-08-08T12:00:00+08:00
-lastmod: 2025-03-11T16:51:00+08:00
+lastmod: 2025-03-11T19:30:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -77,12 +77,15 @@ tar -cC <dir-path> . | docker load
 
 Use a Dockerfile to build a new image based on an existing image.
 
-Check this example: [Dokerfile.example](/files/blogs/something-about-docker/Dockerfile.example).
+Check this example project: {{<href text="jamesnulliu/deeplearning-docker-build" url="https://github.com/jamesnulliu/deeplearning-docker-build/blob/main/Dockerfile">}}.
 
-Run the following command to build `<image-name>:<image-tag>`:
+The following command in {{<href text="./scripts/build.sh" url="https://github.com/jamesnulliu/deeplearning-docker-build/blob/main/scripts/build.sh">}} would build image `<image-name>:<image-tag>`:
 
 ```bash {linenos=true}
-docker build -f <docker-file-path> -t <image-name>:<image-tag> .
+docker build \
+    -f Dockerfile \
+    -t jamesnulliu/deeplearning:torch2.6-cuda12.6-ubuntu24.04 \
+    .
 ```
 
 > Note that `.` specifiles the build context, where docker can reference (e.g., `COPY` and `ADD`) the containing files during the build process. You can change it to other directory path according to your needs.
