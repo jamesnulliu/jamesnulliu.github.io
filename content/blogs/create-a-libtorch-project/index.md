@@ -28,7 +28,7 @@ cover:
 
 ## 0. Introduction
 
-These days I am reading *Programming Massively Parallel Processors: A Hands-on Approach, 4th Edition*, and created a {{<href text="project" url="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors">}} to store my notes as I learn. 
+These days I am reading {{<href text="Programming Massively Parallel Processors: A Hands-on Approach, 4th Edition" url="https://www.elsevier.com/books/programming-massively-parallel-processors/kirk/978-0-12-811986-0">}}, and created a {{<href text="project" url="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors">}} to store my notes as I learn. 
 
 One of the most important parts in the book is writing **cuda kernels**, so I decided to build all kernels into shared libraries and test those implementations both in C++ and Python. 
 

@@ -149,6 +149,12 @@ To guarantee that each token only accesses its predecessors, an attention mask i
 
 ## 5. EAGLE
 
+### 5.1. Roadmap
+
+1. {{<href text="[vllm][PR] |  [Speculative Decoding] EAGLE Implementation with Top-1 proposer #6830" url="https://github.com/vllm-project/vllm/pull/6830">}}
+
+### 5.2. Detailed Process
+
 {{<image
 src="/imgs/blogs/a-brief-talk-on-speculative-decoding/eagle-compare.png"
 width="80%"

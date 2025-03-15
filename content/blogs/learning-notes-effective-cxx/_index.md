@@ -1,9 +1,9 @@
 ---
-title: "📁 Learning Notes: Effective C++"
+title: "📁 learning notes: effective c++"
 description: My learning notes of "Effective C++" by Scott Meyers.
 summary: My learning notes of "Effective C++" by Scott Meyers. 
 author: ["jamesnulliu"]
-comments: flase
+comments: false
 showToc: false
 TocOpen: false
 hidemeta: false
