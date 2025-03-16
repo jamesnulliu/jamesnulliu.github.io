@@ -25,7 +25,7 @@ cover:
 ---
 
 
-{{<gdocs src="https://docs.google.com/spreadsheets/d/1F_KXAAow336r57Gw1JAh-wZe3EzR0e2s6f4PJBCLhLM/edit?usp=sharing">}}
+{{<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS8hnf4AA8xVJCNKTACvm4H_Lnu6kXtfB7tdL4Iv90OcsuXBnMs87XaVll4Dz0XhmXbjvbjKIeu8k3r/pubhtml">}}
 
 ## 1. Introduction to Speculative Decoding
 
