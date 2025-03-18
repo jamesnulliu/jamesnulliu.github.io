@@ -64,7 +64,7 @@ params:
     enabled: true
     title: "Hi, I am JamesNULLiu"
     subtitle: "吾常见笑于大方之家 - 秋水"
-    imageUrl: "imgs/me/myself.jpg"
+    imageUrl: "imgs/people/jamesnulliu.jpg"
     imageTitle: "JamesNULLiu"
     imageWidth: 150 # custom size
     imageHeight: 150 # custom size

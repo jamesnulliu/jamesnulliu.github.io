@@ -18,7 +18,7 @@ hidemeta: false
 showbreadcrumbs: true
 nolisence: true
 cover:
-    image: "/imgs/me/myself-large.jpg"
+    image: "/imgs/people/jamesnulliu-wide.jpg"
     caption: ""
     alt: ""
     relative: false 
