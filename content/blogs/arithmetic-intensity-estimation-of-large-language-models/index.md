@@ -150,7 +150,7 @@ When decoding, suppose cached sequence length is $S_c$ and the input sequence le
 $$
 \begin{align*}
 \text{Arithmetic Intensity} &= \text{FLOPs}_\text{total} / \text{Bytes}_\text{total} \\
-                            &= \frac{N (24 B S_i H^2 + 4 B S_i S_c H)}{2 Z \text{e}^{9} + 8 N B S_i H + 2 N B S_c H}
+                            &= \frac{N (24 B S_i H^2 + 4 B S_i S_c H)}{2 Z 10^9 + 8 N B S_i H + 2 N B S_c H}
 \end{align*}
 $$
 
@@ -175,4 +175,4 @@ Here are two examples of arithmetic intensity estimation:
 
 ## 5. Discussion: Tensor Parallelism
 
-If the model is split across multiple GPUs using TP, 
+If the model is split across multiple GPUs using TP, the hidden size `H` and the model weight is divided by the number of GPUs.
