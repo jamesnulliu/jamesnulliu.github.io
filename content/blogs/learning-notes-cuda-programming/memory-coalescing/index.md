@@ -93,6 +93,37 @@ width="100%"
 caption=`Coalesced Memory Access. There are 2N loads and 1N stores in the kernel, which in all is 2N/32 load instructions and 1N/32 store instructions for warps. Since the access to memroy is coalesced, one instruction will transfer 4 sectors of data. There are no any wasted data.`
 >}}
 
+Another example of coalesced memory access is shown below:
+
+{{< details title="Click to See Example Code" >}}
+```cpp {linenos=true}
+__global__ void vecAddKernelv1(const fp32_t* a, const fp32_t* b, fp32_t* c,
+                               int32_t n)
+{
+
+    int gtid = threadIdx.x + blockDim.x * blockIdx.x;
+    gtid = gtid % 2 == 0 ? gtid + 1 : gtid - 1;
+    if (gtid < n) {
+        // [DRAM] 2 load, 1 store, 3 inst
+        c[gtid] = a[gtid] + b[gtid];
+    }
+}
+```
+{{< /details >}}
+
+Crompared to the previous example, each 2 threads exchange their access positions. However, the access to memory is still coalesced.
+
+{{<image 
+src="https://docs.google.com/drawings/d/e/2PACX-1vTGbAM6z2ZZwcftUcB4E80_PUqOMCr2Y6ErnGx5DCPqVqUqFaxlDV9IbcPHjUKI1PX7v6cwcZHWH2nT/pub?w=1006&h=371"
+width="100%"
+caption=`Another Example of Coalesced Memory Access.`
+>}}
+
+
+
+
+
+### 2.2. Non-Coalesced Access
 
 
 ## References
