@@ -1,5 +1,8 @@
 baseURL: "https://www.autumnrivulet.com"
 title: "秋水·JamesNULLiu"
+copyright: "© 2024-2025 JamesNULLiu"
+theme: [PaperMod]
+
 languageCode: "en-us" 
 DefaultContentLanguage: "en"
 hasCJKLanguage: true
@@ -8,7 +11,6 @@ pagination.path: "page"
 permalinks:  
   post: /:slug/
   page: /:filename/
-theme: "PaperMod"
 enableInlineShortcodes: true
 enableRobotsTXT: true
 buildDrafts: true
@@ -94,17 +96,15 @@ params:
     # limit: 10 # refer: https://www.fusejs.io/api/methods.html#search
     keys: ["title", "permalink", "summary", "content"]
 
-
-
 menu:
   main:
     - identifier: home
       name: Home
       url: /
       weight: 1
-    - identifier: cv
-      name: CV
-      url: /cv/
+    - identifier: about_me
+      name: About Me
+      url: /about_me/
       weight: 2
     - identifier: blogs
       name: Blogs

@@ -56,6 +56,9 @@ The CUDA C Best Practices Guide gives a high priority recommendation to coalesce
 
 ### 2.1. Coalesced Access
 
+ 
+**Coalesced Memory Access** means that each thread in a warp accesses consecutive memory locations so that the hardware can combine all these accesses into one single access. By doing so, fewer wasted data are transferred and the memory bandwidth is fully utilized.
+
 {{< details title="Click to See Example Code" >}}
 ```cpp {linenos=true}
 __global__ void vecAddKernel(const fp32_t* a, const fp32_t* b, fp32_t* c,
@@ -77,9 +80,7 @@ void launchVecAdd(const fp32_t* d_A, const fp32_t* d_B, fp32_t* d_C, size_t n)
     vecAddKernel<<<gridSize, blockSize>>>(d_A, d_B, d_C, int32_t(n));
 }
 ```
-{{< /details >}}<br>
-  
-**Coalesced Memory Access** means that each thread in a warp accesses consecutive memory locations so that the hardware can combine all these accesses into one single access. By doing so, fewer wasted data are transferred and the memory bandwidth is fully utilized.
+{{< /details >}}
 
 Note that in NVIDIA GPUs:  
 - **WARP** is the smallest unit of execution, which contains 32 threads.
