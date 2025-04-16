@@ -10,7 +10,7 @@ categories:
 -
 tags:
 -
-description: About me, my research interests, education, work experience, achievements and publications.
+description: My research interests, education, work experience, achievements and publications.
 comments: false
 showToc: false
 TocOpen: false
@@ -26,7 +26,7 @@ cover:
 
 Hello, I am JamesNULLiu (刘彦辰).
 
-I am currently a 4th-year undergraduate student studying Computer Science in Shanghai University, now working as an intern in [Shanghai AI Laboratory](https://www.shlab.org.cn), mainly engaged in **inference acceleration**, **graph optimization** and **reasoning** of Large Language Models.
+I am a 4th-year undergraduate student studying Computer Science in Shanghai University, now working as an intern in [Shanghai AI Laboratory](https://www.shlab.org.cn), mainly engaged in **inference acceleration**, **graph optimization** and **reasoning** of Large Language Models.
 
 I am a **passionate programmer** and an **open-source enthusiast**. As the principal maintainer of [Shanghai University Super-Computing Team](https://SHUSCT.github.io/wiki) and an active contributor to [Shanghai University Open-Source Community](https://github.com/shuosc), my programming expertise encompasses **C++**, **Python**, **CUDA**, **LLVM/MLIR**, **PyTorch/libtorch**, ......
 
@@ -63,7 +63,7 @@ If you have any inquiries or are interested in collaboration, please feel free t
 
 1. "HPCTransEval: A Benchmark of High-Performance GPU-to-CPU Transpilation with Pre-trained Large Language Models"  
    [Preprint]
-2. Q. Liu$^\dagger$, **Y. Liu**$^\dagger$, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng, "MDHP-Net: Detecting Injection Attacks on In-vehicle Network using Multi-Dimensional Hawkes Process and Temporal Model";  
+2. Q. Liu$^\dagger$, **Y. Liu**$^\dagger$, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng, "MDHP-Net: Detecting an Emerging Time-exciting Threat in IVN";  
    [Preprint] [[Arxiv](https://arxiv.org/abs/2411.10258)] [[Code](https://github.com/Tiara8735/MDHP-Net-Anonymous)]
 3. Z. Xu, A. Shen, D. Kong, X. Dai, J. Liu, **Y. Liu**, L. Wang, S. Wei, Y. Hu and S. Yin*, "LLMEngine: Disaggregated Mapping and Memory Management Co-scheduling for Wafer-scale Chips"   
    [Preprint]
