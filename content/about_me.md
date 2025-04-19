@@ -61,19 +61,14 @@ If you have any inquiries or are interested in collaboration, please feel free t
 
 ### 2025 ------
 
-1. "HPCTransEval: A Benchmark of High-Performance GPU-to-CPU Transpilation with Pre-trained Large Language Models"  
-   [Preprint]
-2. Q. Liu$^\dagger$, **Y. Liu**$^\dagger$, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng, "MDHP-Net: Detecting an Emerging Time-exciting Threat in IVN";  
-   [Preprint] [[Arxiv](https://arxiv.org/abs/2411.10258)] [[Code](https://github.com/Tiara8735/MDHP-Net-Anonymous)]
-3. Z. Xu, A. Shen, D. Kong, X. Dai, J. Liu, **Y. Liu**, L. Wang, S. Wei, Y. Hu and S. Yin*, "LLMEngine: Disaggregated Mapping and Memory Management Co-scheduling for Wafer-scale Chips"   
-   [Preprint]
+1. [Preprint] "HPCTransEval: A Benchmark of High-Performance GPU-to-CPU Transpilation with Pre-trained Large Language Models".  
+2. [Preprint][[Arxiv](https://arxiv.org/abs/2411.10258)][[Code](https://github.com/Tiara8735/MDHP-Net-Anonymous)] Q. Liu$^\dagger$, **Y. Liu**$^\dagger$, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng, "MDHP-Net: Detecting an Emerging Time-exciting Threat in IVN".  
+3. [Preprint] Z. Xu, A. Shen, D. Kong, X. Dai, J. Liu, **Y. Liu**, L. Wang, S. Wei, Y. Hu and S. Yin*, "LLMEngine: Disaggregated Mapping and Memory Management Co-scheduling for Wafer-scale Chips".  
 
 ### 2024 ------
 
-1. Q. Liu, X. Li, K. Sun, Y. Li$^*$ and **Y. Liu**$^*$, "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic"  
-   [[IEEE Internet of Things Journal](https://ieeexplore.ieee.org/document/10521910)] [[Arxiv](https://arxiv.org/abs/2402.14862v1)] [[Code](https://github.com/jamesnulliu/SISSA)]
-2. X. Li, R. Li, and **Y. Liu**. "HP-LSTM: Hawkes Process–LSTM-Based Detection of DDoS Attack for In-Vehicle Network."  
-   [[MDPI Future Internet](https://www.mdpi.com/1999-5903/16/6/185)] [[Code](https://github.com/jamesnulliu/HP-LSTM)]
+1. [[IEEE Internet of Things Journal](https://ieeexplore.ieee.org/document/10521910)][[Arxiv](https://arxiv.org/abs/2402.14862v1)][[Code](https://github.com/jamesnulliu/SISSA)] Q. Liu, X. Li, K. Sun, Y. Li$^*$ and **Y. Liu**$^*$, "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic".  
+2. [[MDPI Future Internet](https://www.mdpi.com/1999-5903/16/6/185)][[Code](https://github.com/jamesnulliu/HP-LSTM)] X. Li, R. Li, and **Y. Liu**. "HP-LSTM: Hawkes Process–LSTM-Based Detection of DDoS Attack for In-Vehicle Network".  
 
 ## 🤪 Hobbies
 
