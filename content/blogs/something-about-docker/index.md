@@ -1,7 +1,7 @@
 ---
 title: "Something about Docker"
 date: 2024-08-08T12:00:00+08:00
-lastmod: 2025-03-11T19:30:00+08:00
+lastmod: 2025-04-26T18:30700+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -150,6 +150,7 @@ docker system df
 
 
 Basic Parameters:  
+
 {{< details >}}
 - `-it`: Interactive mode with pseudo-TTY terminal
 - `--name <container-name>`: Assign a name to the container for easier reference
@@ -160,6 +161,7 @@ Basic Parameters:
 {{< /details >}}
 
 Additional Options:  
+
 {{< details >}}
 - `--shm-size <shm-size>G`: Set size of /dev/shm (shared memory) in GB (e.g. `2G`)
 - `--gpus all`: [Optional] Give container access to all GPUs (requires nvidia-docker)
