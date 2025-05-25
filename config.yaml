@@ -10,7 +10,7 @@ pagination.pagerSize: 6
 pagination.path: "page"
 permalinks:  
   post: /:slug/
-  page: /:filename/
+  page: /:contentbasename/
 enableInlineShortcodes: true
 enableRobotsTXT: true
 buildDrafts: true
