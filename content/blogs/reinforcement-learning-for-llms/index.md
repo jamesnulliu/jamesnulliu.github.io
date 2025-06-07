@@ -85,11 +85,14 @@ R(\tau) &= \sum_t \gamma^t r_{s_t} \quad &\text{(Return)}
 \end{cases}
 $$
 
-$R(\tau)$ is the summed reward across the agent's full trajectory, but **rewards achieved at later time steps are exponentially discounted by the factor $\gamma$** --- This means that current rewards are more valuable than later rewards, due to both uncertainty and the simple fact that waiting to receive a reward is less desirable.
+$R(\tau)$ is the summed reward across the agent's full trajectory, but **rewards achieved at later time steps are exponentially discounted by the factor $\gamma$**
+{{< sidenote >}}
+TL;DR. The fact that the discount rate is bounded to be smaller than 1 is a mathematical trick to make an infinite sum finite. This helps proving the convergence of certain algorithms. See [Understanding the role of the discount factor in reinforcement learning](https://stats.stackexchange.com/questions/221402/understanding-the-role-of-the-discount-factor-in-reinforcement-learning).
+{{< /sidenote >}}
+--- This means that current rewards are more valuable than later rewards, due to both uncertainty and the simple fact that waiting to receive a reward is less desirable.
 
-> TL;DR. The fact that the discount rate is bounded to be smaller than 1 is a mathematical trick to make an infinite sum finite. This helps proving the convergence of certain algorithms. See [Understanding the role of the discount factor in reinforcement learning](https://stats.stackexchange.com/questions/221402/understanding-the-role-of-the-discount-factor-in-reinforcement-learning).
 
-**The goal of RL is to train an agent that maximizes this return**. As shown by the equation below, we can characterize this as finding a policy that maximizes the return over trajectories that are sampled from the final policy.
+**The goal of RL is to train an agent that maximizes this return**. As shown by the equation below, we can characterize this as finding a policy that maximizes the return over trajectories that are sampled from the final policy:
 
 > Note that the policy is a probability distribution over actions at each time step given the current state, so the exact trajectory produced is not deterministic. Many different trajectories can be obtained depending upon how we sample actions from the policy. 
 
@@ -123,7 +126,7 @@ caption=`A simple traditional RL environment. The target is to train the agent t
 
 Like many problems that are solved with RL, this setup has an environment that is not differentiable (i.e., we can’t compute a gradient and train the model in a supervised fashion) and contains long-term dependencies, meaning that we might have to learn how to perform several sequential actions to get any reward. 
 
-### 3. Taxonomy of modern RL algorithms
+### 2.3. Taxonomy of modern RL algorithms
 
 {{<image
 src="/imgs/blogs/reinforcement-learning-for-llms/taxonomy-of-modern-rl-algorithms.webp"
@@ -172,7 +175,7 @@ width=90%
 caption=`Structure of an DQL.`
 >}}
 
- In DQL, we have two neural networks: the Q network and the target network. These networks are identical, but the exact architecture they use depend upon the problem being solved7. To train these networks, we first gather data by interacting with the environment. This data is gathered using the current Q network with an ε-greedy policy. This process of gathering interaction data for training the Q network is referred to as experience replay; see above.
+In DQL, we have two neural networks: the Q network and the target network. These networks are identical, but the exact architecture they use depend upon the problem being solved7. To train these networks, we first gather data by interacting with the environment. This data is gathered using the current Q network with an ε-greedy policy. This process of gathering interaction data for training the Q network is referred to as experience replay; see above.
 
 From here, we use data that has been collected to train the Q network. During each training iteration, we sample a batch of data and pass it through both the Q network and the target network. The Q network takes the current state as input and predicts the Q value of the action that is taken (i.e., predicted Q value), while the target network takes the next state as input and predicts the Q value of the best action that can be taken from that state8 (i.e., target Q value). 
 
@@ -238,7 +241,9 @@ $$
 
 Simply put, the advantage function characterizes **how much better it is to take a certain action a relative to a randomly-selected action in state $s$ given a policy $\pi$**. Here, we should notice that the advantage function can be derived using the on-policy value and action-value functions defined before, as these functions assume that the agent acts according to a randomly-selected action from the policy $\pi$.
 
-> "The value of your starting point is the reward you expect to get from being there, plus the value of wherever you land next." [3]
+{{< quote >}}
+The value of your starting point is the reward you expect to get from being there, plus the value of wherever you land next. ------ [3]
+{{< /quote>}}
 
 ### 4.2. Policy Optimization
 
@@ -308,19 +313,99 @@ We have:
    \Psi_t = \sum_{i=t}^{T} r_{s_i, a_i} - b(s_i)
    $$
    A baseline function to our expression that only depends on the current state.
-4. **Vallina Policy Gradien**t:
+4. **Vallina Policy Gradient (VPG)**:
    $$
    \Psi_t = A^{\pi_{\theta}}(s_t, a_t) = Q^{\pi_{\theta}}(s_t, a_t) - V^{\pi_{\theta}}(s_t)
    $$
    where $A^{\pi_{\theta}}(s_t, a_t)$ is the advantage function, $Q^{\pi_{\theta}}(s_t, a_t)$ is the action-value function, and $V^{\pi_{\theta}}(s_t)$ is the value function.
 
+**TODO**: Why use VPG?
+
 ## 5. Proximal Policy Optimization (PPO)
+
+- DQL: can only be applied in relatively simple environments.
+- VPG: has poor data efficiency and robustness, meaning that we must collect tons of data from our environment to eliminate noise within the policy gradient estimate.
+
+Motivation for TRPO and PPO:
+
+- Generally applicable (i.e., to both discrete and continuous problems)
+- Data efficient
+- Robust (i.e., works without too much tuning)
+- Simple (i.e., not too difficult to understand/implement)
+
+TRPO satisfies the first two points outlined above, while PPO satisfies all four. 
+
+### 5.1. Aligning LLMs with RL
+
+{{<image
+src="/imgs/blogs/reinforcement-learning-for-llms/align-procedure.webp"
+width=100%
+caption=`Basic procedure for aligning LLMs.`
+caption_align="center"
+>}}
+
+After pre-training, the model perfroms next token prediction, but its output may be repetitive, uninteresting, or not useful. That's the reason alignment is needed.
+
+Typically, we perform alignment by 
+
+1. Selecting several alignment criteria (e.g., follow instructions, avoid harmful output, avoid hallucination, produce interesting/creative output, etc.)
+2. Finetuning the model ------ via SFT and RLHF ------ to satisfy these criteria.
+3. The final model can further finetuned and used to solve a downstream application via prompting (or in-context learning).
+
+{{<image
+src="/imgs/blogs/reinforcement-learning-for-llms/sft-and-rlhf.webp"
+width=100%
+caption=`Procedure of SFT and RLHF.`
+caption_align="center"
+>}}
+
+As shown in the figure above, to apply RLHF:
+1. Prepare a set of prompts and generate several outputs for each prompt with the language model.
+2. Ask a group of human annotators to rank/score the responses to each prompt according to our alignment criteria. 
+3. Use these ranked responses to train a reward model that predicts a human preference score from a language model’s response. 
+4. Use PPO (or other algorithms, e.g., VPG, TRPO) to finetune our language model to maximize the human preferences scores (predicted by the reward model) of its outputs.
+
+### 5.2. Kullback–Leibler (KL) Divergence
+
+At the highest level, the Kullback-Leibler (KL) Divergence is just a method of comparing two probability distributions. 
+
+The idea of KL divergence has its roots in information theory and is highly related to the concept of entropy:
+
+$$
+H=
+\begin{cases}
+-\mathbb{E} \left[ \log p(x) \right]      &\text{(Continuous Case)}  \\
+-\sum_{i=1}^{N} p(x_i) \cdot \log p(x_i)  &\text{(Discrete Case)}
+\end{cases}
+$$
+
+In the equation above, we can see common formulations of entropy $H$ for a probability distribution $p$. Intuitively, the entropy value captures how much information is stored within a probability distribution ------ a lower entropy means that you would need fewer bits to encode the information stored within $p$. 
+
+Instead of a single probability distribution $p$, the KL divergence considers two probability distributions: $p$ and $q$. Then, mirroring the above entropy formulation, we compute KL divergence by finding the expected difference in log probabilities between these two distributions:
+
+$$
+D_{\text{KL}}(p||q) = 
+\begin{cases}
+\mathbb{E} \left[ \log p(x) - \log q(x) \right] &\text{(Continuous Case)} \\
+\sum_{i=1}^{N} p(x_i) \cdot \left( \log p(x_i) - \log q(x_i) \right) &\text{(Discrete Case)}
+\end{cases}
+$$
+
+The KL divergence is commonly explained in the context of approximations. Namely, if we approximate $p$ with $q$, **the KL divergence is the number of bits we would expect to lose by making this approximation**. 
+
+KL divergence is heavily used across different domains of AI/ML research. For example, it is commonly used in loss functions for training neural networks, either as the core loss or as an added regularization term. 
+
+{{< quote >}}
+The final reward function we use during optimization contains a [KL divergence] penalty term … we find this constraint is useful for training stability, and to reduce reward hacking.” ------ [4]
+{{< /quote >}}
 
 ## 6. Group Relative Policy Optimization (GRPO)
 
 
+
 ## References
 
-[1] Cameron R. Wolfe. {{<href text="Basics of Reinforcement Learning for LLMs" url="https://cameronrwolfe.substack.com/p/basics-of-reinforcement-learning">}}.
-[2] Cameron R. Wolfe. {{<href text="Proximal Policy Optimization (PPO): The Key to LLM Alignment" url="https://cameronrwolfe.substack.com/p/proximal-policy-optimization-ppo">}}
-[3] Achiam, Josh. {{<href text="Spinning Up in Deep RL" url="https://spinningup.openai.com/en/latest/index.html">}}. OpenAI, 2018.
+[1] Cameron R. Wolfe. {{<href text="Basics of Reinforcement Learning for LLMs" url="https://cameronrwolfe.substack.com/p/basics-of-reinforcement-learning">}}.  
+[2] Cameron R. Wolfe. {{<href text="Proximal Policy Optimization (PPO): The Key to LLM Alignment" url="https://cameronrwolfe.substack.com/p/proximal-policy-optimization-ppo">}}  
+[3] Achiam, Josh. {{<href text="Spinning Up in Deep RL" url="https://spinningup.openai.com/en/latest/index.html">}}. OpenAI, 2018.  
+[4] Touvron, Hugo, et al. "Llama 2: Open foundation and fine-tuned chat models." arXiv preprint arXiv:2307.09288 (2023).

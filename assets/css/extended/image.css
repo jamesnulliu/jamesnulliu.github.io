@@ -21,6 +21,10 @@
   margin-right: 10px;
 }
 
+.image-caption-center {
+  text-align: center;
+}
+
 .image-pair-container {
   display: flex;
   flex-wrap: wrap;

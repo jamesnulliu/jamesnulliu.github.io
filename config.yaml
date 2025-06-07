@@ -1,4 +1,4 @@
-baseURL: "https://www.autumnrivulet.com"
+baseURL: "https://jamesnulliu.github.io"
 title: "秋水·JamesNULLiu"
 copyright: "© 2024-2025 JamesNULLiu"
 theme: [PaperMod]
@@ -50,7 +50,7 @@ params:
   mermaid: true
   showToc: true
   showbreadcrumbs: true
-  ShareButtons: ['telegram', 'twitter', 'reddit', 'linkedin', 'facebook']
+  # ShareButtons: ['telegram', 'twitter', 'reddit', 'linkedin', 'facebook']
   ShowAllPagesInArchive: true
   ShowCodeCopyButtons: true
   ShowFullTextinRSS: true 
@@ -58,7 +58,7 @@ params:
   ShowPageNums: true
   ShowPostNavLinks: true
   ShowReadingTime: true
-  ShowShareButtons: true
+  # ShowShareButtons: false
   ShowUpdateTime: true
   TocOpen: true
   visitCount: true
@@ -80,10 +80,14 @@ params:
   socialIcons:
     - name: 'github'
       url: https://www.github.com/jamesnulliu
-    - name: 'twitter'
-      url: https://twitter.com/jamesnulliu
+    - name: 'X'
+      url: https://x.com/jamesnulliu
+    - name: 'linkedin'
+      url: https://www.linkedin.com/in/jamesnulliu
     - name: 'telegram'
       url: https://t.me/jamesnulliu
+    - name: 'orcid'
+      url: https://orcid.org/0009-0004-9352-2680
     - name: 'email'
       url: "mailto:jamesnulliu@gmail.com"
   fuseOpts:
