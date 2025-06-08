@@ -4,7 +4,9 @@
     margin-right: -18vw;
     width: 40%;
     width: 30ch;
+    font-size: medium;
 }
+
 
 body {
     counter-reset: sidenote-counter;
@@ -19,7 +21,7 @@ body {
     position: relative;
     font-size: 0.9em;
     font-weight: 700;
-    color: #409dff;
+    color: #a668f1;
 }
 
 .sidenote-number::after {
@@ -27,12 +29,12 @@ body {
     vertical-align: super;
     font-size: 0.8em;
     font-weight: 700;
-    color: #409dff;
+    color: #a668f1;
 }
 
 .sidenote-number:hover .sidenote {
 
-    background-color: #409cff41;
+    background-color: #a668f11f;
     border-radius: 4px;
     padding: 0.3em 0.5em;
 

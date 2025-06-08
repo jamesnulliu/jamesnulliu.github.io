@@ -45,9 +45,9 @@
     margin: 0;
 }
 
-.active {
-    font-size: 110%;
+.toc .active {
     font-weight: 600;
+    color: #a668f1;
 }
 
 .toc ul {

@@ -369,7 +369,11 @@ As shown in the figure above, to apply RLHF:
 
 At the highest level, the Kullback-Leibler (KL) Divergence is just a method of comparing two probability distributions. 
 
-The idea of KL divergence has its roots in information theory and is highly related to the concept of entropy:
+The idea of KL divergence has its roots in information theory and is highly related to the concept of entropy{{< sidenote >}}
+According to Shannon's Source Coding Theorem, the optimal number of bits required to encode a message with probability $p(x)$ is given by $−\log_{2}{p(x)}$.  
+High probability event ($p(x) \approx 1$): $−log_2​(1)=0$. It takes very few bits to encode a highly probable event.  
+Low probability event ($p(x) \approx 0$): $−log_2​(p(x))$ is a large number. It takes many bits to encode a rare event.
+{{< /sidenote >}}:
 
 $$
 H=
@@ -384,12 +388,20 @@ In the equation above, we can see common formulations of entropy $H$ for a proba
 Instead of a single probability distribution $p$, the KL divergence considers two probability distributions: $p$ and $q$. Then, mirroring the above entropy formulation, we compute KL divergence by finding the expected difference in log probabilities between these two distributions:
 
 $$
-D_{\text{KL}}(p||q) = 
+\begin{align*}
+D_{\text{KL}}(p||q) &= H(p, q) - H(p) \\  &=
 \begin{cases}
-\mathbb{E} \left[ \log p(x) - \log q(x) \right] &\text{(Continuous Case)} \\
-\sum_{i=1}^{N} p(x_i) \cdot \left( \log p(x_i) - \log q(x_i) \right) &\text{(Discrete Case)}
+\mathbb{E} \left[ \log p(x) - \log q(x) \right] ~~~ \text{(Continuous Case)} \\
+\sum_{i=1}^{N} p(x_i) \cdot \left( \log p(x_i) - \log q(x_i) \right) ~~~ \text{(Discrete Case)}
 \end{cases}
+\end{align*}
 $$
+
+where:
+
+- $H(p,q)$: The average number of bits used with the approximate code.
+- $H(p)$: The minimum possible average number of bits used with the optimal code.
+- $D_{\text{KL}}(p||q)$: The penalty, or the expected number of extra bits "wasted" or "lost" per message due to the approximation.
 
 The KL divergence is commonly explained in the context of approximations. Namely, if we approximate $p$ with $q$, **the KL divergence is the number of bits we would expect to lose by making this approximation**. 
 
@@ -399,8 +411,117 @@ KL divergence is heavily used across different domains of AI/ML research. For ex
 The final reward function we use during optimization contains a [KL divergence] penalty term … we find this constraint is useful for training stability, and to reduce reward hacking.” ------ [4]
 {{< /quote >}}
 
-## 6. Group Relative Policy Optimization (GRPO)
+### 5.3. Trust Region Policy Optimization (TRPO)
 
+VPG is limited by the fact that **it can only perform a single policy update for each estimate of the policy gradient that is derived**. Given that VPG is notoriously data inefficient, meaning that **we have to sample a lot of data when deriving a policy update**, performing multiple (or larger) updates may seem enticing. However, such an approach is not justified theoretically and, in practice, leads to policy updates that are too large, thus damaging performance.
+
+Trust Region Policy Optimization (TRPO) [5] aims to solve the problem described above using an approach that is similar to VPG. At each step of the optimization process, however, we find the largest possible policy update that still improves performance. Simply put, TRPO allows us to learn faster by finding a reliable way to make larger policy updates that do not damage performance.
+
+More specifically, we update the policy under a constraint—based on the KL divergence—that captures the distance between policies before and after the current update. Considering this constraint allows us to find a balance between update size and the amount of change to the underlying policy:
+
+$$
+\begin{equation*}
+\begin{gathered}
+\theta_{k+1} = \operatorname{argmax}_{\theta} \mathbb{E}_{(s,a) \sim (\pi_{\theta_k}, T)} \left[ \frac{\pi_{\theta}(a|s)}{\pi_{\theta_k}(a|s)} A^{\pi_{\theta_k}}(s,a) \right] \\
+\text{such that } \overline{D}_{\text{KL}}(\theta||\theta_k) < \delta
+\end{gathered}
+\end{equation*}
+$$
+
+where:
+- $\mathbb{E}_{(s,a) \sim (\pi_{\theta_k}, T)}$ is the expectation over state-action pairs sampled from the current policy $\pi_{\theta_k}$ and transition function $T$.
+- $\pi_{\theta}(a|s)$ is the probability of taking action $a$ in state $s$ according to the new policy $\pi_{\theta}$.
+- $\pi_{\theta_k}(a|s)$ is the probability of taking action $a$ in state $s$ according to the current policy $\pi_{\theta_k}$.
+- $A^{\pi_{\theta_k}}(s,a)$ is the advantage function for the current policy $\pi_{\theta_k}$.
+- $\overline{D}_{\text{KL}}(\theta||\theta_k)$ is the average KL divergence between the new policy $\pi_{\theta}$ and the current policy $\pi_{\theta_k}$.
+- $\delta$ is a hyperparameter that controls the maximum allowed change in the policy.
+
+Formulation of TRPO has several critical differences from VPG:
+
+- The terms in the expectation are modified slightly to express the probability of a given action a as a ratio between old and updated policies.
+- The update has an added constraint based on the KL divergence between old and updated policies.
+- Instead of performing gradient ascent, we are solving a constrained maximization problem to generate each new policy
+
+The implementation of TRPO is similar to that of VPG. We allow our current policy to interact with the environment and collect data. From this observed data, we can compute the approximate update for TRPO as described above. Then, we can continue the process of collecting data and performing an update until we arrive at a policy that performs quite well. 
+
+**Because we are using the actual policy being trained to collect the data used to train it, TRPO is an on-policy reinforcement learning algorithm**.
+
+### 5.4. TRPO vs. VPG: Larger Policy Updates
+
+As mentioned previously, the VPG algorithm is based upon gradient ascent, which ------ by nature ------ ensures that updates to the policy's parameters $\theta$ are not too large. In particular, we use a learning rate to perform updates with VPG, which can control the size of the update in the parameter space:
+
+$$
+\theta_{t+1} = \theta_t + \alpha \nabla_{\theta} J(\pi_{\theta})|_{\theta_t}
+$$
+
+Here, only the size of the update to $\theta$ is controlled, and so that the old and updated policies are close in the parameter space. However, small changes to $\theta$ may also drastically alter the policy, because ensuring that policy updates are small in the parameter space does not provide much of a guarantee on changes to the resulting policy. 
+
+**As a result, we are constrained to relatively small updates within the VPG algorithm ------ larger or multiple updates could be harmful**.
+
+TRPO sidesteps this issue by considering the size of our policy update from an alternative viewpoint. Namely, we compare updated and old policies using the KL divergence, which measures the difference in probability distributions over the action space produced by the two policies. Such an approach compares policies based upon the actions they take rather than their underlying parameters $\theta$. 
+
+In this way, we can perform large policy updates while ensuring that the new policy does not produce actions that are significantly different from the old policy. 
+
+### 5.5. Proximal Policy Optimization (PPO)
+
+{{< quote >}}
+We introduce proximal policy optimization, a family of policy optimization methods that use multiple epochs of stochastic gradient ascent to perform each policy update. These methods have the stability and reliability of trust-region methods but are much simpler to implement ... applicable in more general settings, and have better overall performance. ------ [6]
+{{< /quote >}}
+
+TRPO has improved data efficiency, stability, and reliability compared to the VPG algorithm, but there are still limitations that need to be addressed. 
+
+Namely, the algorithm is complicated, can only perform a single update each time new data is sampled from the environment, and is only applicable to certain problem setups. 
+
+Aiming to develop a better approach, authors in [6] propose Proximal Policy Optimization (PPO), another policy gradient algorithm that alternates between collecting data from the environment and performing several epochs of training over this sampled data. PPO shares the reliability of TRPO and is:
+
+1. Much simpler
+2. More data efficient
+3. More generally applicable
+
+Similar to TRPO, we perform policy updates in PPO according to a surrogate objective. However, this surrogate objective has a "clipped" probability ratio, as shown in the equation below:
+
+$$
+L^{\text{CLIP}}(\theta) = \mathbb{E}_t \left[ \min(r_t(\theta) A_t, \text{CLIP}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t) \right]
+$$
+
+The surrogate objective for PPO is expressed as a minimum of two values. The first value is the same surrogate objective from TRPO, while the second value is a "clipped" version of this objective that lies within a certain range. In practice, this expression is formulated such that there is no reward for moving the probability ratio beyond the interval $[1 - \epsilon, 1 + \epsilon]$, see the figure below:
+
+{{<image
+src="/imgs/blogs/reinforcement-learning-for-llms/prob-ratio-to-L-CLIP.png"
+width=100%
+caption=`From [2].`
+caption_align="center"
+>}}
+
+In other words, PPO has no incentive for excessively large policy updates. Plus, by taking the minimum of the clipped and unclipped version of the surrogate objective, we only ignore excessive changes to the probability ratio if they improve the underlying objective. In the figure above, we see a basic depiction of this trend for both positive and negative values of the advantage function.
+
+To understand PPO's surrogate objective more intuitively, we should look at the figure below, which plots several objective functions as we interpolate between an old and updated policy obtained via PPO. In this figure, we see the KL divergence, the TRPO surrogate objective (labeled as CPI), the clipped surrogate objective, and the full PPO surrogate objective. From these plots, we can see that the PPO surrogate objective is a pessimistic/lower bound for the TRPO surrogate objective, where a penalty is incurred for having too large of a policy update.
+
+{{<image
+src="/imgs/blogs/reinforcement-learning-for-llms/different-objective-funcs.jpg"
+width=100%
+caption=`From [2].`
+caption_align="center"
+>}}
+
+While TRPO sets a hard constraint to avoid policy updates that are too large, PPO simply formulates the surrogate objective such that a penalty is incurred if the KL divergence is too large. Such an approach is much simpler, as we no longer have to solve a difficult, constrained optimization problem. Rather, we can compute PPO’s surrogate loss with only minor tweaks to the VPG algorithm. 
+
+PPO has several benefits compared to TRPO. First, the implementation of PPO is much simpler compared to TRPO, as we can use automatic differentiation and gradient-based optimization techniques9 instead of deriving an (approximate) solution for a complex, constrained objective function. Additionally, while TRPO makes only a single policy update each time new data is collected, PPO performs multiple epochs of optimization via stochastic gradient ascent over the surrogate objective, which improves data efficiency.
+
+Finally, computing estimates of the advantage function (e.g., via Generalized Advantage Estimation (GAE)) typically requires that we learn a corresponding value function. In TRPO, we must learn this state-value function with a separate neural network. However, PPO—due to its compatibility with a wider scope of architectures (including those with parameter sharing) ------ can train a joint network for policy and value functions by just adding an extra term to the loss function that computes the mean-squared error (MSE) between estimated and actual value function values. 
+
+$$
+L^{\text{CLIP+VF}}(\theta) = \mathbb{E}_t \left[ L^{\text{CLIP}}(\theta) - c_1 L^{\text{VF}}(\theta) \right]
+$$
+
+where:
+
+- $L^{\text{CLIP}}(\theta)$ is the PPO surrogate objective.
+- $L^{\text{VF}}(\theta)$ is the MSE loss for the value function.
+- $c_1$ is a hyperparameter that controls the weight of the value function loss in the overall loss function.
+
+
+## 6. Group Relative Policy Optimization (GRPO)
 
 
 ## References
@@ -408,4 +529,6 @@ The final reward function we use during optimization contains a [KL divergence] 
 [1] Cameron R. Wolfe. {{<href text="Basics of Reinforcement Learning for LLMs" url="https://cameronrwolfe.substack.com/p/basics-of-reinforcement-learning">}}.  
 [2] Cameron R. Wolfe. {{<href text="Proximal Policy Optimization (PPO): The Key to LLM Alignment" url="https://cameronrwolfe.substack.com/p/proximal-policy-optimization-ppo">}}  
 [3] Achiam, Josh. {{<href text="Spinning Up in Deep RL" url="https://spinningup.openai.com/en/latest/index.html">}}. OpenAI, 2018.  
-[4] Touvron, Hugo, et al. "Llama 2: Open foundation and fine-tuned chat models." arXiv preprint arXiv:2307.09288 (2023).
+[4] Touvron, Hugo, et al. "Llama 2: Open foundation and fine-tuned chat models." arXiv preprint arXiv:2307.09288 (2023).  
+[5] Schulman, John, Sergey Levine, Pieter Abbeel, Michael Jordan, and Philipp Moritz. "Trust region policy optimization." In International conference on machine learning, pp. 1889-1897. PMLR, 2015.  
+[6] Schulman, John, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. "Proximal policy optimization algorithms." arXiv preprint arXiv:1707.06347 (2017).
