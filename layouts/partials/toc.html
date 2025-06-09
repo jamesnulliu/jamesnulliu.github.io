@@ -110,23 +110,59 @@
     }, false);
 
     window.addEventListener('scroll', () => {
-        // Check if there is an object in the top half of the screen or keep the last item active
-        activeElement = Array.from(elements).find((element) => {
-            if ((getOffsetTop(element) - window.pageYOffset) > 0 && 
-                (getOffsetTop(element) - window.pageYOffset) < window.innerHeight/2) {
-                return element;
+        // Find the currently visible heading
+        let newActiveElement = null;
+        
+        // Check if we're near the bottom of the page
+        const isNearBottom = (window.innerHeight + window.pageYOffset) >= document.body.offsetHeight - 100;
+        
+        if (isNearBottom) {
+            // If near bottom, activate the last heading
+            newActiveElement = elements[elements.length - 1];
+        } else {
+            // Find the heading that's closest to the top of the viewport
+            let closestElement = null;
+            let closestDistance = Infinity;
+            
+            elements.forEach(element => {
+                const elementTop = getOffsetTop(element) - window.pageYOffset;
+                
+                // Consider headings that are above or slightly below the current scroll position
+                if (elementTop <= window.innerHeight * 0.3) {
+                    const distance = Math.abs(elementTop);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestElement = element;
+                    }
+                }
+            });
+            
+            newActiveElement = closestElement || elements[0];
+        }
+        
+        // Only update if the active element has changed
+        if (newActiveElement && newActiveElement !== activeElement) {
+            // Remove active class from previous element
+            if (activeElement) {
+                const prevId = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+                const prevLink = document.querySelector(`.inner ul li a[href="#${prevId}"]`);
+                if (prevLink) prevLink.classList.remove('active');
             }
-        }) || activeElement
-
-        elements.forEach(element => {
-             const id = encodeURI(element.getAttribute('id')).toLowerCase();
-             if (element === activeElement){
-                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
-             } else {
-                 document.querySelector(`.inner ul li a[href="#${id}"]`).classList.remove('active');
-             }
-         })
-     }, false);
+            
+            // Add active class to new element
+            activeElement = newActiveElement;
+            const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+            const link = document.querySelector(`.inner ul li a[href="#${id}"]`);
+            if (link) {
+                link.classList.add('active');
+                
+                // Auto-scroll TOC to center the active item
+                if (document.getElementById("toc-container").classList.contains("wide")) {
+                    scrollTocToActiveItem(link);
+                }
+            }
+        }
+    }, false);
 
     const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
     const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
@@ -149,6 +185,25 @@
         let rect = element.getBoundingClientRect();
         let win = element.ownerDocument.defaultView;
         return rect.top + win.pageYOffset;   
+    }
+
+    function scrollTocToActiveItem(activeLink) {
+        const tocInner = document.querySelector('.toc .inner');
+        if (!tocInner || !activeLink) return;
+        
+        const tocRect = tocInner.getBoundingClientRect();
+        const linkRect = activeLink.getBoundingClientRect();
+        
+        // Calculate the position to center the active item
+        const tocCenter = tocRect.height / 2;
+        const linkRelativeTop = linkRect.top - tocRect.top + tocInner.scrollTop;
+        const targetScrollTop = linkRelativeTop - tocCenter;
+        
+        // Smooth scroll to center the active item
+        tocInner.scrollTo({
+            top: Math.max(0, targetScrollTop),
+            behavior: 'smooth'
+        });
     }
 </script>
 {{- end }}
