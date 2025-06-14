@@ -44,7 +44,7 @@ If you have any inquiries or are interested in collaboration, please feel free t
 ## 🧑‍🎓 Education
 
 - **2021.09 - 2025.06**: Bachelor of Computer Science, Shanghai University, Shanghai, China.
-- **2025.09 - 2027.06**: Master of Computer Science, University of Southern California, Los Angeles, USA. (Planned)
+- **2025.09 - 2027.06**: Master of Computer Science, University of Southern California, Los Angeles, USA.
 
 ## 💻 Work Experience
 
@@ -61,9 +61,9 @@ If you have any inquiries or are interested in collaboration, please feel free t
 
 ### 2025 ------
 
-1. [Preprint] "HPCTransEval: A Benchmark of High-Performance GPU-to-CPU Transpilation with Pre-trained Large Language Models".  
+1. [Preprint] J. Lv, X. He, **Y. Liu**, A. Shen, X. Dai$^*$, Y. Li, J. Hao, J. Ding, Y. Hu, S. Yin. "HPCTransEval: A Benchmark of High-Performance GPU-to-CPU Transpilation with Pre-trained Large Language Models".  
 2. [Preprint][[Arxiv](https://arxiv.org/abs/2411.10258)][[Code](https://github.com/Tiara8735/MDHP-Net-Anonymous)] Q. Liu$^\dagger$, **Y. Liu**$^\dagger$, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng, "MDHP-Net: Detecting an Emerging Time-exciting Threat in IVN".  
-3. [Preprint] Z. Xu, A. Shen, D. Kong, X. Dai, J. Liu, **Y. Liu**, L. Wang, S. Wei, Y. Hu and S. Yin*, "LLMEngine: Disaggregated Mapping and Memory Management Co-scheduling for Wafer-scale Chips".  
+3. [Preprint] Z. Xu, A. Shen, D. Kong, X. Dai, J. Liu, **Y. Liu**, L. Wang, S. Wei, Y. Hu and S. Yin*. "LLMEngine: Disaggregated Mapping and Memory Management Co-scheduling for Wafer-scale Chips".  
 
 ### 2024 ------
 

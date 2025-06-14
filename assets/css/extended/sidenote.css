@@ -8,7 +8,7 @@
 }
 
 
-body {
+.sidenote.body {
     counter-reset: sidenote-counter;
 }
 

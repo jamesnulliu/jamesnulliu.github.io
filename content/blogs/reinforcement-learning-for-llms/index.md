@@ -250,7 +250,7 @@ The value of your starting point is the reward you expect to get from being ther
 During the learning process, we aim to find parameters $\theta$ for our policy that maximize the objective function below:
 
 $$
-J(\pi_{\theta}) = \mathbb{E}_{\tau \sim (\pi_{\theta},T)} [R(\tau)]
+\mathcal{J}(\pi_{\theta}) = \mathbb{E}_{\tau \sim (\pi_{\theta},T)} [R(\tau)]
 $$
 
 where:
@@ -264,13 +264,13 @@ In words, this objective function measures the expected return of trajectories s
 If we want to find parameters $\theta$ that maximize this objective function, one of the most fundamental techniques that we can use is gradient ascent, which iterates over parameters $\theta$ using the update rule shown below:
 
 $$
-\theta_{t+1} = \theta_t + \alpha \nabla_{\theta} J(\pi_{\theta})|_{\theta_t}
+\theta_{t+1} = \theta_t + \alpha \nabla_{\theta} \mathcal{J}(\pi_{\theta})|_{\theta_t}
 $$
 
-Do a lot of math to compute $\nabla_{\theta} J(\pi_{\theta})$, and the final result of the basic policy gradient is:
+Do a lot of math to compute $\nabla_{\theta} \mathcal{J}(\pi_{\theta})$, and the final result of the basic policy gradient is:
 
 $$
-\nabla_{\theta} J(\pi_{\theta}) = \mathbb{E}_{\tau \sim (\pi_{\theta}, T)} \left[ \sum_{t=0}^{T} \nabla_{\theta} \log \pi_{\theta}(a_t|s_t) R(\tau) \right]
+\nabla_{\theta} \mathcal{J}(\pi_{\theta}) = \mathbb{E}_{\tau \sim (\pi_{\theta}, T)} \left[ \sum_{t=0}^{T} \nabla_{\theta} \log \pi_{\theta}(a_t|s_t) R(\tau) \right]
 $$
 
 Now, we have an actual expression for the gradient of our objective function that we can use in gradient ascent! Plus, this expression only depends on the return of a trajectory and the gradient of the log probability of an action given our current state. As long as we instantiate our policy such that the gradient of action probabilities is computable (e.g., this is pretty easy to do if our policy is implemented as a neural network), we can easily derive both of these quantities.
@@ -282,18 +282,18 @@ In practice, we can estimate the value of this expectation by sampling a fixed n
 - Sample several trajectories by letting the agent interact with the environment according to the current policy.
 - Estimate the policy gradient using an average of relevant quantities over the fixed number of sample trajectories.
 
-Then given a set of sampled trajectories $\mathcal{D} = \{\tau_0, \tau_1, \dots\}$, we can estimate the policy gradient $\overline{\nabla_{\theta} J(\pi_{\theta})}$ as follows:
+Then given a set of sampled trajectories $\mathcal{D} = \{\tau_0, \tau_1, \dots\}$, we can estimate the policy gradient $\overline{\nabla_{\theta} \mathcal{J}(\pi_{\theta})}$ as follows:
 
 $$
-\overline{\nabla_{\theta} J(\pi_{\theta})} = \frac{1}{|\mathcal{D}|} \sum_{\tau \in \mathcal{D}} \sum_{t=0}^{T} \left[ \nabla_{\theta} \log \pi_{\theta}(a_t|s_t) R(\tau) \right]
+\overline{\nabla_{\theta} \mathcal{J}(\pi_{\theta})} = \frac{1}{|\mathcal{D}|} \sum_{\tau \in \mathcal{D}} \sum_{t=0}^{T} \left[ \nabla_{\theta} \log \pi_{\theta}(a_t|s_t) R(\tau) \right]
 $$
 
-### 4.4. Variants of the Basic Policy Gradient
+### 4.4. Vallina Poclicy Gradient (VPG) and Other Policy Gradients
 
 Given:
 
 $$
-\nabla_{\theta} J(\pi_{\theta}) = \mathbb{E} \left[ \sum_{t=0}^{T} \nabla_{\theta} \log \pi_{\theta}(a_t|s_t) \Psi_t \right]
+\nabla_{\theta} \mathcal{J}(\pi_{\theta}) = \mathbb{E} \left[ \sum_{t=0}^{T} \nabla_{\theta} \log \pi_{\theta}(a_t|s_t) \Psi_t \right]
 $$
 
 We have:
@@ -481,10 +481,10 @@ Aiming to develop a better approach, authors in [6] propose Proximal Policy Opti
 Similar to TRPO, we perform policy updates in PPO according to a surrogate objective. However, this surrogate objective has a "clipped" probability ratio, as shown in the equation below:
 
 $$
-L^{\text{CLIP}}(\theta) = \mathbb{E}_t \left[ \min(r_t(\theta) A_t, \text{CLIP}(r_t(\theta), 1-\epsilon, 1+\epsilon) A_t) \right]
+L^{\text{CLIP}}(\theta) = \mathbb{E}_t \left[ \min(\frac{\pi_{\theta}(o_t|q, o_{< t})}{\pi_{\theta_{old}}(o_t|q, o_{< t})}A_t, \text{CLIP}(\frac{\pi_{\theta}(o_t|q, o_{< t})}{\pi_{\theta_{old}}(o_t|q, o_{< t})}, 1-\varepsilon, 1+\varepsilon) A_t) \right]
 $$
 
-The surrogate objective for PPO is expressed as a minimum of two values. The first value is the same surrogate objective from TRPO, while the second value is a "clipped" version of this objective that lies within a certain range. In practice, this expression is formulated such that there is no reward for moving the probability ratio beyond the interval $[1 - \epsilon, 1 + \epsilon]$, see the figure below:
+The surrogate objective for PPO is expressed as a minimum of two values. The first value is the same surrogate objective from TRPO, while the second value is a "clipped" version of this objective that lies within a certain range. In practice, this expression is formulated such that there is no reward for moving the probability ratio beyond the interval $[1 - \varepsilon, 1 + \varepsilon]$, see the figure below:
 
 {{<image
 src="/imgs/blogs/reinforcement-learning-for-llms/prob-ratio-to-L-CLIP.png"
@@ -493,7 +493,7 @@ caption=`From [2].`
 caption_align="center"
 >}}
 
-In other words, PPO has no incentive for excessively large policy updates. Plus, by taking the minimum of the clipped and unclipped version of the surrogate objective, we only ignore excessive changes to the probability ratio if they improve the underlying objective. In the figure above, we see a basic depiction of this trend for both positive and negative values of the advantage function.
+**In other words, PPO has no incentive for excessively large policy updates. Plus, by taking the minimum of the clipped and unclipped version of the surrogate objective, we only ignore excessive changes to the probability ratio if they improve the underlying objective. In the figure above, we see a basic depiction of this trend for both positive and negative values of the advantage function.**
 
 To understand PPO's surrogate objective more intuitively, we should look at the figure below, which plots several objective functions as we interpolate between an old and updated policy obtained via PPO. In this figure, we see the KL divergence, the TRPO surrogate objective (labeled as CPI), the clipped surrogate objective, and the full PPO surrogate objective. From these plots, we can see that the PPO surrogate objective is a pessimistic/lower bound for the TRPO surrogate objective, where a penalty is incurred for having too large of a policy update.
 
@@ -523,12 +523,74 @@ where:
 
 ## 6. Group Relative Policy Optimization (GRPO)
 
+{{<image
+src="/imgs/blogs/reinforcement-learning-for-llms/ppo-vs-grpo.png"
+width=100%
+caption=`From [7].`
+caption_align="center"
+>}}
+
+Different from PPO, GRPO:
+1. Removes the value function model.
+2. The policy model generates multiple outputs for each input, and the reward model calculates the reward for each output, and calculates the advantage scores after group computation.
+3. Removes the GAE, and changes the method to calculate KL.
+
+In PPO, we optimizes LLMs by maximizing the following objective function:
+
+$$
+\begin{align*}
+\mathcal{J}_{\text{PPO}}(\theta) = \mathbb{E}&_{q \sim P(Q), o \sim \pi_{\theta_{\text{old}}}(O|q)} \left[ \frac{1}{|o|} \sum_{t=1}^{|o|} \min \left( \frac{\pi_{\theta}(o_t|q, o_{< t})}{\pi_{\theta_{\text{old}}}(o_t|q, o_{< t})} A_t, \right. \right. \\
+& \left. \left. \text{clip}\left(\frac{\pi_{\theta}(o_t|q, o_{< t})}{\pi_{\theta_{\text{old}}}(o_t|q, o_{< t})}, 1-\varepsilon, 1+\varepsilon\right) A_t \right) \right]
+\end{align*}
+$$
+
+where:
+- $\pi_{\theta}$ and $\pi{\theta_{\text{old}}}$ are the current and old policy models; 
+- $q$, $o$ are questions and outputs sampled from the question dataset and the old policy $\pi{\theta_{\text{old}}}$;
+- $\varepsilon$ is a clipping-related hyper-parameter introduced in PPO for stabilizing training;
+- $A_t$ is the advantage, which is computed by applying Generalized Advantage Estimation (GAE), based on the rewards ${r_{\geq t}}$ and a learned value function $V_{\psi}$. 
+
+Thus, in PPO, a value function needs to be trained alongside the policy model and to mitigate over-optimization of the reward model, the standard approach is to add a per-token KL penalty from a reference model in the reward at each token, i.e.:
+
+$$
+r_t = r_{\varphi}(q, o_{\leq t}) - \beta \log \frac{\pi_{\theta}(o_t|q, o_{< t})}{\pi_{ref}(o_t|q, o_{< t})}
+$$
+
+There are several issues with PPO:
+
+1. As the value function employed in PPO is typically another model of comparable size as the policy model, it brings a substantial memory and computational burden. 
+2. During RL training, the value function is treated as a baseline in the calculation of the advantage for variance reduction. While in the LLM context, usually only the last token is assigned a reward score by the reward model, which may complicate the training of a value function that is accurate at each token.
+
+To address these issues, for each question $q$, GRPO samples a group of outputs $\{o_1, o_2, \dots , o_G\}$ from the old policy $\pi_{\theta_{\text{old}}}$ and then optimizes the policy model by maximizing the following objective:
+
+$$
+\begin{align*}
+\mathcal{J}_{\text{GRPO}}(\theta) = \mathbb{E}&[q \sim P(Q), \{o_i\}_{i=1}^G \sim \pi_{\theta_{\text{old}}}(O|q)] \\
+&\frac{1}{G} \sum_{i=1}^G \frac{1}{|o_i|} \sum_{t=1}^{|o_i|} \left\{ \min\left(\frac{\pi_{\theta}(o_{i,t}|q, o_{i,< t})}{\pi_{\theta_{\text{old}}}(o_{i,t}|q, o_{i,< t})} \hat{A}_{i,t}, \right.\right. \\
+&\left.\left. \text{clip}\left(\frac{\pi_{\theta}(o_{i,t}|q, o_{i,< t})}{\pi_{\theta_{\text{old}}}(o_{i,t}|q, o_{i,< t})}, 1-\varepsilon, 1+\varepsilon\right) \hat{A}_{i,t}\right) - \beta D_{KL}[\pi_{\theta}||\pi_{ref}] \right\}
+\end{align*}
+$$
+
+where:
+
+- $\varepsilon$ and $\beta$ are hyper-parameters;
+- $\hat{A}_{i,t}$ is the advantage calculated based on relative rewards of the outputs inside each group only. 
+
+Note that:
+
+1. Instead of adding KL penalty in the reward, GRPO regularizes by directly adding the KL divergence between the trained policy and the reference policy to the loss, avoiding complicating the calculation of $\hat{A}_{i,t}$.
+2. Different from the KL penalty term used in [6], GRPO estimate the KL divergence with the following unbiased estimator:
+   $$
+   \mathbb{D}_{\text{KL}}\left[ \pi_{\theta}||\pi_{ref}\right] = \frac{\pi_{ref}(o_{t,t}|q, o_{t,< t})}{\pi_{\theta}(o_{t,t}|q, o_{t,< t})} - \log \frac{\pi_{ref}(o_{t,t}|q, o_{t,< t})}{\pi_{\theta}(o_{t,t}|q, o_{t,< t})} - 1
+   $$
+   which is guaranteed to be positive.
 
 ## References
 
-[1] Cameron R. Wolfe. {{<href text="Basics of Reinforcement Learning for LLMs" url="https://cameronrwolfe.substack.com/p/basics-of-reinforcement-learning">}}.  
-[2] Cameron R. Wolfe. {{<href text="Proximal Policy Optimization (PPO): The Key to LLM Alignment" url="https://cameronrwolfe.substack.com/p/proximal-policy-optimization-ppo">}}  
-[3] Achiam, Josh. {{<href text="Spinning Up in Deep RL" url="https://spinningup.openai.com/en/latest/index.html">}}. OpenAI, 2018.  
-[4] Touvron, Hugo, et al. "Llama 2: Open foundation and fine-tuned chat models." arXiv preprint arXiv:2307.09288 (2023).  
-[5] Schulman, John, Sergey Levine, Pieter Abbeel, Michael Jordan, and Philipp Moritz. "Trust region policy optimization." In International conference on machine learning, pp. 1889-1897. PMLR, 2015.  
-[6] Schulman, John, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. "Proximal policy optimization algorithms." arXiv preprint arXiv:1707.06347 (2017).
+1. Cameron R. Wolfe. {{<href text="Basics of Reinforcement Learning for LLMs" url="https://cameronrwolfe.substack.com/p/basics-of-reinforcement-learning">}}.  
+2. Cameron R. Wolfe. {{<href text="Proximal Policy Optimization (PPO): The Key to LLM Alignment" url="https://cameronrwolfe.substack.com/p/proximal-policy-optimization-ppo">}}  
+3. Achiam, Josh. {{<href text="Spinning Up in Deep RL" url="https://spinningup.openai.com/en/latest/index.html">}}. OpenAI, 2018.  
+4. Touvron, Hugo, et al. "Llama 2: Open foundation and fine-tuned chat models." arXiv preprint arXiv:2307.09288 (2023).  
+5. Schulman, John, Sergey Levine, Pieter Abbeel, Michael Jordan, and Philipp Moritz. "Trust region policy optimization." In International conference on machine learning, pp. 1889-1897. PMLR, 2015.  
+6. Schulman, John, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. "Proximal policy optimization algorithms." arXiv preprint arXiv:1707.06347 (2017).  
+7. Shao, Zhihong, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang et al. "Deepseekmath: Pushing the limits of mathematical reasoning in open language models." arXiv preprint arXiv:2402.03300 (2024).

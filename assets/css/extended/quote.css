@@ -3,6 +3,7 @@ blockquote.quote {
     margin: 1em auto;
     padding-left: 3em;
     border: none;
+    font-style: italic;
 }
 
 blockquote.quote::before {
