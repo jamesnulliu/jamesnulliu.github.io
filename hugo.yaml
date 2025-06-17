@@ -58,7 +58,7 @@ params:
   ShowPageNums: true
   ShowPostNavLinks: true
   ShowReadingTime: true
-  # ShowShareButtons: false
+  # ShowShareButtons: 
   ShowUpdateTime: true
   TocOpen: true
   visitCount: true
@@ -82,6 +82,8 @@ params:
       url: https://www.github.com/jamesnulliu
     - name: 'X'
       url: https://x.com/jamesnulliu
+    - name: 'Discord'
+      url: https://discord.gg/jamesnulliu
     - name: 'linkedin'
       url: https://www.linkedin.com/in/jamesnulliu
     - name: 'telegram'
@@ -90,6 +92,9 @@ params:
       url: https://orcid.org/0009-0004-9352-2680
     - name: 'email'
       url: "mailto:jamesnulliu@gmail.com"
+    - name: KoFi
+      title: Buy me a Ko-Fi :)
+      url: "https://ko-fi.com/jamesnulliu"
   fuseOpts:
     isCaseSensitive: false
     shouldSort: true
