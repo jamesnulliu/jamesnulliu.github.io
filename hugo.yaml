@@ -70,27 +70,27 @@ params:
     imageTitle: "JamesNULLiu"
     imageWidth: 150 # custom size
     imageHeight: 150 # custom size
-    # buttons:
-    #   - name: "Blogs"
-    #     url: "/blogs/"
+    buttons:
+      - name: About Me
+        url: /about_me/
+      - name: Blogs
+        url: /blogs/
+      - name: Search
+        url: /search/
     #   - name: "Categories"
     #     url: "/categories/"
     #   - name: "Tags"
     #     url: "/tags/"
   socialIcons:
-    - name: 'github'
+    - name: github
       url: https://www.github.com/jamesnulliu
-    - name: 'X'
-      url: https://x.com/jamesnulliu
-    - name: 'Discord'
-      url: https://discord.gg/jamesnulliu
-    - name: 'linkedin'
+    - name: linkedin
       url: https://www.linkedin.com/in/jamesnulliu
-    - name: 'telegram'
+    - name: X
+      url: https://x.com/jamesnulliu
+    - name: telegram
       url: https://t.me/jamesnulliu
-    - name: 'orcid'
-      url: https://orcid.org/0009-0004-9352-2680
-    - name: 'email'
+    - name: email
       url: "mailto:jamesnulliu@gmail.com"
     - name: KoFi
       title: Buy me a Ko-Fi :)

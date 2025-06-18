@@ -1,0 +1,11 @@
+{{- $src := .Get "src" -}}
+{{- $alt := .Get "alt" | default "" -}}
+{{- $type := .Get "type" | default "" -}}
+
+<object
+  data="{{ $src }}"
+  {{ with $type }}type="{{ . }}"{{ end }}
+  style="display: inline-block; height: auto; vertical-align: text-bottom; margin: 0; padding: 0; border: 0;"
+>
+  {{ $alt }}
+</object>
