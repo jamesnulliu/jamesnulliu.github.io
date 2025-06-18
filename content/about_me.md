@@ -36,15 +36,15 @@ If you have any inquiries or are interested in collaboration, please feel free t
 
 ## 🧑‍🎓 Education
 
-- **2021.09 - 2025.06**: Bachelor of Computer Science, Shanghai University, Shanghai, China.
 - **2025.09 - 2027.06**: Master of Computer Science, University of Southern California, Los Angeles, California, USA.
+- **2021.09 - 2025.06**: Bachelor of Computer Science, Shanghai University, Shanghai, China.
 
 ## 💻 Experience
 
 - **2025.07 - Present**: Research Intern, INK Lab, University of Southern California.
   - Conducted research on RLHF, test-time computing and reasoning.
 - **2024.07 - 2025.06**: MLE Intern, Shanghai AI Laboratory.
-  - Accelerated LLM inference on in-house RISC-V TPUs with vllm.
+  - Extended vllm for LLM inference optimization on in-house RISC-V TPUs.
   - Developed high-performance custom kernels with MLIR.
   - Condeucted research on knowledge injection and fine-tuning for LLMs on kernel translation problems.
 - **2023.03 - 2025.04**: Research Assistant, SHUCS Lab, Shanghai University.
@@ -61,15 +61,15 @@ If you have any inquiries or are interested in collaboration, please feel free t
 
 ## 📰 Publications
 
-### 2025 ------
+**2025 ------------**
 
 1.  {{< image-inline src="https://img.shields.io/badge/Preprint-gray?style=plastic" >}} J. Lv, X. He, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, A. Shen, X. Dai$^*$, Y. Li, J. Hao, J. Ding, Y. Hu, S. Yin. "HPCTransEval: A Benchmark of High-Performance GPU-to-CPU Transpilation with Pre-trained Large Language Models".  
-2. {{< image-inline src="https://img.shields.io/badge/Preprint-Arxiv-880000?style=plastic&link=https://arxiv.org/abs/2411.10258" >}}{{< image-inline src="https://img.shields.io/badge/Code-black?style=plastic&logo=github&link=https://github.com/Tiara8735/MDHP-Net-Anonymous" >}} Q. Liu$^\dagger$, {{< text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{< /text >}}, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng, "MDHP-Net: Detecting an Emerging Time-exciting Threat in IVN".  
+2. {{< image-inline src="https://img.shields.io/badge/Preprint-Arxiv-880000?style=plastic&link=https://arxiv.org/abs/2411.10258" >}}{{< image-inline src="https://img.shields.io/badge/Code-black?style=plastic&logo=github&link=https://github.com/Tiara8735/MDHP-Net-Anonymous" >}} Q. Liu$^\dagger$, {{< text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{< /text >}}, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng. "MDHP-Net: Detecting an Emerging Time-exciting Threat in IVN".  
 3. {{< image-inline src="https://img.shields.io/badge/Preprint-gray?style=plastic" >}} Z. Xu, A. Shen, D. Kong, X. Dai, J. Liu, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, L. Wang, S. Wei, Y. Hu and S. Yin*. "LLMEngine: Disaggregated Mapping and Memory Management Co-scheduling for Wafer-scale Chips".  
 
-### 2024 ------
+**2024 ------------**
 
-1. {{< image-inline src="https://img.shields.io/badge/IEEE_Internet_of_Things_journal-1966B2?style=plastic&link=https://ieeexplore.ieee.org/document/10521910" >}}{{< image-inline src="https://img.shields.io/badge/Code-black?style=plastic&logo=github&link=https://github.com/jamesnulliu/SISSA" >}}. Q. Liu, X. Li, K. Sun, Y. Li$^*$ and {{< text color="#8860cc" weight="bold" >}}Y. Liu$^*${{< /text >}}, "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic".  
+1. {{< image-inline src="https://img.shields.io/badge/IEEE_Internet_of_Things_Journal-1966B2?style=plastic&link=https://ieeexplore.ieee.org/document/10521910" >}}{{< image-inline src="https://img.shields.io/badge/Code-black?style=plastic&logo=github&link=https://github.com/jamesnulliu/SISSA" >}} Q. Liu, X. Li, K. Sun, Y. Li$^*$ and {{< text color="#8860cc" weight="bold" >}}Y. Liu$^*${{< /text >}}. "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic".  
 2. {{< image-inline src="https://img.shields.io/badge/MDPI_Future_Internet-1966B2?style=plastic&link=https://www.mdpi.com/1999-5903/16/6/185" >}}{{< image-inline src="https://img.shields.io/badge/Code-black?style=plastic&logo=github&link=https://github.com/jamesnulliu/HP-LSTM" >}} X. Li, R. Li, and {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}. "HP-LSTM: Hawkes Process–LSTM-Based Detection of DDoS Attack for In-Vehicle Network".  
 
 ## 🎉 Achievements
