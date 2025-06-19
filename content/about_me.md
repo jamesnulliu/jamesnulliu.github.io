@@ -34,15 +34,15 @@ I achieved my Bachelor's degree in Computer Science from **Shanghai University**
 
 If you have any inquiries or are interested in collaboration, please feel free to contact me via email at jamesnulliu@gmail.com.
 
-## 🧑‍🎓 Education
+## 🧑‍🎓 Education History
 
 - **2025.09 - 2027.06**: Master of Computer Science, University of Southern California, Los Angeles, California, USA.
 - **2021.09 - 2025.06**: Bachelor of Computer Science, Shanghai University, Shanghai, China.
 
-## 💻 Experience
+## 💻 Professional Experience
 
 - **2025.07 - Present**: Research Intern, INK Lab, University of Southern California.
-  - Conducted research on RLHF, test-time computing and reasoning.
+  - Conducting research on RLHF, test-time computing and reasoning.
 - **2024.07 - 2025.06**: MLE Intern, Shanghai AI Laboratory.
   - Extended vllm for LLM inference optimization on in-house RISC-V TPUs.
   - Developed high-performance custom kernels with MLIR.
@@ -59,6 +59,11 @@ If you have any inquiries or are interested in collaboration, please feel free t
   - Deployed cutting-edge deep learning models to improve meteorological monitoring, forecasting, and super-resolution.
   - Improved super-resolution models with keypoint and semantic constraints, feature map fusion and redesigned loss functions.
 
+## 🎉 Honors and Awards
+
+- [2024.04] **First Prize** and **Group Competition Award** in [2024 ASC Student Supercomputer Challenge](http://www.asc-events.org/StudentChallenge/index.html#) Global Final.
+- [2022.06] **First-Class Academic Scholarship** for outstanding academic performance, Shanghai University.
+
 ## 📰 Publications
 
 **2025 ------------**
@@ -70,12 +75,7 @@ If you have any inquiries or are interested in collaboration, please feel free t
 **2024 ------------**
 
 1. {{< image-inline src="https://img.shields.io/badge/IEEE_Internet_of_Things_Journal-1966B2?style=plastic&link=https://ieeexplore.ieee.org/document/10521910" >}}{{< image-inline src="https://img.shields.io/badge/Code-black?style=plastic&logo=github&link=https://github.com/jamesnulliu/SISSA" >}} Q. Liu, X. Li, K. Sun, Y. Li$^*$ and {{< text color="#8860cc" weight="bold" >}}Y. Liu$^*${{< /text >}}. "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic".  
-2. {{< image-inline src="https://img.shields.io/badge/MDPI_Future_Internet-1966B2?style=plastic&link=https://www.mdpi.com/1999-5903/16/6/185" >}}{{< image-inline src="https://img.shields.io/badge/Code-black?style=plastic&logo=github&link=https://github.com/jamesnulliu/HP-LSTM" >}} X. Li, R. Li, and {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}. "HP-LSTM: Hawkes Process–LSTM-Based Detection of DDoS Attack for In-Vehicle Network".  
-
-## 🎉 Achievements
-
-- [2024.04] **First Prize** and **Group Competition Award** in [2024 ASC Student Supercomputer Challenge](http://www.asc-events.org/StudentChallenge/index.html#) Global Final.
-- [2022.06] **First-Class Academic Scholarship** for outstanding academic performance, Shanghai University.
+2. {{< image-inline src="https://img.shields.io/badge/MDPI_Future_Internet-1966B2?style=plastic&link=https://www.mdpi.com/1999-5903/16/6/185" >}}{{< image-inline src="https://img.shields.io/badge/Code-black?style=plastic&logo=github&link=https://github.com/jamesnulliu/HP-LSTM" >}} X. Li, R. Li, and {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}. "HP-LSTM: Hawkes Process-LSTM-Based Detection of DDoS Attack for In-Vehicle Network".  
 
 
 ## 🤪 Hobbies

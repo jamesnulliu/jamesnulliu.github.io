@@ -50,7 +50,6 @@ params:
   mermaid: true
   showToc: true
   showbreadcrumbs: true
-  # ShareButtons: ['telegram', 'twitter', 'reddit', 'linkedin', 'facebook']
   ShowAllPagesInArchive: true
   ShowCodeCopyButtons: true
   ShowFullTextinRSS: true 
@@ -58,7 +57,6 @@ params:
   ShowPageNums: true
   ShowPostNavLinks: true
   ShowReadingTime: true
-  # ShowShareButtons: 
   ShowUpdateTime: true
   TocOpen: true
   visitCount: true
@@ -68,19 +66,17 @@ params:
     subtitle: "吾常见笑于大方之家 - 秋水"
     imageUrl: "imgs/people/jamesnulliu.jpg"
     imageTitle: "JamesNULLiu"
-    imageWidth: 150 # custom size
-    imageHeight: 150 # custom size
+    imageWidth: 150
+    imageHeight: 150
     buttons:
-      - name: About Me
+      - name: Bio
         url: /about_me/
+      - name: CV
+        url: /docs/CV_Yanchen_Liu.pdf
       - name: Blogs
         url: /blogs/
       - name: Search
         url: /search/
-    #   - name: "Categories"
-    #     url: "/categories/"
-    #   - name: "Tags"
-    #     url: "/tags/"
   socialIcons:
     - name: github
       url: https://www.github.com/jamesnulliu
@@ -102,7 +98,7 @@ params:
     distance: 1000
     threshold: 0.4
     minMatchCharLength: 0
-    # limit: 10 # refer: https://www.fusejs.io/api/methods.html#search
+    limit: 10  # refer: https://www.fusejs.io/api/methods.html#search
     keys: ["title", "permalink", "summary", "content"]
 
 menu:
