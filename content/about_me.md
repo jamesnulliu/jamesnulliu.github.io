@@ -42,27 +42,16 @@ If you have any inquiries or are interested in collaboration, please feel free t
 ## 💻 Professional Experience
 
 - **2025.07 - Present**: Graduate Research Intern, INK Lab, University of Southern California.
-  - Conducting research on RLHF, test-time computing and reasoning.
 - **2024.07 - 2025.06**: MLE Intern, Shanghai AI Laboratory.
-  - Extended vllm for LLM inference optimization on in-house RISC-V TPUs.
-  - Developed high-performance custom kernels with MLIR.
-  - Condeucted research on knowledge injection and fine-tuning for LLMs on kernel translation problems.
 - **2023.03 - 2025.04**: Undergraduate Research Assistant, SHUCS Lab, Shanghai University.
-  - Integrated deep learning and traditional math modeling to assess cyber security and functional safety in-vehicle communication systems.
-  - Developed and optimized a novel gradient descent solver for Multi-Dimensional Hawkes Process.
 - **2023.03 - 2025.04**: Team Leader, Shangai University Super Computing Team.
-  - Participated in 2024 ASC Student Supercomputer Challenge.
-  - Assembled and optimized a high-performance computing cluster.
-  - Developed a custom LLM inference engine.
-  - Optizmed multiple super-computing programs.
 - **2023.06 - 2024.07**: Undergraduate Research Intern, Shanghai University and East China Air Traffic Control Bureau.
-  - Deployed cutting-edge deep learning models to improve meteorological monitoring, forecasting, and super-resolution.
-  - Improved super-resolution models with keypoint and semantic constraints, feature map fusion and redesigned loss functions.
+
 
 ## 🎉 Honors and Awards
 
-- [2024.04] **First Prize** and **Group Competition Award** in [2024 ASC Student Supercomputer Challenge](http://www.asc-events.org/StudentChallenge/index.html#) Global Final.
-- [2022.06] **First-Class Academic Scholarship** for outstanding academic performance, Shanghai University.
+- [{{< text color="#767676" >}}2024.04{{< /text >}}] **First Prize** and **Group Competition Award** in [2024 ASC Student Supercomputer Challenge](http://www.asc-events.org/StudentChallenge/index.html#) Global Final.
+- [{{< text color="#767676" >}}2022.06{{< /text >}}] **First-Class Academic Scholarship** for outstanding academic performance, Shanghai University.
 
 ## 📰 Publications
 
@@ -76,11 +65,6 @@ If you have any inquiries or are interested in collaboration, please feel free t
 
 1. [{{< text color="#767676" url="https://ieeexplore.ieee.org/document/10521910" >}}IEEE Internet of Things Journal{{< /text >}} | {{< text color="#767676" url="https://github.com/jamesnulliu/SISSA" >}}Code{{< /text >}}] Q. Liu, X. Li, K. Sun, Y. Li$^*$ and {{< text color="#8860cc" weight="bold" >}}Y. Liu$^*${{< /text >}}. "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic".  
 2. [{{< text color="#767676" url="https://www.mdpi.com/1999-5903/16/6/185" >}}MDPI Future Internet{{< /text >}} | {{< text color="#767676" url="https://github.com/jamesnulliu/HP-LSTM" >}}Code{{< /text >}}] X. Li, R. Li, and {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}. "HP-LSTM: Hawkes Process–LSTM-Based Detection of DDoS Attack for In-Vehicle Network".  
-
-## 🎉 Achievements
-
-- [2024.04] **First Prize** and **Group Competition Award** in [2024 ASC Student Supercomputer Challenge](http://www.asc-events.org/StudentChallenge/index.html#) Global Final.
-- [2022.06] **First-Class Academic Scholarship** for outstanding academic performance, Shanghai University.
 
 
 ## 🤪 Hobbies
