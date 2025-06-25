@@ -28,9 +28,9 @@ cover:
 
 Hello, I am JamesNULLiu (Yanchen Liu, 刘彦辰).
 
-I am a first-year MSCS student at **University of Southern California**, now working as a research intern in {{< text url="https://inklab.usc.edu/" >}}INK Lab @ USC{{< /text >}}, advised by Prof. {{< text url="https://www.seanre.com/" >}}Xiang Ren{{< /text >}} and Postdoc. {{< text url="https://siyuanwangw.github.io/" >}}Siyuan Wang{{< /text >}}. My current research focuses on {{< text color="#8860cc" weight="bold" >}}RLHF{{< /text >}}, {{< text color="#8860cc" weight="bold" >}}Test-time Computing{{< /text >}} and {{< text color="#8860cc" weight="bold" >}}Reasoning{{< /text >}} of {{< text color="#8860cc" weight="bold" >}}Large Language Models{{< /text >}}.
+I am a first-year MSCS student at **University of Southern California**, now working as a research intern in {{< text url="https://inklab.usc.edu/" >}}INK Lab @ USC{{< /text >}}, advised by Prof. {{< text url="https://www.seanre.com/" >}}Xiang Ren{{< /text >}} and Postdoc. {{< text url="https://siyuanwangw.github.io/" >}}Siyuan Wang{{< /text >}}. My current research focuses on {{< text color="#8860cc" weight="bold" >}}RLHF{{< /text >}}, {{< text color="#8860cc" weight="bold" >}}Test-time Computing{{< /text >}} and {{< text color="#8860cc" weight="bold" >}}Reasoning{{< /text >}} of LLMs.
 
-I achieved my Bachelor's degree in Computer Science from **Shanghai University**. During that time, I conducted in-depth research on **Inference Acceleration**, **High Performance Computing**, **In-vehicle System Security** and **Super-Resolution**. 
+I achieved my Bachelor's degree in Computer Science from **Shanghai University**. During that time, I conducted in-depth research on {{< text color="#8860cc" weight="bold" >}}Inference Acceleration{{< /text >}}, {{< text color="#8860cc" weight="bold" >}}High Performance Computing{{< /text >}}, {{< text color="#8860cc" weight="bold" >}}In-vehicle System Security{{< /text >}} and {{< text color="#8860cc" weight="bold" >}}Super-Resolution{{< /text >}}. 
 
 If you have any inquiries or are interested in collaboration, please feel free to contact me via email at jamesnulliu@gmail.com.
 
