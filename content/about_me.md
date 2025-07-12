@@ -57,7 +57,7 @@ If you have any inquiries or are interested in collaboration, please feel free t
 
 **2025 ------------**
 
-1. [{{< text color="#767676" >}}Preprint{{< /text >}}] J. Lv, X. He, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, A. Shen, X. Dai$^*$, Y. Li, J. Hao, J. Ding, Y. Hu, S. Yin. "HPCTransEval: A Benchmark of High-Performance GPU-to-CPU Transpilation with Pre-trained Large Language Models".  
+1. [{{< text color="#767676" url="https://arxiv.org/abs/2506.10401v2" >}}Preprint{{< /text >}} | {{< text color="#767676" url="https://github.com/PJLAB-CHIP/HPCTransCompile" >}}Code{{< /text >}}] J. Lv, X. He, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, A. Shen, X. Dai$^*$, Y. Li, J. Hao, J. Ding, Y. Hu, S. Yin. "HPCTransCompile: An AI Compiler Generated Dataset for High-Performance CUDA Transpilation and LLM Preliminary Exploration".  
 2. [{{< text color="#767676" url="https://arxiv.org/abs/2411.10258" >}}Preprint{{< /text >}} | {{< text color="#767676" url="https://github.com/Tiara8735/MDHP-Net-Anonymous" >}}Code{{< /text >}}] Q. Liu$^\dagger$, {{< text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{< /text >}}, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng. "MDHP-Net: Detecting an Emerging Time-exciting Threat in IVN".  
 3. [{{< text color="#767676" >}}Preprint{{< /text >}}] Z. Xu, A. Shen, D. Kong, X. Dai, J. Liu, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, L. Wang, S. Wei, Y. Hu and S. Yin*. "LLMEngine: Disaggregated Mapping and Memory Management Co-scheduling for Wafer-scale Chips".  
 

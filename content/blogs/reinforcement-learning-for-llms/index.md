@@ -1,7 +1,7 @@
 ---
 title: "Reinforcement Learning for LLMs"
 date: 2025-06-02T08:25:00+08:00
-lastmod: 2025-11-18T18:45:00+08:00
+lastmod: 2025-07-15T01:19:00+08:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -9,6 +9,8 @@ keywords:
     - llm
     - ppo
     - grpo
+    - dapo
+    - rlvr
 categories:
     - deeplearning
 tags:
@@ -574,7 +576,7 @@ $$
 where:
 
 - $\varepsilon$ and $\beta$ are hyper-parameters;
-- $\hat{A}_{i,t}$ is the advantage calculated based on relative rewards of the outputs inside each group only. 
+- $\hat{A}_{i,t}$ is the advantage calculated based on relative rewards of the outputs inside each group only. See {{<text url="https://github.com/jamesnulliu/verl/blob/archive-d9a6a31/verl/trainer/ppo/core_algos.py#L244-L308">}}here{{</text>}} for verl's implementation. For simplicity, given input `scores` (a tensor of padded rewards with shape `(batch_size, response_len)`), the algorithm first sums the rewards for each response, then normalizes the rewards in each group (a batch may contain multiple groups), and finally broadcasts and   multiplies the rewards (of shape `(batch_size, 1)`) with reponse mask (of shape `(batch_size, response_len)`) to get the advantage{{<sidenote>}}That is to say, for each response of shape `(1, response_len)`, the advantages are the same, except for the padded positions, which are 0.{{</sidenote>}}.
 
 Note that:
 
@@ -585,12 +587,71 @@ Note that:
    $$
    which is guaranteed to be positive.
 
+The code of the objective function, i.e., `compute_policy_loss`, is show {{<text url="https://github.com/jamesnulliu/verl/blob/archive-d9a6a31/verl/trainer/ppo/core_algos.py#L722-L794">}}here{{</text>}} in verl. It can be seen that the implementation is a bit different from the equation above:
+
+- The $\frac {\pi_{\theta}(o_{i,t}|q, o_{i,< t})}{\pi_{\theta_{\text{old}}}(o_{i,t}|q, o_{i,< t})}$ term is replaced with $e^{\log \pi_{\theta}(o_{i,t}|q, o_{i,< t}) - \log \pi_{\theta_{\text{old}}}(o_{i,t}|q, o_{i,< t})}$, which is more numerically stable, as shown in {{<text url="https://github.com/jamesnulliu/verl/blob/archive-d9a6a31/verl/trainer/ppo/core_algos.py#L766-L769">}}these lines{{</text>}} in function `compute_policy_loss`.
+- The kl penalty term is removed, and calculated separately in `DataParallelPPOActor.update_policy`, according to option `use_kl_loss` (which is default false but shoule be set to true for GRPO), as shown {{<text url="https://github.com/jamesnulliu/verl/blob/archive-d9a6a31/verl/workers/actor/dp_actor.py#L529-L539">}}here{{</text>}}.
+- Both the policy loss and the KL loss would be passed to function `agg_loss`, which aggregates them to scalar values. The default method is `token-mean`, which is different from "*the original GRPO paper takes the sample-level loss (`seq-mean-token-mean`), which may be unstable in long-CoT scenarios*".
+  {{<quote>}} All GRPO example scripts provided in verl uses the default configuration "token-mean" for loss aggregation instead. {{</quote>}}
+  Btw, `token-mean` will means the (policy gradient) loss across all the tokens in all the sequences in a mini-batch; *An idea of DAPO?*
+
+## 7. DAPO: An Open-Source LLM Reinforcement Learning System at Scale [8]
+
+1. Clip-Higher, which promotes the diversity of the system and avoids entropy collapse; Configured {{<text url="https://github.com/jamesnulliu/verl/blob/archive-d9a6a31/recipe/dapo/run_dapo_qwen2.5_32b.sh#L76-L77">}}here{{</text>}} and used {{<text url="https://github.com/jamesnulliu/verl/blob/archive-d9a6a31/verl/trainer/ppo/core_algos.py#L773-L779">}}here{{</text>}} in `compute_policy_loss`.
+2. Dynamic Sampling, which improves training efficiency and stability; Shown {{<text url="https://github.com/jamesnulliu/verl/blob/archive-d9a6a31/recipe/dapo/dapo_ray_trainer.py#L199-L257">}}here{{</text>}} in `RayDPAOTrainer`.
+3. Token-Level Policy Gradient Loss, which is critical in long-CoT RL scenarios; Configured {{<text url="https://github.com/jamesnulliu/verl/blob/archive-d9a6a31/recipe/dapo/run_dapo_qwen2.5_32b.sh#L99">}}here{{</text>}}, which has been introduced in the above GRPO section.
+4. Overlong Reward Shaping, which reduces reward noise and stabilizes training; Configured {{<text url="https://github.com/jamesnulliu/verl/blob/archive-d9a6a31/recipe/dapo/run_dapo_qwen2.5_32b.sh#L117-L119">}}here{{</text>}} and used {{<text url="https://github.com/volcengine/verl/blob/4f80e465c2ec79ab9c3c30ec74b9745de61d0490/verl/workers/reward_manager/dapo.py#L100-L113">}}here{{</text>}} in `DapoRewardManager`.
+
+Before defining the object function, it is worth noting that the KL term is excluded from the proposed algorithm.
+
+{{<quote>}} The KL penalty term is used to regulate the divergence between the online policy and the frozen reference policy. In the RLHF scenario, the goal of RL is to align the model behavior without diverging too far from the initial model. However, during training the long-CoT reasoning model, the model distribution can diverge significantly from the initial model, thus this restriction is not necessary. {{</quote>}}
+
+The objective function of DAPO is shown below:
+
+$$
+\begin{align*}
+    \mathcal{J}_{\text{DAPO}}(\theta) =& ~ \mathbb{E}_{(q,a) \sim \mathcal{D}, \{o_i\}_{i=1}^G \sim \pi_{\theta_{\text{old}}}(\cdot|q)} \\
+    &\left[ \frac{1}{\sum_{i=1}^G |o_i|} \sum_{i=1}^G \sum_{t=1}^{|o_i|} \min \left( r_{i,t}(\theta)\hat{A}_{i,t}, \text{clip}(r_{i,t}(\theta), 1 - \epsilon_{\text{low}}, 1 + \epsilon_{\text{high}})\hat{A}_{i,t} \right) \right]
+    \\
+    \text{s.t. } &0 < \left | \{o_i \mid \text{is_equivalent}(a, o_i)\} \right | < G,
+\end{align*}
+$$
+
+where: 
+
+$$
+r_{i,t}(\theta) = \frac{\pi_\theta(o_{i,t} \mid q, o_{i, < t})}{\pi_{\theta_{\text{old}}}(o_{i,t} \mid q, o_{i, < t})}, \quad \hat{A}_{i,t} = \frac{R_i - \text{mean}(\{R_i\}_{i=1}^G)}{\text{std}(\{R_i\}_{i=1}^G)}
+$$
+
+## 8. Beyond the 80/20 Rule: High-Entropy Minority Tokens Drive Effective Reinforcement Learning for LLM Reasoning [9]
+
+Token entropy calculation:
+
+$$
+\begin{gather*}
+H_t := - \sum_{j=1}^{V} p_{t,j} \log p_{t,j} \\
+\text{ where } (p_{t,1}, \cdots, p_{t,V}) = \boldsymbol{p}_t = \pi_{\theta}(\cdot \mid q, o_{ < t}) = \text{Softmax}\left(\frac{\mathbf{z}_t}{T}\right)
+\end{gather*}
+$$
+
+Here, 
+- $\pi_{\theta}$ denotes an LLM parameterized by $\theta$
+- $q$ is the input query, and $o_{< t} = (o_1, o_2, \ldots, o_{t-1})$ represents the previously generated tokens
+- $V$ is the vocabulary size
+- $\mathbf{z}_t \in \mathbb{R}^V$ denotes the pre-softmax logits at time step $t$
+- $\boldsymbol{p}_t \in \mathbb{R}^V$ is the corresponding probability distribution over the vocabulary
+- $T \in \mathbb{R}$ is the decoding temperature
+
+In off-policy settings, sequences are generated by a rollout policy $\pi_{\phi}$ while the training policy is $\pi_{\theta}$, with $\phi \neq \theta$. The entropy is still calculated using $\pi_{\theta}$, as defined in Equation (1), to measure the uncertainty of the training policy in the given sequence.
+
 ## References
 
-1. Cameron R. Wolfe. {{<href text="Basics of Reinforcement Learning for LLMs" url="https://cameronrwolfe.substack.com/p/basics-of-reinforcement-learning">}}.  
-2. Cameron R. Wolfe. {{<href text="Proximal Policy Optimization (PPO): The Key to LLM Alignment" url="https://cameronrwolfe.substack.com/p/proximal-policy-optimization-ppo">}}  
-3. Achiam, Josh. {{<href text="Spinning Up in Deep RL" url="https://spinningup.openai.com/en/latest/index.html">}}. OpenAI, 2018.  
+1. Cameron R. Wolfe. {{<text url="https://cameronrwolfe.substack.com/p/basics-of-reinforcement-learning">}}Basics of Reinforcement Learning for LLMs{{</text>}}.  
+2. Cameron R. Wolfe. {{<text url="https://cameronrwolfe.substack.com/p/proximal-policy-optimization-ppo">}}Proximal Policy Optimization (PPO): The Key to LLM Alignment{{</text>}}.  
+3. Achiam, Josh. {{<text url="https://spinningup.openai.com/en/latest/index.html">}}Spinning Up in Deep RL{{</text>}}. OpenAI, 2018.  
 4. Touvron, Hugo, et al. "Llama 2: Open foundation and fine-tuned chat models." arXiv preprint arXiv:2307.09288 (2023).  
 5. Schulman, John, Sergey Levine, Pieter Abbeel, Michael Jordan, and Philipp Moritz. "Trust region policy optimization." In International conference on machine learning, pp. 1889-1897. PMLR, 2015.  
 6. Schulman, John, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. "Proximal policy optimization algorithms." arXiv preprint arXiv:1707.06347 (2017).  
 7. Shao, Zhihong, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang et al. "Deepseekmath: Pushing the limits of mathematical reasoning in open language models." arXiv preprint arXiv:2402.03300 (2024).
+8. Yu, Qiying, Zheng Zhang, Ruofei Zhu, Yufeng Yuan, Xiaochen Zuo, Yu Yue, Weinan Dai et al. "Dapo: An open-source llm reinforcement learning system at scale." arXiv preprint arXiv:2503.14476 (2025).
+9. Wang, Shenzhi, Le Yu, Chang Gao, Chujie Zheng, Shixuan Liu, Rui Lu, Kai Dang et al. "Beyond the 80/20 rule: High-entropy minority tokens drive effective reinforcement learning for llm reasoning." arXiv preprint arXiv:2506.01939 (2025).
