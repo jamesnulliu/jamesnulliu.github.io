@@ -1,7 +1,7 @@
 ---
 title: "User Management on Linux"
 date: 2024-07-06T07:04:00+08:00
-lastmod: 2024-12-03T15:30:00+08:00
+lastmod: 2025-08-22T13:22:00-07:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -89,7 +89,7 @@ Create a new group:
 groupadd <groupname>
 ```
 
-Add a user to a group:
+Add a user to a group (logout and login again to take effect):
 
 ```bash {linenos=true}
 usermod -aG <groupname> <username>
@@ -162,6 +162,94 @@ chmod a-rwx file          # Remove all permissions from all
 # ...
 ```
 
-## 6. Related Blogs
+## 6. Shared Directory
+
+To create a shared directory for all users in the same group being able to create, modify, execute, and delete files:
+
+{{<details title="Click to see file: create-shared-dir">}}
+
+```bash {linenos=true}
+#!/bin/bash
+
+set -e
+
+# =============================================================================
+# Script: create-shared-dir
+# Description: Configures one or more directories to be shared with a specific
+#              group.
+#
+# It performs the following actions on each target directory:
+#   1. Creates the directory if it doesn't exist.
+#   2. Recursively sets the group ownership.
+#   3. Sets permissions (group: rwx, others: none).
+#   4. Sets the 'setgid' bit on subdirectories to enforce group inheritance.
+#   5. Uses Access Control Lists (ACLs) to enforce permissions for new items.
+#
+# Usage:
+#   sudo create-shared-dir <shared_group> <dir1> [<dir2> ...]
+#
+# Example:
+#   sudo create-shared-dir developers /srv/data /home/shared/project
+#
+# =============================================================================
+
+# --- Argument Parsing ---
+SHARED_GROUP="$1"
+shift # Shift arguments so $@ contains only the directories
+TARGET_DIRS=("$@")
+
+# --- Input Validation ---
+if [ ${#TARGET_DIRS[@]} -eq 0 ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]
+then
+    echo "Usage: $0 <shared_group> <dir1> [<dir2> ...]"
+    echo "Example: $0 developers /var/www/project_a"
+    exit 1
+fi
+
+# --- Pre-flight Checks ---
+# 1. Check for root privileges.
+if [[ $EUID -ne 0 ]]; then
+    echo "Error: This script must be run as root (or with sudo)." >&2
+    exit 1
+fi
+
+# 2. Check if the specified group exists.
+if ! getent group "$SHARED_GROUP" > /dev/null; then
+    echo "Error: Group '$SHARED_GROUP' does not exist." >&2
+    exit 1
+fi
+
+# --- Main Logic ---
+echo "Configuring shared directories for group '$SHARED_GROUP'..."
+
+for target_dir in "${TARGET_DIRS[@]}"; do
+    echo "--> Processing: $target_dir"
+    mkdir -p "$target_dir"
+    chgrp -R "$SHARED_GROUP" "$target_dir"
+    chmod -R g=rwX,o-rwx "$target_dir"
+    find "$target_dir" -type d -exec chmod g+s {} +
+    setfacl -R -m "g:$SHARED_GROUP:rwX" "$target_dir"
+    setfacl -R -d -m "g:$SHARED_GROUP:rwX" "$target_dir"
+done
+
+echo "Configuration complete."
+exit 0
+```
+
+{{</details>}}
+
+You may put the file to "/usr/local/bin/create-shared-dir", and then change its mode with command:
+
+```bash {{linenos=true}}
+chmod +x /usr/local/bin/create-shared-dir
+```
+
+Then you can run the script with the desired parameters, for example:
+
+```bash {{linenos=true}}
+sudo create-shared-dir developers /srv/data /home/shared/project
+```
+
+## Related Blogs
 
 - [Environment Varialble Management on Linux](/blogs/environment-variable-management-on-linux)

@@ -1,7 +1,7 @@
 ---
 title: "WSL is All You Need"
 date: 2025-01-10T13:25:00+08:00
-lastmod: 2025-05-26T01:42:00+08:00
+lastmod: 2025-08-22T14:54:00-07:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -183,7 +183,7 @@ hostname = <your-hostname>
 
 > Virtual disk files will grow automatically as you add files, but they will not shrink automatically when you delete files. This can lead to a large virtual disk file that takes up a lot of space on your hard drive.
 
-First, search for a `.vdhx` file in your computer, which is the virtual disk file for your WSL distribution. The default location is "C:/Users/\<your-username\>/AppData/Local/Packages/\<distro-name\>/LocalState/ext4.vhdx".
+First, search for a `.vdhx` file in your computer, which is the virtual disk file for your WSL distribution. The default location is "C:/Users/\<your-username\>/AppData/Local/wsl/\<hash-value\>/ext4.vhdx".
 
 Then, run the following command in PowerShell:
 
