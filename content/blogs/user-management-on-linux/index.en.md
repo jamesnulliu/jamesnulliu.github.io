@@ -1,7 +1,7 @@
 ---
 title: "User Management on Linux"
 date: 2024-07-06T07:04:00+08:00
-lastmod: 2025-08-22T13:22:00-07:00
+lastmod: 2025-08-23T10:13:00-07:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -33,13 +33,28 @@ cat /etc/passwd
 Add a new user:
 
 ```bash {linenos=true}
-useradd <username>
+# - `-m`: Creates the user's home directory.
+# - `-s`: Specifies the user's login shell.
+# - `-c`: Provides a comment, typically the user's full name.
+useradd -m -s /bin/bash -c "<full-name>" <username>
+
+# Set password after the user is created
+passwd <username>
 ```
 
 Remove an existing user:
 
+Remove the user from the sudo or wheel group (if they were in) before deleting them:
+
 ```bash {linenos=true}
-userdel <username>
+gpasswd -d <username> sudo
+gpasswd -d <username> wheel
+```
+
+
+```bash {linenos=true}
+# `-r`: Removes the user's home directory and mail spool.
+userdel -r <username>
 ```
 
 ## 2. Change the Password of a User
