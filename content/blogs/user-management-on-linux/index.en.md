@@ -68,7 +68,7 @@ passwd <username>
 Grant write permission to `/etc/sudoers`:
 
 ```bash {linenos=true}
-chmode u+w /etc/sudoers
+chmod u+w /etc/sudoers
 ```
 
 There are four ways to make a user a superuser:
@@ -81,7 +81,7 @@ There are four ways to make a user a superuser:
 Return the file `/etc/sudoers` to read-only mode:
 
 ```bash {linenos=true}
-chmode u-w /etc/sudoers
+chmod u-w /etc/sudoers
 ```
 
 ## 4. User Groups
@@ -104,10 +104,16 @@ Create a new group:
 groupadd <groupname>
 ```
 
-Add a user to a group (logout and login again to take effect):
+Add a user to a group:
 
 ```bash {linenos=true}
-usermod -aG <groupname> <username>
+gpasswd -a <username> <groupname>
+```
+
+Remove a user from a group:
+
+```bash {linenos=true}
+gpasswd -d <username> <groupname>
 ```
 
 ## 5. Onwership and Permission of Files and Directories
