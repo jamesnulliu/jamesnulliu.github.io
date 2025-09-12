@@ -1,0 +1,89 @@
+.sidenote {
+    float: right;
+    position: relative;
+    margin-right: -18vw;
+    width: 40%;
+    width: 30ch;
+    font-size: medium;
+}
+
+
+.sidenote.body {
+    counter-reset: sidenote-counter;
+}
+
+.sidenote-number {
+    counter-increment: sidenote-counter;
+}
+
+.sidenote::before {
+    content: "# ";
+    position: relative;
+    font-size: 0.9em;
+    font-weight: 700;
+    color: #8860cc;
+}
+
+.sidenote-number::after {
+    content: "#";
+    vertical-align: super;
+    font-size: 0.8em;
+    font-weight: 700;
+    color: #8860cc;
+}
+
+.sidenote-number:hover .sidenote {
+
+    background-color: #8860cc1f;
+    border-radius: 4px;
+    padding: 0.3em 0.5em;
+
+    color: var(--primary-text);
+
+    transition: all 0.2s ease-in-out;
+}
+
+
+@media (max-width: 1024px) {
+
+    .sidenote-container {
+        all: unset;
+        display: block;
+        margin: 1.5em 0;
+    }
+
+    .sidenote-ref {
+        all: unset;
+        display: inline;
+
+        counter-increment: sidenote-counter;
+        content: "[" counter(sidenote-counter) "]";
+        vertical-align: super;
+        font-size: 0.8em;
+        font-weight: 700;
+        color: var(--accent);
+    }
+
+    .sidenote-content {
+        all: unset;
+        display: block;
+
+        margin-top: 0.8em;
+        padding: 1em 1.2em;
+        background-color: var(--secondary);
+        border-left: 4px solid var(--accent);
+        border-radius: 4px;
+
+        font-size: 0.9rem;
+        line-height: 1.7;
+        color: var(--secondary-text);
+    }
+
+    .sidenote-content>*:first-child {
+        margin-top: 0;
+    }
+
+    .sidenote-content>*:last-child {
+        margin-bottom: 0;
+    }
+}

@@ -1,0 +1,27 @@
+{{- $styles := slice -}}
+{{- with .Get "color" -}}{{- $styles = $styles | append (printf "color: %s;" .) -}}{{- end -}}
+{{- with .Get "size" -}}{{- $styles = $styles | append (printf "font-size: %s;" .) -}}{{- end -}}
+{{- with .Get "style" -}}{{- $styles = $styles | append (printf "font-style: %s;" .) -}}{{- end -}}
+{{- with .Get "weight" -}}{{- $styles = $styles | append (printf "font-weight: %s;" .) -}}{{- end -}}
+{{- with .Get "align" -}}{{- $styles = $styles | append (printf "text-align: %s;" .) -}}{{- end -}}
+
+{{- $styleAttr := "" -}}
+{{- if gt (len $styles) 0 -}}
+  {{- $styleAttr = printf "style=\"%s\"" (delimit $styles " " | safeCSS) | safeHTMLAttr -}}
+{{- end -}}
+
+{{- if .Get "url" -}}
+  <a href="{{ .Get "url" }}"
+    {{- if not (eq (.Get "blank") "false") }} target="_blank" rel="noopener noreferrer"{{ end -}}
+    {{- with .Get "class" }} class="{{ . }}"{{ end -}}
+    {{- with .Get "title" }} title="{{ . }}"{{ end }}
+    {{- with $styleAttr }} {{ . }}{{ end -}}>
+    {{- .Inner | markdownify -}}
+  </a>
+{{- else -}}
+  {{- if $styleAttr -}}
+    <span {{ $styleAttr }}>{{ .Inner | markdownify }}</span>
+  {{- else -}}
+    {{ .Inner | markdownify }}
+  {{- end -}}
+{{- end -}}

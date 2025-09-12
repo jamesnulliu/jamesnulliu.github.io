@@ -1,0 +1,161 @@
+baseURL: "https://jamesnulliu.github.io"
+title: "秋水·JamesNULLiu"
+copyright: "© 2024-2025 JamesNULLiu"
+theme: [PaperMod]
+
+languageCode: "en-us" 
+DefaultContentLanguage: "en"
+hasCJKLanguage: true
+pagination.pagerSize: 6 
+pagination.path: "page"
+permalinks:  
+  post: /:slug/
+  page: /:contentbasename/
+enableInlineShortcodes: true
+enableRobotsTXT: true
+buildDrafts: true
+buildFuture: false
+buildExpired: false
+enableEmoji: true
+enableGitInfo: true
+pygmentsUseClasses: true
+
+outputs:
+  home:
+    - HTML
+    - JSON
+    - RSS 
+
+languages:
+  en:
+    languageName: 'English'
+    weight: 1
+    
+  zh:
+    languageName: '简体中文'
+    weight: 2
+
+params:
+  comments: true 
+  defaultTheme: auto
+  disableScrollToTop: false
+  disableThemeToggle: false
+  disableLangToggle: true
+  displayFullLangName: true
+  DateFormat: "Jan-02-2006"
+  env: production
+  hideFooter: false
+  hidemeta: false
+  math: true
+  mermaid: true
+  showToc: true
+  showbreadcrumbs: true
+  ShowAllPagesInArchive: true
+  ShowCodeCopyButtons: true
+  ShowFullTextinRSS: true 
+  ShowWordCount: true
+  ShowPageNums: true
+  ShowPostNavLinks: true
+  ShowReadingTime: true
+  ShowUpdateTime: true
+  TocOpen: true
+  visitCount: true
+  profileMode:
+    enabled: true
+    title: "Hi, I am JamesNULLiu"
+    subtitle: "吾常见笑于大方之家 - 秋水"
+    imageUrl: "imgs/people/jamesnulliu.jpg"
+    imageTitle: "JamesNULLiu"
+    imageWidth: 150
+    imageHeight: 150
+    buttons:
+      - name: Bio
+        url: /about_me/
+      - name: CV
+        url: /docs/CV_Yanchen_Liu.pdf
+      - name: Blogs
+        url: /blogs/
+      - name: Search
+        url: /search/
+  socialIcons:
+    - name: github
+      url: https://www.github.com/jamesnulliu
+    - name: linkedin
+      url: https://www.linkedin.com/in/jamesnulliu
+    - name: X
+      url: https://x.com/jamesnulliu
+    - name: telegram
+      url: https://t.me/jamesnulliu
+    - name: email
+      url: "mailto:jamesnulliu@gmail.com"
+    - name: KoFi
+      title: Buy me a Ko-Fi :)
+      url: "https://ko-fi.com/jamesnulliu"
+  fuseOpts:
+    isCaseSensitive: false
+    shouldSort: true
+    location: 0
+    distance: 1000
+    threshold: 0.4
+    minMatchCharLength: 0
+    limit: 10  # refer: https://www.fusejs.io/api/methods.html#search
+    keys: ["title", "permalink", "summary", "content"]
+
+menu:
+  main:
+    - identifier: home
+      name: Home
+      url: /
+      weight: 1
+    - identifier: about_me
+      name: About Me
+      url: /about_me/
+      weight: 2
+    - identifier: blogs
+      name: Blogs
+      url: /blogs/
+      weight: 3 
+    - identifier: categories
+      name: Categories
+      url: /categories/
+      weight: 4 
+    - identifier: tags
+      name: Tags
+      url: /tags/
+      weight: 5 
+    - name: Archive
+      url: archives/
+      weight: 6
+    - identifier: search
+      name: Search
+      url: /search/
+      weight: 7
+    - identifier: friends
+      name: Friends
+      url: /friends/
+      weight: 8
+
+markup:
+  highlight:
+    noClasses: false
+    codeFences: true
+    guessSyntax: true
+    linenos: true
+    style: monospace
+
+markup:
+  goldmark:
+    extensions:
+      passthrough:
+        delimiters:
+          block:
+          - - \[
+            - \]
+          - - $$
+            - $$
+          inline:
+          - - \(
+            - \)
+          - - $
+            - $
+        enable: true

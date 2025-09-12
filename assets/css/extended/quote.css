@@ -1,0 +1,16 @@
+blockquote.quote {
+    position: relative;
+    margin: 1em auto;
+    padding-left: 3em;
+    border: none;
+    font-style: italic;
+}
+
+blockquote.quote::before {
+    position: absolute;
+    left: 0;
+    content: "“";
+    font-size: 3em;
+    font-weight: bold;
+    line-height: 1;
+}
