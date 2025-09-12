@@ -11,11 +11,13 @@ on:
 
 concurrency: preview-${{ github.ref }}
 
+permissions:
+  contents: write
+  pull-requests: write
+  
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     env:
       HUGO_VERSION: 0.148.2
     steps:
@@ -55,12 +57,13 @@ jobs:
           source-dir: ./public/
 
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: deploy-preview
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ./public/
+          branch: gh-pages
+          clean-exclude: pr-preview
+          force: false
