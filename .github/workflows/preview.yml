@@ -1,4 +1,3 @@
-# .github/workflows/preview.yml
 name: Deploy PR previews
 
 on:
@@ -11,12 +10,13 @@ on:
 
 concurrency: preview-${{ github.ref }}
 
+permissions:
+  contents: write
+  pull-requests: write
+  
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     env:
       HUGO_VERSION: 0.148.2
     steps:
@@ -55,3 +55,14 @@ jobs:
         with:
           source-dir: ./public/
 
+  deploy:
+    runs-on: ubuntu-latest
+    needs: deploy-preview
+    steps:
+      - uses: actions/checkout@v4
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ./public/
+          branch: gh-pages
+          clean-exclude: pr-preview
+          force: false
