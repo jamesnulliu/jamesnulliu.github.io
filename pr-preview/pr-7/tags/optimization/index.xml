@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Optimization on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/optimization/</link><description>Recent content in Optimization on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 16:00:18 -0700</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/optimization/index.xml" rel="self" type="application/rss+xml"/><item><title>CUDA Programming Notes | 01: Memory Coalescing</title><link>https://jamesnulliu.github.io/blogs/cuda-programming-notes-01-memory-coalescing/</link><pubDate>Sun, 16 Mar 2025 01:39:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/cuda-programming-notes-01-memory-coalescing/</guid><description>Introduction to memory coalescing with Nsight Compute.</description><content:encoded><![CDATA[<h2 id="1-introduction-to-memory-coalescing">1. Introduction to Memory Coalescing</h2>
+<h3 id="11-dynamic-random-access-memories-drams">1.1. Dynamic Random Access Memories (DRAMs)</h3>
+<p>Accessing data in the global memory is critical to the performance of a CUDA application.</p>
+<p>In addition to tiling techniques utilizing shared memories, we discuss memory coalescing techniques to move data efficiently <strong>from global memory into shared memory and registers</strong>.</p>
+<p>Global memory is implemented with dynamic random access memories (DRAMs). Reading one DRAM is a very slow process.</p>
+<p>Modern DRAMs use a parallel process: <strong>Each time a location is accessed, many consecutive locations that includes the requested location are accessed</strong>.</p>
+<p>If an application uses data from consecutive locations before moving on to other locations, the DRAMs work close to the advertised peak global memory bandwidth.</p>
+<h3 id="12-memory-coalescing">1.2. Memory Coalescing</h3>
+<p>Recall that <strong>all threads in a warp execute the same instruction</strong>.</p>
+<p>When all threads in a warp execute a load instruction, the hardware detects whether the threads access consecutive memory locations.</p>
+<p>The most favorable global memory access is achieved when the same instruction for all threads in a warp accesses global memory locations.</p>
+<p>In this favorable case, the hardware coalesces all memory accesses into a consolidated access to consecutive DRAM locations.</p>
+<blockquote>
+<p><strong>Definition: Memory Coalescing</strong><br>
+If, in a warp, thread $0$ accesses location $n$, thread $1$ accesses location $n + 1$, &hellip; thread $31$ accesses location $n + 31$, then all these accesses are coalesced, that is: <strong>combined into one single access</strong>.</p></blockquote>
+<p>The CUDA C Best Practices Guide gives a high priority recommendation to coalesced access to global memory.</p>
+<h2 id="2-example-vector-addition">2. Example: Vector Addition</h2>
+<h3 id="21-coalesced-access">2.1. Coalesced Access</h3>
+<p><strong>Coalesced Memory Access</strong> means that each thread in a warp accesses consecutive memory locations so that the hardware can combine all these accesses into one single access. By doing so, fewer wasted data are transferred and the memory bandwidth is fully utilized.</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to See Example Code</summary>
+    <div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">__global__</span> <span class="kt">void</span> <span class="nf">vecAddKernel</span><span class="p">(</span><span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">b</span><span class="p">,</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">c</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                             <span class="kt">int32_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">gtid</span> <span class="o">=</span> <span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">blockDim</span><span class="p">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">gtid</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// [DRAM] 2 load, 1 store, 3 inst
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">c</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">gtid</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">launchVecAdd</span><span class="p">(</span><span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">d_A</span><span class="p">,</span> <span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">d_B</span><span class="p">,</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">d_C</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">dim3</span> <span class="n">blockSize</span> <span class="o">=</span> <span class="p">{</span><span class="n">std</span><span class="o">::</span><span class="n">min</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1024</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
+</span></span><span class="line"><span class="cl">    <span class="n">dim3</span> <span class="n">gridSize</span> <span class="o">=</span> <span class="p">{</span><span class="n">ceilDiv</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">blockSize</span><span class="p">.</span><span class="n">x</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">vecAddKernel</span><span class="o">&lt;&lt;&lt;</span><span class="n">gridSize</span><span class="p">,</span> <span class="n">blockSize</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">d_A</span><span class="p">,</span> <span class="n">d_B</span><span class="p">,</span> <span class="n">d_C</span><span class="p">,</span> <span class="kt">int32_t</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></div>
+</details><br>
+<p>Note that in NVIDIA GPUs:</p>
+<ul>
+<li><strong>WARP</strong> is the smallest unit of execution, which contains 32 threads.</li>
+<li><strong>SECTOR</strong> is the smallest unit of data that can be accessed from global memory, which is exactly 32 bytes.</li>
+</ul>
+<p>In the example above, all threads in a warp access consecutive memory locations both for <code>a</code>, <code>b</code>, and <code>c</code>, and for each $32 * 4 / 32 = 4$ sectors, only <strong>ONE</strong> instruction to a warp is needed to access the data. This is so-called <strong>coalesced memory access</strong>.</p>
+<div class="image-container">
+    <img src="https://docs.google.com/drawings/d/e/2PACX-1vRXwpIJWOSYT4fXZ3ZwR8UZOXpqO0R_-AG5JLZQkm3BEZQ16KExQdAH58LkP1pvZbisQOI2-Gr0N1v_/pub?w=1006&amp;h=371" 
+        alt="" 
+        class="image" 
+        width="100%"/>
+    <div class="image-caption">
+        Coalesced Memory Access. There are 2N loads operations and 1N store operations in the kernel, which in all are 2N/32 load instructions and 1N/32 store instructions for warps (each warp executes 1 instruction). Since the access to memroy is coalesced, one instruction will transfer 4 sectors of data. There are no any wasted data.
+    </div>
+</div>
+<p>Another example of coalesced memory access is shown below:</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to See Example Code</summary>
+    <div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">__global__</span> <span class="kt">void</span> <span class="nf">vecAddKernelv1</span><span class="p">(</span><span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">b</span><span class="p">,</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">c</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                               <span class="kt">int32_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">gtid</span> <span class="o">=</span> <span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">blockDim</span><span class="p">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">gtid</span> <span class="o">=</span> <span class="n">gtid</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">?</span> <span class="n">gtid</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">:</span> <span class="n">gtid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">gtid</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// [DRAM] 2 load, 1 store, 3 inst
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">c</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">gtid</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></div>
+</details><br>
+<p>Crompared to the previous example, each 2 threads exchange their access positions. However, the access to memory is still coalesced.</p>
+<div class="image-container">
+    <img src="https://docs.google.com/drawings/d/e/2PACX-1vTGbAM6z2ZZwcftUcB4E80_PUqOMCr2Y6ErnGx5DCPqVqUqFaxlDV9IbcPHjUKI1PX7v6cwcZHWH2nT/pub?w=1006&amp;h=371" 
+        alt="" 
+        class="image" 
+        width="100%"/>
+    <div class="image-caption">
+        Another Example of Coalesced Memory Access. 1 intruction will transfer 4 sectors of data. There are no any wasted data.
+    </div>
+</div>
+<h3 id="22-non-coalesced-access">2.2. Non-Coalesced Access</h3>
+<p><strong>Non-Coalesced Memory Access</strong> means that some thread in a warp accesses non-consecutive memory locations so that the hardware cannot combine all these accesses into one single access. By doing so, more wasted data are transferred and the memory bandwidth is not fully utilized.</p>
+<p>See the example code below. Originally, 32 threads in a warp would access 32 consecutive fp32 elements. However, I make the first thread in each warp access the 33th fp32 element (which should be accessed by the next warp), making an intented non-coalesced access.</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to See Example Code</summary>
+    <div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">__global__</span> <span class="kt">void</span> <span class="nf">vecAddKernelv1</span><span class="p">(</span><span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">b</span><span class="p">,</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">c</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                               <span class="kt">int32_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">gtid</span> <span class="o">=</span> <span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">blockDim</span><span class="p">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">gtid</span> <span class="o">%</span> <span class="n">warpSize</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">gtid</span> <span class="o">=</span> <span class="p">(</span><span class="n">gtid</span> <span class="o">+</span> <span class="n">warpSize</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">ceilDiv</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">warpSize</span><span class="p">)</span> <span class="o">*</span> <span class="n">warpSize</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">gtid</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// [DRAM] 2 load, 1 store, 3 inst
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">c</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">gtid</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></div>
+</details><br>
+<p>The memory access pattern is shown in the figure below. Campare to the previous examples, you can see that despite the total number of load/store instructions is the same (2N/32 load instructions and 1N/32 store instructions), for each warp, 5 sectors of data are now being transferred per instruction. From the perspective of hardware, more data are being transferred than needed.</p>
+<div class="image-container">
+    <img src="https://docs.google.com/drawings/d/e/2PACX-1vS26Ml2jmtIYgk4jhrnmAihGKhuGMcjnwM3aqh784REEtZVLh2_fEva6GbyaroJ9ZrF-w1QmRONlxQm/pub?w=1006&amp;h=371" 
+        alt="" 
+        class="image" 
+        width="100%"/>
+    <div class="image-caption">
+        Non-Coalesced Memory Access. There are 2N/32 load instructions and 1N/32 store instructions for warps. But one instruction will transfer 5 sectors of data, as shown in the first warp with 5 orange sectors.
+    </div>
+</div>
+<p>In Nsight Compute, you can see the performance analysis in the &ldquo;Memory Workload Analysis&rdquo; section. Optimization suggestions are provided for reducing wasted data transfer.</p>
+<div class="image-container">
+    <img src="/imgs/blogs/cuda-programming-notes-01-memory-coalescing/non-coalesced-nsight-compute.png" 
+        alt="" 
+        class="image" 
+        width="100%"/>
+    <div class="image-caption">
+        Performance analysis of non-coalesced memory access using Nsight Compute.
+    </div>
+</div>
+<h2 id="references">References</h2>
+<ol>
+<li><a href="https://www.elsevier.com/books/programming-massively-parallel-processors/kirk/978-0-12-811986-0" target="_blank" rel="noopener noreferrer">
+    Programming Massively Parallel Processors: A Hands-on Approach, 4th Edition
+</a>
+</li>
+<li><a href="https://www.bilibili.com/video/BV1NYCtYTEFH" target="_blank" rel="noopener noreferrer">
+    【CUDA调优指南】合并访存
+</a>
+</li>
+<li><a href="https://homepages.math.uic.edu/~jan/mcs572/memory_coalescing.pdf" target="_blank" rel="noopener noreferrer">
+    Memory Coalescing Techniques
+</a>
+</li>
+</ol>
+]]></content:encoded></item></channel></rss>

@@ -1,0 +1,1343 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>System on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/categories/system/</link><description>Recent content in System on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 16:00:18 -0700</lastBuildDate><atom:link href="https://jamesnulliu.github.io/categories/system/index.xml" rel="self" type="application/rss+xml"/><item><title>WSL is All You Need</title><link>https://jamesnulliu.github.io/blogs/wsl-is-all-you-need/</link><pubDate>Fri, 10 Jan 2025 13:25:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/wsl-is-all-you-need/</guid><description>How do I work with WSL</description><content:encoded><![CDATA[<h2 id="1-motivation">1. Motivation</h2>
+<p>Coding on Windows feels like a nightmare, but most games do not run on Linux, and I hate MacOS 🤢🤮 from many aspects.</p>
+<p>After trying many ways, now I firmly believe that WSL (as a Docker launcher 🤣) is the best solution if:</p>
+<ul>
+<li>You are a programmer specifically relying on Unix environment, for example, Deep Learning, CUDA, C++, etc.</li>
+<li>You are a gamer who wants to play games on Windows.</li>
+<li>You want to switch between Linux and Windows with zero cost.</li>
+</ul>
+<blockquote>
+<p>💡<strong>NOTE</strong><br>
+<strong>Windows Subsystem for Linux (WSL)</strong> is a feature of Windows that allows you to run a Linux environment on your Windows machine, without the need for a separate virtual machine or dual booting. WSL is designed to provide a seamless and productive experience for developers who want to use both Windows and Linux at the same time.</p></blockquote>
+<h2 id="2-installation">2. Installation</h2>
+<blockquote>
+<p>Official Doc: <a href="https://learn.microsoft.com/en-us/windows/wsl/install" target="_blank" rel="noopener noreferrer">
+    How to install Linux on Windows with WSL
+</a>
+</p></blockquote>
+<blockquote>
+<p>⚠️<strong>WARNING</strong><br>
+If you are using scoop on Windows, make sure uninstall it before the first-time installation of a WSL distribution. You can reinstall scoop after the installation.</p></blockquote>
+<p>List all available WSL distributions:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-list</span> <span class="p">-</span><span class="n">-online</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Install a specific WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-install</span> <span class="n">-d</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Run a WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="n">-d</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="3-change-the-storage-location-of-a-distribution">3. Change the Storage Location of a Distribution</h2>
+<p>List installed WSL distributions:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="n">-l</span> <span class="n">-v</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Shutdown WSL service:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-shutdown</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Export a WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-export</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="nb">path-to</span><span class="n">-exported-tar</span><span class="p">&gt;.</span><span class="py">tar</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Unregister the target WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wslconfig</span> <span class="p">/</span><span class="n">u</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Import a WSL distribution from tar and specify the storage location; Note that you can specify any new distro name here:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-import</span> <span class="p">&lt;</span><span class="nb">new-distro</span><span class="n">-name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="nb">path-to</span><span class="n">-the-new-storage-dir</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="nb">path-to</span><span class="n">-exported-tar</span><span class="p">&gt;.</span><span class="py">tar</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>After importing, the default user of <code>&lt;new-distro-name&gt;</code> would become <code>root</code>. You can set the default user for a WSL distribution by modifying the <code>/etc/wsl.conf</code> file. See <a href="#7-default-user">
+    7. Default User
+</a>
+.</p>
+<h2 id="4-work-with-vscode">4. Work with VSCode</h2>
+<p>Run a WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="n">-d</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Open a directory in WSL with VSCode:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">code</span> <span class="p">&lt;</span><span class="nb">path-to</span><span class="n">-a-directory-in-wsl</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="5-install-docker-in-wsl">5. Install Docker in WSL</h2>
+<p><del>I don&rsquo;t like Docker Desktop for Windows</del>. Instead, you can install Docker in WSL as you do in a normal Linux system.</p>
+<p>If you want to play with cuda and deep learning in your WSL, see this blog: <a href="/blogs/docker-container-with-nvidia-gpu-support" target="_blank" rel="noopener noreferrer">
+    Docker Container with Nvidia GPU Support
+</a>
+</p>
+<p>If you need a concise mannual for docker images and containers, see this blog: <a href="/blogs/something-about-docker" target="_blank" rel="noopener noreferrer">
+    Something about Docker
+</a>
+</p>
+<p>To open a directory inside a running container with VSCode, install extension <code>ms-vscode-remote.remote-containers</code>, and:</p>
+<ol>
+<li>Open a directory in a WSL (where you installed docker and ran containers) with VSCode following <a href="#4-work-with-vscode">
+    4. Work with VSCode
+</a>
+.</li>
+<li>Press <code>ctrl</code> + <code>shift</code> + <code>p</code>, search for command &ldquo;Dev Containers: Attach to Running Container&hellip;&rdquo;.</li>
+<li>Choose and click the container you want to open.</li>
+<li>That&rsquo;s it.</li>
+</ol>
+<h2 id="6-proxy">6. Proxy</h2>
+<p>Somethimes you may need to set the proxy for your subsystem.</p>
+<p>From my experience, the easiest way is to turn on <code>System Proxy</code> and <code>TUN Mode</code> in clash or v2ray on windows, and your WSL and the running containers will automatically use the proxy.</p>
+<h2 id="7-default-user">7. Default User</h2>
+<p>You can set the default user for a WSL distribution by modifying the <code>/etc/wsl.conf</code> file.</p>
+<p>First, login to a WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="n">-d</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Then, create or modify the <code>/etc/wsl.conf</code> file:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo vim /etc/wsl.conf
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Add the following lines to the file:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="line"><span class="cl"><span class="k">[user]</span>
+</span></span><span class="line"><span class="cl"><span class="na">default</span><span class="o">=</span><span class="s">&lt;your-username&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="8-hostname">8. Hostname</h2>
+<p>You can set the hostname for a WSL distribution by modifying the <code>/etc/hostname</code> file.</p>
+<p>First, login to a WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="n">-d</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Then, create or modify the <code>/etc/wsl.conf</code> file:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo vim /etc/wsl.conf
+</span></span></code></pre></div><p>Add the following lines to the file:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="line"><span class="cl"><span class="k">[network]</span>
+</span></span><span class="line"><span class="cl"><span class="na">hostname</span> <span class="o">=</span> <span class="s">&lt;your-hostname&gt;</span>
+</span></span></code></pre></div><h2 id="9-compress-the-wsl-file-system">9. Compress the WSL File System</h2>
+<blockquote>
+<p>Virtual disk files will grow automatically as you add files, but they will not shrink automatically when you delete files. This can lead to a large virtual disk file that takes up a lot of space on your hard drive.</p></blockquote>
+<p>First, search for a <code>.vdhx</code> file in your computer, which is the virtual disk file for your WSL distribution. The default location is &ldquo;C:/Users/&lt;your-username&gt;/AppData/Local/wsl/&lt;hash-value&gt;/ext4.vhdx&rdquo;.</p>
+<p>Then, run the following command in PowerShell:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-shutdown</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>After that, run <code>diskpart</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">diskpart</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>In the pop-up window, run the following commands:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="nb">select </span><span class="n">vdisk</span> <span class="n">file</span><span class="p">=</span><span class="s2">&#34;&lt;path-to-your-vhdx-file&gt;&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="n">compact</span> <span class="n">vdisk</span>
+</span></span><span class="line"><span class="cl"><span class="n">detach</span> <span class="n">vdisk</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item><item><title>Docker Container with Nvidia GPU Support</title><link>https://jamesnulliu.github.io/blogs/docker-container-with-nvidia-gpu-support/</link><pubDate>Thu, 08 Aug 2024 12:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/docker-container-with-nvidia-gpu-support/</guid><description>How to create a Docker container with Nvidia GPU support.</description><content:encoded><![CDATA[<blockquote>
+<p>Offical Docs:</p>
+<ol>
+<li><a href="https://docs.docker.com/engine/install/ubuntu/">Install Docker Engine on Ubuntu</a></li>
+<li><a href="https://docs.docker.com/engine/install/centos/">Install Docker Engine on CentOS</a></li>
+<li><a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html">Installing the NVIDIA Container Toolkit</a></li>
+</ol></blockquote>
+<h2 id="1-installation">1. Installation</h2>
+<h3 id="11-uninstall-docker">1.1. Uninstall Docker</h3>
+<p>For Ubuntu/Debian:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Uninstall old versions</span>
+</span></span><span class="line"><span class="cl">sudo apt-get remove docker.io docker-doc docker-compose docker-compose-v2 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    podman-docker containerd runc
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Uninstall docker engine</span>
+</span></span><span class="line"><span class="cl">sudo apt-get purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-compose-plugin docker-ce-rootless-extras
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For CentOS/RHEL:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Uninstall old versions</span>
+</span></span><span class="line"><span class="cl">sudo yum remove docker docker-client docker-client-latest docker-common <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-latest docker-latest-logrotate docker-logrotate docker-engine
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Uninstall docker engine</span>
+</span></span><span class="line"><span class="cl">sudo yum remove docker-ce docker-ce-cli containerd.io docker-buildx-plugin <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-compose-plugin docker-ce-rootless-extras
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo rm -rf /var/lib/docker
+</span></span><span class="line"><span class="cl">sudo rm -rf /var/lib/containerd
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="12-install-docker">1.2. Install Docker</h3>
+<p>For Ubuntu/Debian:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Add Docker&#39;s official GPG key:</span>
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">sudo apt-get install ca-certificates curl
+</span></span><span class="line"><span class="cl">sudo install -m <span class="m">0755</span> -d /etc/apt/keyrings
+</span></span><span class="line"><span class="cl">sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -o /etc/apt/keyrings/docker.asc
+</span></span><span class="line"><span class="cl">sudo chmod a+r /etc/apt/keyrings/docker.asc
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Add the repository to Apt sources:</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  <span class="s2">&#34;deb [arch=</span><span class="k">$(</span>dpkg --print-architecture<span class="k">)</span><span class="s2"> signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+</span></span></span><span class="line"><span class="cl"><span class="s2">  </span><span class="k">$(</span>. /etc/os-release <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$VERSION_CODENAME</span><span class="s2">&#34;</span><span class="k">)</span><span class="s2"> stable&#34;</span> <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  sudo tee /etc/apt/sources.list.d/docker.list &gt; /dev/null
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Install Docker Engine:</span>
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">sudo apt-get install docker-ce docker-ce-cli containerd.io <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-buildx-plugin docker-compose-plugin
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Enable and start the Docker service:</span>
+</span></span><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> docker
+</span></span><span class="line"><span class="cl">sudo systemctl start docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For CentOS/RHEL:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo yum install -y yum-utils
+</span></span><span class="line"><span class="cl">sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo yum install docker-ce docker-ce-cli containerd.io docker-buildx-plugin <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-compose-plugin
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> docker
+</span></span><span class="line"><span class="cl">sudo systemctl start docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="13-install-nvidia-container-toolkit">1.3. Install Nvidia Container Toolkit</h3>
+<p>For Ubuntu/Debian:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey <span class="p">|</span> sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  <span class="o">&amp;&amp;</span> curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    sed <span class="s1">&#39;s#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g&#39;</span> <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Optionally, configure the repository to use experimental packages:</span>
+</span></span><span class="line"><span class="cl">sed -i -e <span class="s1">&#39;/experimental/ s/^#//g&#39;</span> /etc/apt/sources.list.d/nvidia-container-toolkit.list
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo apt-get install -y nvidia-container-toolkit
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo systemctl restart docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For CentOS/RHEL:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Optionally, configure the repository to use experimental packages:</span>
+</span></span><span class="line"><span class="cl">sudo yum-config-manager --enable nvidia-container-toolkit-experimental
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo yum install -y nvidia-container-toolkit
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo systemctl restart docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2-create-a-container">2. Create a Container</h2>
+<p>Choose a base image that supports Nvidia GPU in doker hub of <a href="https://hub.docker.com/r/nvidia/cuda/">nvidia/cuda</a>, run the following command to create a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -it  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --gpus all <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --name &lt;container_name&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -v <span class="nv">$HOME</span>/data:/root/data <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -p &lt;host_port&gt;:&lt;container_port&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --entrypoint /bin/bash <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --shm-size &lt;shm-size&gt;G <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    &lt;image_name&gt;:&lt;tag&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>If you need a concise mannual for docker images and containers, see this blog: <a href="/blogs/something-about-docker/">Something about Docker</a></p>
+]]></content:encoded></item><item><title>Something about Docker</title><link>https://jamesnulliu.github.io/blogs/something-about-docker/</link><pubDate>Thu, 08 Aug 2024 12:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/something-about-docker/</guid><description>Something about docker.</description><content:encoded><![CDATA[<blockquote>
+<p>Check this blog if you want a <a href="/blogs/docker-container-with-nvidia-gpu-support/">Docker Container with Nvidia GPU Support</a>.</p></blockquote>
+<h2 id="1-about-image">1. About Image</h2>
+<h3 id="11-check-existing-images-and-statistics">1.1. Check Existing Images and Statistics</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># List all images</span>
+</span></span><span class="line"><span class="cl">docker images
+</span></span><span class="line"><span class="cl"><span class="c1"># Check disk usage of docker (images, conatiners)</span>
+</span></span><span class="line"><span class="cl">docker system df
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To list all images not being used by any container, run:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker images --filter <span class="s2">&#34;dangling=false&#34;</span> -q <span class="p">|</span> xargs -r docker inspect --format <span class="s1">&#39;{{ .Id }} {{ .RepoTags }}&#39;</span> <span class="p">|</span> grep -v <span class="s1">&#39;&lt;none&gt;&#39;</span> <span class="p">|</span> <span class="k">while</span> <span class="nb">read</span> id tags<span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> ! docker ps -a --format <span class="s1">&#39;{{.Image}}&#39;</span> <span class="p">|</span> grep -q <span class="s2">&#34;</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$tags</span> <span class="p">|</span> cut -d<span class="s1">&#39;[&#39;</span> -f2 <span class="p">|</span> cut -d<span class="s1">&#39;]&#39;</span> -f1<span class="k">)</span><span class="s2">&#34;</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$id</span><span class="s2"> </span><span class="nv">$tags</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">fi</span>
+</span></span><span class="line"><span class="cl"><span class="k">done</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="12-rename-an-image">1.2. Rename an Image</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker tag &lt;image-id&gt; &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="13-pull-an-image">1.3. Pull an Image</h3>
+<p>Search for an image in <a href="https://hub.docker.com/">Docker Hub</a>.</p>
+<p>Pull the image by running:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker pull &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Or download the layers to <code>&lt;dir-path&gt;</code> by using <a href="https://github.com/moby/moby/blob/master/contrib/download-frozen-image-v2.sh">this script</a>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir -p &lt;dir-path&gt;  <span class="c1"># Directory to store the layers</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">bash download-frozen-image-v2.sh &lt;dir-path&gt; &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Load the image</span>
+</span></span><span class="line"><span class="cl">tar -cC &lt;dir-path&gt; . <span class="p">|</span> docker load
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="14-build-an-image">1.4. Build an Image</h3>
+<p>Use a Dockerfile to build a new image based on an existing image.</p>
+<p>Check this example project: <a href="https://github.com/jamesnulliu/deeplearning-docker-build/blob/main/Dockerfile" target="_blank" rel="noopener noreferrer">
+    jamesnulliu/deeplearning-docker-build
+</a>
+.</p>
+<p>The following command in <a href="https://github.com/jamesnulliu/deeplearning-docker-build/blob/main/scripts/build.sh" target="_blank" rel="noopener noreferrer">
+    ./scripts/build.sh
+</a>
+ would build image <code>&lt;image-name&gt;:&lt;image-tag&gt;</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker build <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -f Dockerfile <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -t jamesnulliu/deeplearning:torch2.6-cuda12.6-ubuntu24.04 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    .
+</span></span></code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>Note that <code>.</code> specifiles the build context, where docker can reference (e.g., <code>COPY</code> and <code>ADD</code>) the containing files during the build process. You can change it to other directory path according to your needs.</p></blockquote>
+<p>You will find the new image after building by runing <code>docker images</code>.</p>
+<h3 id="15-save-an-image-to-a-tar-file">1.5. Save an Image to a tar File</h3>
+<p>To export an image to a tar file with reusable layer imformations, run the following command:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker save -o &lt;some-name&gt;.tar &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># Or</span>
+</span></span><span class="line"><span class="cl">docker save -o &lt;some-name&gt;.tar &lt;image-id&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>See <a href="/blogs/something-about-docker/#16-load-an-image">1.6. Load an Image</a> to load the generated tar file to an image.</p>
+<h3 id="16-load-an-image">1.6. Load an Image</h3>
+<p>Suppose you have a tar file <code>&lt;some-name&gt;.tar</code>, if the file is generated by <code>docker save</code> (see <a href="/blogs/something-about-docker/#15-save-an-image-to-a-tar-file">1.5. Save an Image to a tar File</a>), load the image by running:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker load -i &lt;some-name&gt;.tar
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Or if the file is generated by <code>docker export</code> (see <a href="/blogs/something-about-docker/#24-export-a-container-to-a-tar-file">2.4 Export a container to a tar File</a>), load the container to an image by running:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker import &lt;some-name&gt;.tar &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="17-remove-an-image">1.7. Remove an Image</h3>
+<p>Before removing an image, you need to:</p>
+<ul>
+<li>Stop containers using the image: <code>docker stop &lt;container-id&gt;</code>.</li>
+<li>Remove containers using the image: <code>docker rm &lt;container-id&gt;</code>.</li>
+</ul>
+<p>Then remove the image:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker rmi &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># Or</span>
+</span></span><span class="line"><span class="cl">docker rmi &lt;image-id&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2-about-container">2. About Container</h2>
+<h3 id="21-check-existing-containers-and-statistics">2.1. Check Existing Containers and Statistics</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># List running/[all] containers</span>
+</span></span><span class="line"><span class="cl">docker ps <span class="o">[</span>-a<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Check statistics of all/[some] containers</span>
+</span></span><span class="line"><span class="cl">docker stats <span class="o">[</span>&lt;container-id&gt;<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Check disk usage of docker (images, conatiners)</span>
+</span></span><span class="line"><span class="cl">docker system df
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="22-create-a-container">2.2. Create a Container</h3>
+<p>Basic Parameters:</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to expand</summary>
+    <div><ul>
+<li><code>-it</code>: Interactive mode with pseudo-TTY terminal</li>
+<li><code>--name &lt;container-name&gt;</code>: Assign a name to the container for easier reference</li>
+<li><code>-p &lt;host-port&gt;:&lt;container-port&gt;</code>: Map host port to container port (e.g. <code>8888:22</code>)</li>
+<li><code>--entrypoint /bin/bash</code>: Override default entrypoint with bash shell</li>
+<li><code>&lt;image-name&gt;</code>: Name of the Docker image to use (e.g. <code>ubuntu</code>, <code>nvidia/cuda</code>)</li>
+<li><code>&lt;image-tag&gt;</code>: Version/tag of the image (e.g. <code>latest</code>, <code>20.04</code>)</li>
+</ul>
+</div>
+</details><br>
+<p>Additional Options:</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to expand</summary>
+    <div><ul>
+<li><code>--shm-size &lt;shm-size&gt;G</code>: Set size of /dev/shm (shared memory) in GB (e.g. <code>2G</code>)</li>
+<li><code>--gpus all</code>: [Optional] Give container access to all GPUs (requires nvidia-docker)</li>
+<li><code>-v &lt;host-path&gt;:&lt;container-path&gt;</code>: Mount host directory into container</li>
+<li><code>-e KEY=VALUE</code>: Set environment variables</li>
+<li><code>--network=host</code>: Use host network stack; If set, <code>-p</code> is not needed, and you can access host services directly with <code>localhost</code></li>
+<li><code>--ipc=host</code>: Use host IPC namespace</li>
+<li><code>--privileged</code>: Give extended privileges to container</li>
+<li><code>-u $(id -u):$(id -g)</code>: Run as current user instead of root</li>
+<li><code>--rm</code>: Automatically remove container when it exits</li>
+</ul>
+</div>
+</details><br>
+<p>Example:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Create and run a container from &lt;image-name&gt;:&lt;image-tag&gt;</span>
+</span></span><span class="line"><span class="cl">docker run -it <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --gpus all <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --name &lt;container-name&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -p &lt;host-port&gt;:&lt;container-port&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --entrypoint /bin/bash <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --shm-size &lt;shm-size&gt;G <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># Now you are in the container.</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To exit container and return to host, run <code>exit</code>, which will stop the containter; Or type <code>Ctrl+P+Q</code>, which will detach from container without stopping it.</p>
+<h3 id="23-start-stop-remove-and-rename-a-container">2.3. Start, Stop, Remove and Rename a Container</h3>
+<p>Start a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker start &lt;container-name&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Attach to a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker <span class="nb">exec</span> -it &lt;container-name&gt; bash
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Stop a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker stop &lt;contianer-name&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Remove a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker rm &lt;container-name&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Rename a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker rename &lt;container-id&gt; &lt;new-name&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># or</span>
+</span></span><span class="line"><span class="cl">docker rename &lt;old-name&gt; &lt;new-name&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="24-export-a-container-to-a-tar-file">2.4. Export a Container to a tar File</h3>
+<p>Note that <code>docker export</code> only exports the container&rsquo;s filesystem without layer information. It is more recommended to use <code>docker save</code> to save a image to a tar file (see <a href="/blogs/something-about-docker/#15-save-an-image-to-a-tar-file">1.5. Save an Image to a tar File</a>).</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker <span class="nb">export</span> &lt;container-id&gt; &gt; &lt;some-name&gt;.tar
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>See <a href="/blogs/something-about-docker/#16-load-an-image">1.6. Load an Image</a> to load the generated tar file to an image.</p>
+<h2 id="3-change-docker-root-directory-to-a-different-location">3. Change Docker Root Directory to a Different Location</h2>
+<p>Check current docker root directory:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker info <span class="p">|</span> grep <span class="s2">&#34;Docker Root Dir&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Stop docker daemon:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">systemctl stop docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Edit (or create) the docker configuration file:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vim /etc/docker/daemon.json
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Add or modify the configuration:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;data-root&#34;</span><span class="p">:</span> <span class="s2">&#34;&lt;target-docker-root&gt;&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Copy the existing docker data to target location:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rsync -aP &lt;current-docker-root&gt; &lt;target-docker-root&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Restart docker daemon:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">systemctl daemon-reload
+</span></span><span class="line"><span class="cl">systemctl start docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Verify the new location:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker info <span class="p">|</span> grep <span class="s2">&#34;Docker Root Dir&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item><item><title>Environment Variable Management on Linux</title><link>https://jamesnulliu.github.io/blogs/environment-variable-management-on-linux/</link><pubDate>Wed, 31 Jul 2024 14:51:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/environment-variable-management-on-linux/</guid><description>An easy way to manage environment variables on Linux using load and unload.</description><content:encoded><![CDATA[<p>Open <code>~/.bashrc</code> file.</p>
+<p>Create 2 functions to load and unload environment variables:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">env_load<span class="o">()</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">env_var</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">path</span><span class="o">=</span><span class="nv">$2</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">[[</span> <span class="s2">&#34;:</span><span class="si">${</span><span class="p">!env_var</span><span class="si">}</span><span class="s2">:&#34;</span> !<span class="o">=</span> *<span class="s2">&#34;:</span><span class="nv">$path</span><span class="s2">:&#34;</span>* <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">export</span> <span class="nv">$env_var</span><span class="o">=</span><span class="s2">&#34;</span><span class="si">${</span><span class="p">!env_var</span><span class="si">}</span><span class="s2">:</span><span class="nv">$path</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">env_unload<span class="o">()</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">env_var</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">path</span><span class="o">=</span><span class="nv">$2</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">paths_array</span><span class="o">=(</span><span class="si">${</span><span class="p">!env_var//:/ </span><span class="si">}</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">new_paths</span><span class="o">=()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> item in <span class="s2">&#34;</span><span class="si">${</span><span class="nv">paths_array</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="o">[[</span> <span class="s2">&#34;</span><span class="nv">$item</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;</span><span class="nv">$path</span><span class="s2">&#34;</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">            <span class="nv">new_paths</span><span class="o">+=(</span><span class="s2">&#34;</span><span class="nv">$item</span><span class="s2">&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">    <span class="k">done</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">export</span> <span class="nv">$env_var</span><span class="o">=</span><span class="k">$(</span><span class="nv">IFS</span><span class="o">=</span>:<span class="p">;</span> <span class="nb">echo</span> <span class="s2">&#34;</span><span class="si">${</span><span class="nv">new_paths</span><span class="p">[*]</span><span class="si">}</span><span class="s2">&#34;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Now, you can use <code>env_load</code> and <code>env_unload</code> to manage environment variables.</p>
+<p>For example, to manage CUDA environment, add these lines to <code>~/.bashrc</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">CUDA_HOME</span><span class="o">=</span><span class="s2">&#34;/usr/local/cuda-12.1&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">alias</span> <span class="nv">LOAD_CUDA</span><span class="o">=</span><span class="s2">&#34;env_load PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/bin; env_load LD_LIBRARY_PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/lib64&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">alias</span> <span class="nv">UNLOAD_CUDA</span><span class="o">=</span><span class="s2">&#34;env_unload PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/bin; env_unload LD_LIBRARY_PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/lib64&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="related-blogs">Related Blogs</h2>
+<ul>
+<li><a href="/blogs/user-management-on-linux" target="_blank" rel="noopener noreferrer">
+    User Management on Linux
+</a>
+</li>
+</ul>
+]]></content:encoded></item><item><title>User Management on Linux</title><link>https://jamesnulliu.github.io/blogs/user-management-on-linux/</link><pubDate>Sat, 06 Jul 2024 07:04:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/user-management-on-linux/</guid><description>Some useful commands for user management on Linux.</description><content:encoded><![CDATA[<h2 id="1-list-add-and-remove-a-user">1. List, Add and Remove a User</h2>
+<p>List all users:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">cat /etc/passwd
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Add a new user:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># - `-m`: Creates the user&#39;s home directory.</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># - `-s`: Specifies the user&#39;s login shell.</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># - `-c`: Provides a comment, typically the user&#39;s full name.</span>
+</span></span><span class="line"><span class="cl">useradd -m -s /bin/bash -c <span class="s2">&#34;&lt;full-name&gt;&#34;</span> &lt;username&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Set password after the user is created</span>
+</span></span><span class="line"><span class="cl">passwd &lt;username&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Remove an existing user:</p>
+<p>Remove the user from the sudo or wheel group (if they were in) before deleting them:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">gpasswd -d &lt;username&gt; sudo
+</span></span><span class="line"><span class="cl">gpasswd -d &lt;username&gt; wheel
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># `-r`: Removes the user&#39;s home directory and mail spool.</span>
+</span></span><span class="line"><span class="cl">userdel -r &lt;username&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2-change-the-password-of-a-user">2. Change the Password of a User</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">passwd &lt;username&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="3-superuser">3. Superuser</h2>
+<p>Grant write permission to <code>/etc/sudoers</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">chmod u+w /etc/sudoers
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>There are four ways to make a user a superuser:</p>
+<ol>
+<li>Add <code>&lt;username&gt; ALL=(ALL:ALL) ALL</code> to the end of the file <code>/etc/sudoers</code>. This allows the user to execute any command with prefix <code>sudo</code> after entering the password.</li>
+<li>Add <code>&lt;username&gt; ALL=(ALL:ALL) NOPASSWD: ALL</code> to the end of the file <code>/etc/sudoers</code>. This allows the user to execute any command with prefix <code>sudo</code> without entering the password.</li>
+<li>Add <code>%&lt;groupname&gt; ALL=(ALL:ALL) ALL</code> to the end of the file <code>/etc/sudoers</code>. This allows all users in the group to execute any command with prefix <code>sudo</code> after entering the password.</li>
+<li>Add <code>%&lt;groupname&gt; ALL=(ALL:ALL) NOPASSWD: ALL</code> to the end of the file <code>/etc/sudoers</code>. This allows all users in the group to execute any command with prefix <code>sudo</code> without entering the password.</li>
+</ol>
+<p>Return the file <code>/etc/sudoers</code> to read-only mode:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">chmod u-w /etc/sudoers
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="4-user-groups">4. User Groups</h2>
+<p>List all user groups:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">cat /etc/group
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>List the groups a user is in:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">groups &lt;username&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Create a new group:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">groupadd &lt;groupname&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Add a user to a group:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">gpasswd -a &lt;username&gt; &lt;groupname&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Remove a user from a group:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">gpasswd -d &lt;username&gt; &lt;groupname&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="5-onwership-and-permission-of-files-and-directories">5. Onwership and Permission of Files and Directories</h2>
+<p>To check the owership and the permission of a file or directory:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># File:</span>
+</span></span><span class="line"><span class="cl">ls -l &lt;filename&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># Directory:</span>
+</span></span><span class="line"><span class="cl">ls -ld &lt;dirname&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># List all files including the hidden ones</span>
+</span></span><span class="line"><span class="cl">ls -la
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Output example:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Permision|*|owner|group|bytes|   date    |file/dirname</span>
+</span></span><span class="line"><span class="cl">drwxr-xr-x  <span class="m">2</span> james james <span class="m">4096</span>  Dec <span class="m">2</span> 11:02 example-dir/
+</span></span><span class="line"><span class="cl"><span class="c1"># *: Number of subdirectories.</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#    If file, usually starts at 1; Numbers higher than 1 indicate how many hard </span>
+</span></span><span class="line"><span class="cl"><span class="c1">#    links point to this file.</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#    If directory, the minimum value is 2 (&#34;.&#34; and &#34;..&#34;).</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To break down <code>drwxr-xr-x</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">d | rwx | r-x | r-x
+</span></span><span class="line"><span class="cl">↓   ↓     ↓     ↓
+</span></span><span class="line"><span class="cl">|   |     |     └── Others permissions (last 3 chars), 101=5
+</span></span><span class="line"><span class="cl">|   |     └──────── Group permissions (middle 3), 101=5
+</span></span><span class="line"><span class="cl">|   └────────────── Owner permissions (first 3), 111=7
+</span></span><span class="line"><span class="cl">└────────────────── File type, d = directory; - = regular file; l = symbolic 
+</span></span><span class="line"><span class="cl">                    link; b = block device; c = character device
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To change the ownership:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">chown <span class="o">[</span>-R<span class="o">]</span> &lt;user&gt;:&lt;group&gt; &lt;filename/dirname&gt;
+</span></span><span class="line"><span class="cl">chown <span class="o">[</span>-R<span class="o">]</span> :&lt;group&gt; &lt;filename/dirname&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To change the permission using numeric mode:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">chmod <span class="o">[</span>-R<span class="o">]</span> <span class="m">764</span> &lt;filename/dirname&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Where:</p>
+<ul>
+<li><code>7=0b100+0b010+0b001</code>, owner can Read Write Execute.</li>
+<li><code>6=0b100+0b010+0b000</code>, group can Read Write.</li>
+<li><code>4=0b100+0b000+0b000</code>, other can Read.</li>
+</ul>
+<p>To change the permission using symbolic mode:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">chmod +r foldername       <span class="c1"># Add read for everyone</span>
+</span></span><span class="line"><span class="cl">chmod a+r foldername      <span class="c1"># Add read for everyone</span>
+</span></span><span class="line"><span class="cl">chmod u+r foldername      <span class="c1"># Add read for owner only</span>
+</span></span><span class="line"><span class="cl">chmod g+r foldername      <span class="c1"># Add read for group only</span>
+</span></span><span class="line"><span class="cl">chmod o+r foldername      <span class="c1"># Add read for others only</span>
+</span></span><span class="line"><span class="cl">chmod a-rwx file          <span class="c1"># Remove all permissions from all</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ...</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="6-shared-directory">6. Shared Directory</h2>
+<p>To create a shared directory for all users in the same group being able to create, modify, execute, and delete files:</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to see file: create-shared-dir</summary>
+    <div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="cp">#!/bin/bash
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> -e
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># =============================================================================</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Script: create-shared-dir</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Description: Configures one or more directories to be shared with a specific</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#              group.</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># It performs the following actions on each target directory:</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#   1. Creates the directory if it doesn&#39;t exist.</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#   2. Recursively sets the group ownership.</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#   3. Sets permissions (group: rwx, others: none).</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#   4. Sets the &#39;setgid&#39; bit on subdirectories to enforce group inheritance.</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#   5. Uses Access Control Lists (ACLs) to enforce permissions for new items.</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Usage:</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#   sudo create-shared-dir &lt;shared_group&gt; &lt;dir1&gt; [&lt;dir2&gt; ...]</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Example:</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#   sudo create-shared-dir developers /srv/data /home/shared/project</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># =============================================================================</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># --- Argument Parsing ---</span>
+</span></span><span class="line"><span class="cl"><span class="nv">SHARED_GROUP</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">shift</span> <span class="c1"># Shift arguments so $@ contains only the directories</span>
+</span></span><span class="line"><span class="cl"><span class="nv">TARGET_DIRS</span><span class="o">=(</span><span class="s2">&#34;</span><span class="nv">$@</span><span class="s2">&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># --- Input Validation ---</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="o">[</span> <span class="si">${#</span><span class="nv">TARGET_DIRS</span><span class="p">[@]</span><span class="si">}</span> -eq <span class="m">0</span> <span class="o">]</span> <span class="o">||</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span> <span class="o">==</span> <span class="s2">&#34;-h&#34;</span> <span class="o">]</span> <span class="o">||</span> <span class="o">[</span> <span class="s2">&#34;</span><span class="nv">$1</span><span class="s2">&#34;</span> <span class="o">==</span> <span class="s2">&#34;--help&#34;</span> <span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="k">then</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;Usage: </span><span class="nv">$0</span><span class="s2"> &lt;shared_group&gt; &lt;dir1&gt; [&lt;dir2&gt; ...]&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;Example: </span><span class="nv">$0</span><span class="s2"> developers /var/www/project_a&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">exit</span> <span class="m">1</span>
+</span></span><span class="line"><span class="cl"><span class="k">fi</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># --- Pre-flight Checks ---</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 1. Check for root privileges.</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="o">[[</span> <span class="nv">$EUID</span> -ne <span class="m">0</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;Error: This script must be run as root (or with sudo).&#34;</span> &gt;<span class="p">&amp;</span><span class="m">2</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">exit</span> <span class="m">1</span>
+</span></span><span class="line"><span class="cl"><span class="k">fi</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 2. Check if the specified group exists.</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> ! getent group <span class="s2">&#34;</span><span class="nv">$SHARED_GROUP</span><span class="s2">&#34;</span> &gt; /dev/null<span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;Error: Group &#39;</span><span class="nv">$SHARED_GROUP</span><span class="s2">&#39; does not exist.&#34;</span> &gt;<span class="p">&amp;</span><span class="m">2</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">exit</span> <span class="m">1</span>
+</span></span><span class="line"><span class="cl"><span class="k">fi</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># --- Main Logic ---</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="s2">&#34;Configuring shared directories for group &#39;</span><span class="nv">$SHARED_GROUP</span><span class="s2">&#39;...&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">for</span> target_dir in <span class="s2">&#34;</span><span class="si">${</span><span class="nv">TARGET_DIRS</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;--&gt; Processing: </span><span class="nv">$target_dir</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">    mkdir -p <span class="s2">&#34;</span><span class="nv">$target_dir</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">    chgrp -R <span class="s2">&#34;</span><span class="nv">$SHARED_GROUP</span><span class="s2">&#34;</span> <span class="s2">&#34;</span><span class="nv">$target_dir</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">    chmod -R <span class="nv">g</span><span class="o">=</span>rwX,o-rwx <span class="s2">&#34;</span><span class="nv">$target_dir</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">    find <span class="s2">&#34;</span><span class="nv">$target_dir</span><span class="s2">&#34;</span> -type d -exec chmod g+s <span class="o">{}</span> +
+</span></span><span class="line"><span class="cl">    setfacl -R -m <span class="s2">&#34;g:</span><span class="nv">$SHARED_GROUP</span><span class="s2">:rwX&#34;</span> <span class="s2">&#34;</span><span class="nv">$target_dir</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">    setfacl -R -d -m <span class="s2">&#34;g:</span><span class="nv">$SHARED_GROUP</span><span class="s2">:rwX&#34;</span> <span class="s2">&#34;</span><span class="nv">$target_dir</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="k">done</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="s2">&#34;Configuration complete.&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">exit</span> <span class="m">0</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></div>
+</details><br>
+<p>You may put the file to &ldquo;/usr/local/bin/create-shared-dir&rdquo;, and then change its mode with command:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">chmod +x /usr/local/bin/create-shared-dir
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Then you can run the script with the desired parameters, for example:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo create-shared-dir developers /srv/data /home/shared/project
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="related-blogs">Related Blogs</h2>
+<ul>
+<li><a href="/blogs/environment-variable-management-on-linux/">Environment Varialble Management on Linux</a></li>
+</ul>
+]]></content:encoded></item><item><title>Turn off The Buzzer</title><link>https://jamesnulliu.github.io/blogs/turn-off-the-buzzer/</link><pubDate>Sat, 06 Jul 2024 06:41:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/turn-off-the-buzzer/</guid><description>How to close the buzzer on Linux?</description><content:encoded><![CDATA[<p>The buzzer is a small speaker that emits a beep sound. It is used to notify the user of system events. However, sometimes the beep sound is annoying. To close the buzzer on Linux system, execute the following command:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo bash -c <span class="s2">&#34;echo blacklist pcspkr &gt; /etc/modprobe.d/blacklist-pcspkr.conf&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Reboot</span>
+</span></span><span class="line"><span class="cl">sudo reboot
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item><item><title>Install Nvidia Driver and CUDA Toolkit on Rocky 9</title><link>https://jamesnulliu.github.io/blogs/install-nvidia-driver-and-cuda-toolkit-on-rocky-9/</link><pubDate>Sat, 06 Jul 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/install-nvidia-driver-and-cuda-toolkit-on-rocky-9/</guid><description>How to install Nvidia driver and CUDA toolkit on Rocky 9.</description><content:encoded><![CDATA[<p>To stop and disable gdm service (which is the default display manager):</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo systemctl disable gdm
+</span></span><span class="line"><span class="cl">sudo systemctl stop gdm
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To disable the default nouveau driver:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo bash -c <span class="s2">&#34;echo blacklist nouveau &gt; /etc/modprobe.d/blacklist-nvidia-nouveau.conf&#34;</span>
+</span></span><span class="line"><span class="cl">sudo bash -c <span class="s2">&#34;echo options nouveau modeset=0 &gt;&gt; /etc/modprobe.d/blacklist-nvidia-nouveau.conf&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Update the kernel initramfs</span>
+</span></span><span class="line"><span class="cl">sudo dracut --force
+</span></span><span class="line"><span class="cl"><span class="c1"># Reboot</span>
+</span></span><span class="line"><span class="cl">sudo reboot
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Install epel-release and dkms:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnf install epel-release
+</span></span><span class="line"><span class="cl">sudo dnf install dkms
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Download the installation <strong>LOCAL RUN FILE</strong> of <strong>THE LATEST</strong> CUDA Toolkit (&gt;=12.5) from <a href="https://developer.nvidia.com/cuda-downloads">NVIDIA official website</a> and install it (with driver).</p>
+<blockquote>
+<p>💬 There is a bug of the compatibility of the new linux kernel and previous cuda derviers (less than 555). You could install other versions of cuda toolkit but keep the latest driver.</p></blockquote>
+<p>To enable and start gdm service:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> gdm
+</span></span><span class="line"><span class="cl">sudo systemctl start gdm
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item></channel></rss>

@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Programming on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/categories/programming/</link><description>Recent content in Programming on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 16:00:18 -0700</lastBuildDate><atom:link href="https://jamesnulliu.github.io/categories/programming/index.xml" rel="self" type="application/rss+xml"/><item><title>VSCode: Debug C++</title><link>https://jamesnulliu.github.io/blogs/vscode-debug-cxx/</link><pubDate>Wed, 09 Oct 2024 11:35:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/vscode-debug-cxx/</guid><description>How to configure launch.json in VSCode for debugging C++</description><content:encoded><![CDATA[<blockquote>
+<p>Here is my template repository of building a CMake-CXX project (with CUDA): <a href="https://github.com/jamesnulliu/VSC-CMake-CXX-Project-Template">VSC-CMake-CXX-Project-Template</a> !</p></blockquote>
+<p>Suppose that you are managing your project with CMake. To build an executable, first write all your build commands in a bash script. For example, create a new file &ldquo;./scripts/build.sh&rdquo;:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">build_type</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl">cmake -S . -B ./build -DCMAKE_BUILD_TYPE<span class="o">=</span><span class="nv">$build_type</span>
+</span></span><span class="line"><span class="cl">cmake --build ./build -j <span class="k">$(</span>nproc<span class="k">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Second, add the following code to &ldquo;./.vscode/tasks.json&rdquo; (create the file if it does not exist):</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;version&#34;</span><span class="p">:</span> <span class="s2">&#34;2.0.0&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;tasks&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Other tasks...,
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Task name, anything you want, must match the preLaunchTask in 
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="c1">// launch.json
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;label&#34;</span><span class="p">:</span> <span class="s2">&#34;Build: Debug 01&#34;</span><span class="p">,</span>  
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;shell&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Command: bash &lt;script&gt; &lt;args...&gt;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;command&#34;</span><span class="p">:</span> <span class="s2">&#34;bash&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;args&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// Your build script path
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="s2">&#34;${workspaceFolder}/scripts/build.sh&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// Build script arguments
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="s2">&#34;Debug&#34;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">],</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;group&#34;</span><span class="p">:</span> <span class="s2">&#34;build&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Other tasks...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Next, add the following code to &ldquo;./.vscode/launch.json&rdquo; (create the file if it does not exist):</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;version&#34;</span><span class="p">:</span> <span class="s2">&#34;0.2.0&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;configurations&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Other configurations...,
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Launch configuration name, anything you want
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;Launch: Debug 01&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;cppdbg&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;request&#34;</span><span class="p">:</span> <span class="s2">&#34;launch&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Path to the generated executable
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;program&#34;</span><span class="p">:</span> <span class="s2">&#34;${workspaceFolder}/&lt;path-to-generated-executable&gt;&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Arguments to pass to the program
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;args&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;arg1&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;arg2&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// Other arguments...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="p">],</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;externalConsole&#34;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;stopAtEntry&#34;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Working directory
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;cwd&#34;</span><span class="p">:</span> <span class="s2">&#34;${workspaceFolder}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// MIMode should be &#34;gdb&#34; for gdb, &#34;lldb&#34; for lldb
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;MIMode&#34;</span><span class="p">:</span> <span class="s2">&#34;gdb&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Path to the gdb executable
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="c1">// Change this to lldb path if you are using lldb
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;miDebuggerPath&#34;</span><span class="p">:</span> <span class="s2">&#34;/usr/bin/gdb&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Pre-launch task, make sure it matches the task label in 
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="c1">// tasks.json
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;preLaunchTask&#34;</span><span class="p">:</span> <span class="s2">&#34;Build: Debug 01&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Environment variables
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;environment&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// This is an example of adding a path to the PATH environment 
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="c1">// variable
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;PATH&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;value&#34;</span><span class="p">:</span> <span class="s2">&#34;&lt;some-path&gt;:${env:PATH}&#34;</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">            <span class="p">],</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;setupCommands&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;description&#34;</span><span class="p">:</span> <span class="s2">&#34;Enable pretty-printing for gdb/lldb&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;text&#34;</span><span class="p">:</span> <span class="s2">&#34;-enable-pretty-printing&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;ignoreFailures&#34;</span><span class="p">:</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">            <span class="p">],</span>
+</span></span><span class="line"><span class="cl">        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Other configurations...,
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Finally, click on the &ldquo;Run and Debug&rdquo; icon on the left sidebar, choose the configuration with the name you specified in &ldquo;launch.json&rdquo;, then click on the green play button to start debugging.</p>
+]]></content:encoded></item><item><title>VSCode: Debug Python</title><link>https://jamesnulliu.github.io/blogs/vscode-debug-python/</link><pubDate>Wed, 09 Oct 2024 10:40:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/vscode-debug-python/</guid><description>How to configure launch.json in VSCode for debugging Python</description><content:encoded><![CDATA[<blockquote>
+<p>Here is my template repository of building a Python project (with Pytorch and cutomized CUDA kernels): <a href="https://github.com/jamesnulliu/VSC-Python-Project-Template">VSC-Pytorch-Project-Template</a> !</p></blockquote>
+<p>First, add the following code to &ldquo;./.vscode/launch.json&rdquo; (create the file if it does not exist):</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;version&#34;</span><span class="p">:</span> <span class="s2">&#34;0.2.0&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;configurations&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Other configurations...,
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;DebugPy: Current File&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;debugpy&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;request&#34;</span><span class="p">:</span> <span class="s2">&#34;launch&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;console&#34;</span><span class="p">:</span> <span class="s2">&#34;integratedTerminal&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Whether to jump to external code when debugging
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;justMyCode&#34;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Path to the Python file to debug; If set to &#34;${file}&#34;, it will 
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="c1">// use the currently opened file
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;program&#34;</span><span class="p">:</span> <span class="s2">&#34;${file}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Arguments to pass to the program
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;args&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;&lt;arg1&gt;&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;&lt;arg2&gt;&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="p">],</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Environment variables
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;env&#34;</span><span class="p">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nt">&#34;&lt;YOUR_ENV_VAR&gt;&#34;</span><span class="p">:</span> <span class="s2">&#34;&lt;VALUE&gt;&#34;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">},</span>
+</span></span><span class="line"><span class="cl">        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Other configurations...,
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Next, click on the &ldquo;Run and Debug&rdquo; icon on the left sidebar, choose the configuration with the name you specified in &ldquo;launch.json&rdquo;, then click on the green play button to start debugging.</p>
+]]></content:encoded></item></channel></rss>
