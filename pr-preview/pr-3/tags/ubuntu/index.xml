@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Ubuntu on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/ubuntu/</link><description>Recent content in Ubuntu on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 21:45:48 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/ubuntu/index.xml" rel="self" type="application/rss+xml"/><item><title>Install GCC-13 on Ubuntu 20 (or Earlier)</title><link>https://jamesnulliu.github.io/blogs/install-gcc-13-on-ubuntu-20/</link><pubDate>Sat, 29 Jun 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/install-gcc-13-on-ubuntu-20/</guid><description>This blog is a tutorial on how to install GCC-13 in Ubuntu 20 (or earlier).</description><content:encoded><![CDATA[<p>Install build essentials.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo apt install build-essential
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Check which version of gcc and g++ is installed on your system:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">gcc -v  <span class="c1"># or g++ -v</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>Suppose</strong> that your currently installed gcc and g++ version is 11, you should be able to find gcc-11 and g++-11 under &ldquo;/usr/bin/&rdquo;:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">ls /usr/bin
+</span></span><span class="line"><span class="cl"><span class="c1"># All files under &#34;/usr/bin&#34; would be listd.</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Now, install gcc-13 and g++-13, while keeping older version existed:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Install gcc-13 and g++-13</span>
+</span></span><span class="line"><span class="cl">sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">sudo apt-get install gcc-13 g++-13
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Register gcc-11 and g++-11 as one group of alternatives</span>
+</span></span><span class="line"><span class="cl">sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 <span class="m">110</span> --slave /usr/bin/g++ g++ /usr/bin/g++-11
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Register gcc-13 and g++-13 as another group of alternatives</span>
+</span></span><span class="line"><span class="cl">sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 <span class="m">130</span> --slave /usr/bin/g++ g++ /usr/bin/g++-13
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Pop a prompt to select the default version of gcc, and g++ would be updated automatically</span>
+</span></span><span class="line"><span class="cl">sudo update-alternatives --config gcc
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For general purpose of C++ programing, it is suggested that gcc-11 and g++-11 is installed on your system. Some softwares may have a strict rule for gcc version not larger than 12.</p>
+]]></content:encoded></item></channel></rss>

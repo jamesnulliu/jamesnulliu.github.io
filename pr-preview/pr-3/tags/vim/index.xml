@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Vim on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/vim/</link><description>Recent content in Vim on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 21:45:48 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/vim/index.xml" rel="self" type="application/rss+xml"/><item><title>My vimrc</title><link>https://jamesnulliu.github.io/blogs/my-vimrc/</link><pubDate>Thu, 21 Nov 2024 13:54:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/my-vimrc/</guid><description>My configurations of vim.</description><content:encoded><![CDATA[<p>Nothing but my self-use configurations of vim.</p>
+<p>Create a file &ldquo;~/.vimrc&rdquo; and write the following content:</p>
+<pre tabindex="0"><code>&#34; All system-wide defaults are set in $VIMRUNTIME/debian.vim and sourced by
+&#34; the call to :runtime you can find below.  If you wish to change any of those
+&#34; settings, you should do it in this file (/etc/vim/vimrc), since debian.vim
+&#34; will be overwritten everytime an upgrade of the vim packages is performed.
+&#34; It is recommended to make changes after sourcing debian.vim since it alters
+&#34; the value of the &#39;compatible&#39; option.
+
+runtime! debian.vim
+
+&#34; Uncomment the next line to make Vim more Vi-compatible
+&#34; NOTE: debian.vim sets &#39;nocompatible&#39;.  Setting &#39;compatible&#39; changes
+&#34; numerous options, so any other options should be set AFTER changing
+&#34; &#39;compatible&#39;.
+&#34;set compatible
+
+&#34; Vim5 and later versions support syntax highlighting. Uncommenting the next
+&#34; line enables syntax highlighting by default.
+if has(&#34;syntax&#34;)
+  syntax on
+endif
+
+&#34; If using a dark background within the editing area and syntax highlighting
+&#34; turn on this option as well
+&#34;set background=dark
+
+&#34; Uncomment the following to have Vim jump to the last position when
+&#34; reopening a file
+au BufReadPost * if line(&#34;&#39;\&#34;&#34;) &gt; 1 &amp;&amp; line(&#34;&#39;\&#34;&#34;) &lt;= line(&#34;$&#34;) | exe &#34;normal! g&#39;\&#34;&#34; | endif
+
+&#34; Uncomment the following to have Vim load indentation rules and plugins
+&#34; according to the detected filetype.
+&#34;filetype plugin indent on
+
+&#34; Source a global configuration file if available
+if filereadable(&#34;/etc/vim/vimrc.local&#34;)
+  source /etc/vim/vimrc.local
+endif
+
+&#34; The following are commented out as they cause vim to behave a lot
+&#34; differently from regular Vi. They are highly recommended though.
+set showcmd             &#34; Show (partial) command in status line.
+set showmatch           &#34; Show matching brackets.
+set ignorecase          &#34; Do case insensitive matching
+set smartcase           &#34; Do smart case matching
+set incsearch           &#34; Incremental search
+set autowrite           &#34; Automatically save before commands like :next and :make
+set hidden              &#34; Hide buffers when they are abandoned
+set mouse=a             &#34; Enable mouse usage (all modes)
+
+set number
+set cursorline
+set cursorcolumn
+set shiftwidth=4
+set tabstop=4
+set expandtab
+set scrolloff=10
+set showmode
+set hlsearch
+
+set autoindent
+set smartindent
+set cindent
+filetype indent on
+
+&#34; Set the menu &amp; message to English
+set langmenu=en_US
+let $LANG=&#39;en_US&#39;
+source $VIMRUNTIME/delmenu.vim
+source $VIMRUNTIME/menu.vim
+
+augroup numbertoggle
+  autocmd!
+  autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if &amp;nu &amp;&amp; mode() != &#34;i&#34; | set rnu   | endif
+  autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &amp;nu                  | set nornu | endif
+augroup END
+
+&#34; Set the menu &amp; message to English
+set langmenu=en_US
+let $LANG=&#39;en_US&#39;
+source $VIMRUNTIME/delmenu.vim
+source $VIMRUNTIME/menu.vim
+</code></pre>]]></content:encoded></item></channel></rss>

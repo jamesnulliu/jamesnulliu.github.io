@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Mlir on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/mlir/</link><description>Recent content in Mlir on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 21:45:48 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/mlir/index.xml" rel="self" type="application/rss+xml"/><item><title>MLIR Tutorial 01 | Running and Testing a Lowering</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/mlir-tutorial-01-running-and-testing-a-lowering/</link><pubDate>Thu, 29 Aug 2024 11:05:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/mlir-tutorial-01-running-and-testing-a-lowering/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<blockquote>
+<p>Reference: <a href="https://www.jeremykun.com/2023/08/10/mlir-running-and-testing-a-lowering/">https://www.jeremykun.com/2023/08/10/mlir-running-and-testing-a-lowering/</a></p></blockquote>
+<p><strong>Note</strong>: Check <a href="../setup-the-environment-of-mlir/">Setup the Environment of MLIR</a> for the environment setup.</p>
+<h2 id="1-implementing-a-lowering">1. Implementing a Lowering</h2>
+<p>Create a file &ldquo;ctlz.mlir&rdquo;:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mlir" data-lang="mlir"><span class="line"><span class="cl"><span class="kt">func</span><span class="p">.</span><span class="kt">func</span> <span class="nf">@main</span><span class="p">(</span><span class="nv">%arg0</span><span class="p">:</span> <span class="k">i32</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="k">i32</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nv">%0</span> <span class="p">=</span> math<span class="p">.</span>ctlz <span class="nv">%arg0</span> <span class="p">:</span> <span class="k">i32</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">func</span><span class="p">.</span><span class="kt">return</span> <span class="nv">%0</span> <span class="p">:</span> <span class="k">i32</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Lower the <code>math.ctlz</code> operation to the <code>llvm.ctlz</code> operation with <code>mlir-opt</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mlir-opt --convert-math-to-funcs<span class="o">=</span>convert-ctlz ./ctlz.mlir
+</span></span></code></pre></div>]]></content:encoded></item><item><title>Toy Ch4 | Enabling Generic Transformation with Interfaces</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch4-enabling-generic-transformation-with-interfaces/</link><pubDate>Thu, 01 Aug 2024 11:11:11 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch4-enabling-generic-transformation-with-interfaces/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<blockquote>
+<p>Reference: <a href="https://mlir.llvm.org/docs/Tutorials/Toy/Ch-4/">https://mlir.llvm.org/docs/Tutorials/Toy/Ch-4/</a></p></blockquote>
+<p><strong>Note</strong>: Check <a href="../setup-the-environment-of-mlir/">Setup the Environment of MLIR</a> for the environment setup.</p>
+<h2 id="1-introduction">1. Introduction</h2>
+<p><strong>Problem</strong>: Naively implementing each transformation for each dialect leads to large amounts of code duplication, as the internal algorithms are generally very similar.</p>
+<p><strong>Solution</strong>: To provide the ability for transformations to opaquely hook into dialects like Toy to get the information they need.</p>
+<h2 id="2-add-opprintinterface">2. Add OpPrintInterface</h2>
+<p>Define a new env var:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">TOY_CH4_HOME</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$MLIR_HOME</span><span class="s2">/examples/toy/Ch4&#34;</span>
+</span></span></code></pre></div><h3 id="21-define-opprintinterface">2.1. Define OpPrintInterface</h3>
+<p>First, create a new file <code>$TOY_CH4_HOME/include/toy/OpPrintInterface.td</code>, define <code>OpPrintOpInterface</code> with method <code>opPrint</code> which returns a <code>std::string</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-tablegen" data-lang="tablegen"><span class="line"><span class="cl"><span class="cp">#ifndef PRINT_INTERFACE</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define PRINT_INTERFACE</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">include</span> <span class="s">&#34;mlir/IR/OpBase.td&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nv">OpPrintOpInterface</span> <span class="p">:</span> <span class="nv">OpInterface</span><span class="p">&lt;</span><span class="s">&#34;OpPrint&#34;</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">let</span> <span class="nv">description</span> <span class="p">=</span> <span class="s">[{
+</span></span></span><span class="line"><span class="cl"><span class="s">        Interface to print something in an operator.
+</span></span></span><span class="line"><span class="cl"><span class="s">    }]</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">let</span> <span class="nv">methods</span> <span class="p">=</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">        <span class="nv">InterfaceMethod</span><span class="p">&lt;</span> <span class="s">&#34;Print some information in the current operation&#34;</span><span class="p">,</span> <span class="s">&#34;std::string&#34;</span><span class="p">,</span> <span class="s">&#34;opPrint&#34;</span> <span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#endif</span> <span class="c">// PRINT_INTERFACE
+</span></span></span></code></pre></div><p>Second, create a file <code>$TOY_CH4_HOME/include/toy/OpPrintInterface.hpp</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#ifndef OPPRINTINTERFACE_HPP_
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define OPPRINTINTERFACE_HPP_
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/IR/OpDefinition.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">namespace</span> <span class="n">mlir</span><span class="o">::</span><span class="n">toy</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">/// Include the auto-generated declarations.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintOpInterface.h.inc&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="c1">// namespace mlir::toy
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#endif 
+</span></span></span></code></pre></div><p>Third, in <code>$TOY_CH4_HOME/include/toy/Dialect.h</code>, include the new interface:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintInterface.hpp&#34;</span><span class="cp">
+</span></span></span></code></pre></div><p>Fourth, make some modifications in <code>$TOY_CH4_HOME/include/toy/Ops.td</code>. Include the interface&rsquo;s td at the beginning of the file:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-td" data-lang="td"><span class="line"><span class="cl"><span class="nv">include</span> <span class="s">&#34;toy/OpPrintInterface.td&#34;</span>
+</span></span></code></pre></div><p>Then, for example, change the <code>AddOp</code> to declare that it implements the <code>OpPrint</code> interface:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-tablegen" data-lang="tablegen"><span class="line"><span class="cl"><span class="k">def</span> <span class="nv">AddOp</span> <span class="p">:</span> <span class="nv">Toy_Op</span><span class="p">&lt;</span><span class="s">&#34;add&#34;</span><span class="p">,</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">Pure</span><span class="p">,</span> 
+</span></span><span class="line"><span class="cl">    <span class="nv">DeclareOpInterfaceMethods</span><span class="p">&lt;</span><span class="nv">ShapeInferenceOpInterface</span><span class="p">&gt;,</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">DeclareOpInterfaceMethods</span><span class="p">&lt;</span><span class="nv">OpPrintOpInterface</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">]&gt;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="c">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c"></span><span class="p">}</span>
+</span></span></code></pre></div><blockquote>
+<p>You can also do the similar declaration for other operations.</p></blockquote>
+<p>Finally, some CMakeLists need to be modified.</p>
+<p>Add following lines in <code>$TOY_CH4_HOME/include/toy/CMakeLists.txt</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cmake" data-lang="cmake"><span class="line"><span class="cl"><span class="nb">set</span><span class="p">(</span><span class="s">LLVM_TARGET_DEFINITIONS</span> <span class="s">OpPrintInterface.td</span><span class="p">)</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">OpPrintOpInterface.h.inc</span> <span class="s">-gen-op-interface-decls</span><span class="p">)</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">OpPrintOpInterface.cpp.inc</span> <span class="s">-gen-op-interface-defs</span><span class="p">)</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="nb">add_public_tablegen_target</span><span class="p">(</span><span class="s">ToyCh4OpPrintInterfaceIncGen</span><span class="p">)</span><span class="err">
+</span></span></span></code></pre></div><p>Change the <code>add_toy_chapter</code> in <code>$TOY_CH4_HOME/CMakelists.txt</code> to:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cmake" data-lang="cmake"><span class="line"><span class="cl"><span class="nb">add_toy_chapter</span><span class="p">(</span><span class="s">toyc-ch4</span>
+</span></span><span class="line"><span class="cl">  <span class="s">toyc.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">parser/AST.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">mlir/MLIRGen.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">mlir/Dialect.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">mlir/ShapeInferencePass.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">mlir/OpPrintInterfacePass.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">mlir/ToyCombine.cpp</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="s">DEPENDS</span>
+</span></span><span class="line"><span class="cl">  <span class="s">ToyCh4OpsIncGen</span>
+</span></span><span class="line"><span class="cl">  <span class="s">ToyCh4ShapeInferenceInterfaceIncGen</span>
+</span></span><span class="line"><span class="cl">  <span class="s">ToyCh4CombineIncGen</span>
+</span></span><span class="line"><span class="cl">  <span class="s">ToyCh4OpPrintInterfaceIncGen</span>
+</span></span><span class="line"><span class="cl">  <span class="p">)</span><span class="err">
+</span></span></span></code></pre></div><p>To match the listed source files, create a blank file <code>$TOY_CH4_HOME/mlir/OpPrintInterfacePass.cpp</code>. We will implement the pass later.</p>
+<p>Now build the MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">bash <span class="nv">$LLVM_PROJ_HOME</span>/scripts/build-mlir.sh
+</span></span></code></pre></div><p>Errors pop out because we haven&rsquo;t implemented the <code>OpPrintInterface</code> which is declared in <code>AddOp</code>. Don&rsquo;t worry, it will be implemented in the next section.</p>
+<p>Now you can check the generated C++ class declarations in, for example,  <code>$LLVM_PROJ_HOME/build/tools/mlir/examples/toy/Ch4/include/toy/OpPrintOpInterface.h.inc</code>.</p>
+<h3 id="23-implement-opprintinterface">2.3. Implement OpPrintInterface</h3>
+<p>Since the interface is declared in <code>AddOp</code> (which is actually implemented by inheriting <code>OpPrintOpInterface</code> which provides a pure virtual function <code>opPrint</code>), we need to implement the function.</p>
+<p>In <code>$TOY_CH4_HOME/mlir/Dialect.cpp</code>, add the following code:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">AddOp</span><span class="o">::</span><span class="n">opPrint</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="s">&#34;I am AddOp&#34;</span><span class="p">;</span> <span class="p">}</span>
+</span></span></code></pre></div><h3 id="24-implement-opprintpass">2.4. Implement OpPrintPass</h3>
+<p>In <code>$TOY_CH4_HOME/include/toy/Passes.h</code>, add the following line under <code>mlir/examples/toy/Ch4/include/toy/Passes.h</code> (inside namespace <code>mlir::toy</code>):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Pass</span><span class="o">&gt;</span> <span class="n">createOpPrintPass</span><span class="p">();</span>
+</span></span></code></pre></div><p>In <code>$TOY_CH4_HOME/mlir/OpPrintInterfacePass.cpp</code>, add the following code:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/IR/Operation.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Pass/Pass.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Support/LLVM.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Support/TypeID.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/Dialect.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintInterface.hpp&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/Passes.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;memory&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">using</span> <span class="k">namespace</span> <span class="n">mlir</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">using</span> <span class="k">namespace</span> <span class="n">toy</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintOpInterface.cpp.inc&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">namespace</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="nc">OpPrintIntercfacePass</span>
+</span></span><span class="line"><span class="cl">    <span class="o">:</span> <span class="k">public</span> <span class="n">mlir</span><span class="o">::</span><span class="n">PassWrapper</span><span class="o">&lt;</span><span class="n">OpPrintIntercfacePass</span><span class="p">,</span> <span class="n">OperationPass</span><span class="o">&lt;</span><span class="n">toy</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID</span><span class="p">(</span><span class="n">OpPrintIntercfacePass</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="n">runOnOperation</span><span class="p">()</span> <span class="k">override</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">auto</span> <span class="n">f</span> <span class="o">=</span> <span class="n">getOperation</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">        <span class="n">f</span><span class="p">.</span><span class="n">walk</span><span class="p">([</span><span class="o">&amp;</span><span class="p">](</span><span class="n">mlir</span><span class="o">::</span><span class="n">Operation</span><span class="o">*</span> <span class="n">op</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="k">auto</span> <span class="n">shapeOp</span> <span class="o">=</span> <span class="n">dyn_cast</span><span class="o">&lt;</span><span class="n">OpPrint</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">shapeOp</span><span class="p">.</span><span class="n">opPrint</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">});</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">}</span>  <span class="c1">// namespace
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Pass</span><span class="o">&gt;</span> <span class="n">createOpPrintPass</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">OpPrintIntercfacePass</span><span class="o">&gt;</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h3 id="25-add-pass-to-pass-manager">2.5. Add Pass to Pass Manager</h3>
+<p>In <code>$TOY_CH4_HOME/toyc.cpp</code>, add the following line after <code>mlir::OpPassManager &amp;optPM = pm.nest&lt;mlir::toy::FuncOp&gt;();</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">optPM</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">toy</span><span class="o">::</span><span class="n">createOpPrintPass</span><span class="p">());</span>
+</span></span></code></pre></div><p>Implement <code>OpPrintPass</code> in <code>$TOY_CH4_HOME/mlir/OpPrintInterfacePass.cpp</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/IR/Operation.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Pass/Pass.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Support/LLVM.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Support/TypeID.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/Dialect.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintInterface.hpp&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/Passes.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;memory&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">using</span> <span class="k">namespace</span> <span class="n">mlir</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">using</span> <span class="k">namespace</span> <span class="n">toy</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintOpInterface.cpp.inc&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">namespace</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="nc">OpPrintIntercfacePass</span>
+</span></span><span class="line"><span class="cl">    <span class="o">:</span> <span class="k">public</span> <span class="n">mlir</span><span class="o">::</span><span class="n">PassWrapper</span><span class="o">&lt;</span><span class="n">OpPrintIntercfacePass</span><span class="p">,</span> <span class="n">OperationPass</span><span class="o">&lt;</span><span class="n">toy</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID</span><span class="p">(</span><span class="n">OpPrintIntercfacePass</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="n">runOnOperation</span><span class="p">()</span> <span class="k">override</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">auto</span> <span class="n">f</span> <span class="o">=</span> <span class="n">getOperation</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">        <span class="n">f</span><span class="p">.</span><span class="n">walk</span><span class="p">([</span><span class="o">&amp;</span><span class="p">](</span><span class="n">mlir</span><span class="o">::</span><span class="n">Operation</span><span class="o">*</span> <span class="n">op</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="k">auto</span> <span class="n">shapeOp</span> <span class="o">=</span> <span class="n">dyn_cast</span><span class="o">&lt;</span><span class="n">OpPrint</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">shapeOp</span><span class="p">.</span><span class="n">opPrint</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">});</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">}</span>  <span class="c1">// namespace
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Pass</span><span class="o">&gt;</span> <span class="n">mlir</span><span class="o">::</span><span class="n">toy</span><span class="o">::</span><span class="n">createOpPrintPass</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">OpPrintIntercfacePass</span><span class="o">&gt;</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h3 id="26-test-the-pass">2.6. Test the Pass</h3>
+<p>Now, rebuild the MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">bash <span class="nv">$LLVM_PROJ_HOME</span>/scripts/build-mlir.sh
+</span></span></code></pre></div><p>Run the Test:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">toyc-ch4 <span class="nv">$MLIR_HOME</span>/test/Examples/Toy/Ch4/codegen.toy -emit<span class="o">=</span>mlir -opt
+</span></span></code></pre></div>]]></content:encoded></item><item><title>Toy Ch3 | High-Level Language Specific Analysis and Transformation</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch3-high-level-language-specific-analysis-and-transformation/</link><pubDate>Wed, 31 Jul 2024 11:11:11 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch3-high-level-language-specific-analysis-and-transformation/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<blockquote>
+<p>Reference: <a href="https://mlir.llvm.org/docs/Tutorials/Toy/Ch-3/">https://mlir.llvm.org/docs/Tutorials/Toy/Ch-3/</a></p></blockquote>
+<p><strong>Note</strong>: Check <a href="../setup-the-environment-of-mlir/">Setup the Environment of MLIR</a> for the environment setup.</p>
+<h2 id="1-run-example">1. Run Example</h2>
+<p>Emit MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">toyc-ch3 <span class="nv">$MLIR_HOME</span>/test/Examples/Toy/Ch3/codegen.toy -emit<span class="o">=</span>mlir -opt
+</span></span></code></pre></div><p><strong>Key Points:</strong></p>
+<ul>
+<li>Pattern-match and rewrite;</li>
+<li>Declarative, rule-based pattern-match and rewrite (DRR);</li>
+</ul>
+]]></content:encoded></item><item><title>Toy Ch2 | Emitting Basic MLIR</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch2-emitting-basic-mlir/</link><pubDate>Tue, 30 Jul 2024 14:45:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch2-emitting-basic-mlir/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<blockquote>
+<p>Reference: <a href="https://mlir.llvm.org/docs/Tutorials/Toy/Ch-2/">https://mlir.llvm.org/docs/Tutorials/Toy/Ch-2/</a></p></blockquote>
+<p><strong>Note</strong>: Check <a href="../setup-the-environment-of-mlir/">Setup the Environment of MLIR</a> for the environment setup.</p>
+<h2 id="1-run-example">1. Run Example</h2>
+<p>Define a new env var:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">TOY_CH2_HOME</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$MLIR_HOME</span><span class="s2">/examples/toy/Ch2&#34;</span>
+</span></span></code></pre></div><p>Create a file <code>$TOY_CH2_HOME/input.toy</code> ; Add the following content to the file:</p>
+<pre tabindex="0"><code class="language-toy" data-lang="toy"># User defined generic function that operates on unknown shaped arguments.
+def multiply_transpose(a, b) {
+  return transpose(a) * transpose(b);
+}
+
+def main() {
+  var a&lt;2, 3&gt; = [[1, 2, 3], [4, 5, 6]];
+  var b&lt;2, 3&gt; = [1, 2, 3, 4, 5, 6];
+  var c = multiply_transpose(a, b);
+  var d = multiply_transpose(b, a);
+  print(d);
+}
+</code></pre><p>Emit to AST (Abstract Syntax Tree):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">toy-ch2 <span class="nv">$TOY_CH2_HOME</span>/input.toy -emit<span class="o">=</span>ast
+</span></span></code></pre></div><p>Emit to MLIR (Multi-Level Intermediate Representation):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">toyc-ch2 <span class="nv">$TOY_CH2_HOME</span>/input.toy -emit<span class="o">=</span>mlir
+</span></span></code></pre></div><h2 id="2-add-an-operator">2. Add an Operator</h2>
+<h3 id="21-define-the-operation">2.1. Define the Operation</h3>
+<p>Add following code to <code>$TOY_CH2_HOME/include/toy/Ops.td</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-tablegen" data-lang="tablegen"><span class="line"><span class="cl"><span class="c">// SubtractOp
+</span></span></span><span class="line"><span class="cl"><span class="c"></span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nv">SubtractOp</span> <span class="p">:</span> <span class="nv">Toy_Op</span><span class="p">&lt;</span><span class="s">&#34;subtract&#34;</span><span class="p">&gt;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">let</span> <span class="nv">summary</span> <span class="p">=</span> <span class="s">&#34;element-wise subtraction operation&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">let</span> <span class="nv">description</span> <span class="p">=</span> <span class="s">[{
+</span></span></span><span class="line"><span class="cl"><span class="s">    The &#34;subtract&#34; operation performs element-wise subtraction between two
+</span></span></span><span class="line"><span class="cl"><span class="s">    tensors. The shapes of the tensor operands are expected to match.
+</span></span></span><span class="line"><span class="cl"><span class="s">  }]</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">let</span> <span class="nv">arguments</span> <span class="p">=</span> <span class="p">(</span><span class="nv">ins</span> <span class="nv">F64Tensor</span><span class="p">:</span><span class="nv">$lhs</span><span class="p">,</span> <span class="nv">F64Tensor</span><span class="p">:</span><span class="nv">$rhs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">let</span> <span class="nv">results</span> <span class="p">=</span> <span class="p">(</span><span class="nv">outs</span> <span class="nv">F64Tensor</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c">// Indicate that the operation has a custom parser and printer method.
+</span></span></span><span class="line"><span class="cl"><span class="c"></span>  <span class="k">let</span> <span class="nv">hasCustomAssemblyFormat</span> <span class="p">=</span> <span class="m">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c">// Allow building an AddOp with from the two input operands.
+</span></span></span><span class="line"><span class="cl"><span class="c"></span>  <span class="k">let</span> <span class="nv">builders</span> <span class="p">=</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">OpBuilder</span><span class="p">&lt;(</span><span class="nv">ins</span> <span class="s">&#34;Value&#34;</span><span class="p">:</span><span class="nv">$lhs</span><span class="p">,</span> <span class="s">&#34;Value&#34;</span><span class="p">:</span><span class="nv">$rhs</span><span class="p">)&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Build MLIR again to imply the modifications:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">bash <span class="nv">$LLVM_PROJ_HOME</span>/scripts/build-mlir.sh
+</span></span></code></pre></div><p>Build errors pop out, because:</p>
+<ul>
+<li><code>hasCustomAssemblyFormat</code> is assigned with <code>1</code>, but the custom parser and printer method is not implemented.</li>
+<li><code>OpBuilder</code> is not implemented.</li>
+</ul>
+<p>These errors will be handled later.</p>
+<p>Note that the C++ implementation of class <code>SubtractOp</code> has been generated in <code>$LLVM_PROJ_HOME/build/tools/mlir/examples/toy/Ch2/include/toy/Ops.h.inc</code>, and as a result, you are now able to use class <code>SubtractOp</code> with code completion and syntax highlighting of clangd.</p>
+<h3 id="22-implement-the-operations">2.2. Implement the Operations</h3>
+<p>To implement custom parser and printer methods as well as <code>OpBuilder</code>, add the following code to <code>$TOY_CH2_HOME/mlir/Dialect.cpp</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// SubtractOp
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="n">SubtractOp</span><span class="o">::</span><span class="n">build</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">OpBuilder</span> <span class="o">&amp;</span><span class="n">builder</span><span class="p">,</span> <span class="n">mlir</span><span class="o">::</span><span class="n">OperationState</span> <span class="o">&amp;</span><span class="n">state</span><span class="p">,</span> <span class="n">mlir</span><span class="o">::</span><span class="n">Value</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">mlir</span><span class="o">::</span><span class="n">Value</span> <span class="n">rhs</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="n">state</span><span class="p">.</span><span class="n">addTypes</span><span class="p">(</span><span class="n">UnrankedTensorType</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">builder</span><span class="p">.</span><span class="n">getF64Type</span><span class="p">()));</span>
+</span></span><span class="line"><span class="cl">  <span class="n">state</span><span class="p">.</span><span class="n">addOperands</span><span class="p">({</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">});</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">mlir</span><span class="o">::</span><span class="n">ParseResult</span> <span class="n">SubtractOp</span><span class="o">::</span><span class="n">parse</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">OpAsmParser</span> <span class="o">&amp;</span><span class="n">parser</span><span class="p">,</span> <span class="n">mlir</span><span class="o">::</span><span class="n">OperationState</span> <span class="o">&amp;</span><span class="n">result</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="nf">parseBinaryOp</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">result</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="n">SubtractOp</span><span class="o">::</span><span class="n">print</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">OpAsmPrinter</span> <span class="o">&amp;</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span> <span class="n">printBinaryOp</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="o">*</span><span class="k">this</span><span class="p">);</span> <span class="p">}</span>
+</span></span></code></pre></div><h3 id="23-emit---operator">2.3. Emit <code>-</code> Operator</h3>
+<p>Go to <code>$TOY_CH2_HOME/mlir/MLIRGen.cpp</code>, locate function <code>mlirGen</code> and add the specific case for <code>-</code>, as shown below:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">mlir</span><span class="o">::</span><span class="n">Value</span> <span class="n">mlirGen</span><span class="p">(</span><span class="n">BinaryExprAST</span> <span class="o">&amp;</span><span class="n">binop</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">switch</span> <span class="p">(</span><span class="n">binop</span><span class="p">.</span><span class="n">getOp</span><span class="p">())</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="sc">&#39;+&#39;</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">      <span class="k">return</span> <span class="n">builder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">AddOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="sc">&#39;*&#39;</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">      <span class="k">return</span> <span class="n">builder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">MulOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="sc">&#39;-&#39;</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">      <span class="k">return</span> <span class="n">builder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">SubtractOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></div><p>Rebuild the MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">$LLVM_PROJ_HOME</span>/scripts/build-mlir.sh
+</span></span></code></pre></div><h3 id="24-test-the---operator">2.4. Test the <code>-</code> Operator</h3>
+<p>Change the content of <code>$MLIR_HOME/input.toy</code> to:</p>
+<pre tabindex="0"><code class="language-toy" data-lang="toy"># User defined generic function that operates on unknown shaped arguments.
+def multiply_transpose(a, b) {
+  return transpose(a) * transpose(b);
+}
+
+def main() {
+  var a&lt;2, 3&gt; = [[1, 2, 3], [4, 5, 6]];
+  var b&lt;2, 3&gt; = [1, 2, 3, 4, 5, 6];
+  var c = multiply_transpose(a, b);
+  var d = multiply_transpose(b, a);
+  var e = a - b;
+  print(e);
+}
+</code></pre><p>Generate MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">toyc-ch2 <span class="nv">$TOY_CH2_HOME</span>/input.toy -emit<span class="o">=</span>mlir
+</span></span></code></pre></div>]]></content:encoded></item><item><title>Setup the Environment of MLIR</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/setup-the-environment-of-mlir/</link><pubDate>Tue, 30 Jul 2024 10:45:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/setup-the-environment-of-mlir/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<p>To build MLIR, follow the official guide: <a href="https://mlir.llvm.org/getting_started/">Getting Started</a>.</p>
+<p>Set up some environment variables to make our life easier when working with MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">LLVM_PROJ_HOME</span><span class="o">=</span><span class="s2">&#34;/path/to/llvm-project&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">MLIR_HOME</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$LLVM_PROJ_HOME</span><span class="s2">/mlir&#34;</span>
+</span></span></code></pre></div><p>Write a script to help build MLIR from source:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># @file $LLVM_PROJ_HOME/scripts/build-mlir.sh</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> <span class="nv">$LLVM_PROJ_HOME</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">CC</span><span class="o">=</span>clang <span class="nv">CXX</span><span class="o">=</span>clang++ <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>cmake -S . -B ./build -G Ninja ./llvm <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DCMAKE_BUILD_TYPE<span class="o">=</span>Release <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DLLVM_ENABLE_PROJECTS<span class="o">=</span>mlir <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DLLVM_BUILD_EXAMPLES<span class="o">=</span>ON <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DLLVM_TARGETS_TO_BUILD<span class="o">=</span><span class="s2">&#34;Native;NVPTX;AMDGPU&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DCMAKE_BUILD_TYPE<span class="o">=</span>Release <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DLLVM_ENABLE_ASSERTIONS<span class="o">=</span>ON <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DCMAKE_EXPORT_COMPILE_COMMANDS<span class="o">=</span>ON <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DLLVM_ENABLE_LLD<span class="o">=</span>ON
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">cmake --build . --target check-mlir -j <span class="k">$(</span>nproc<span class="k">)</span>
+</span></span></code></pre></div><p>Now we can run the script to build the MLIR easily:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">bash <span class="nv">$LLVM_PROJ_HOME</span>/scripts/build-mlir.sh
+</span></span></code></pre></div><p>The generated binary files are in <code>$LLVM_PROJ_HOME/build/bin</code>.</p>
+<p>It would be more convenient to add this directory to <code>PATH</code> when working with MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$LLVM_PROJ_HOME</span><span class="s2">/build/bin:</span><span class="nv">$PATH</span><span class="s2">&#34;</span>
+</span></span></code></pre></div>]]></content:encoded></item><item><title>Paper Review: The Deep Learning Compiler: A Comprehensive Survey</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/paper-review-the-deep-learning-compiler-a-comprehensive-survey/</link><pubDate>Mon, 29 Jul 2024 11:07:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/paper-review-the-deep-learning-compiler-a-comprehensive-survey/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<blockquote>
+<p>Reference: <a href="https://arxiv.org/pdf/2002.03794">The Deep Learning Compiler: A Comprehensive Survey</a></p></blockquote>
+<h2 id="1-abstract">1. ABSTRACT</h2>
+<p>The DL compilers take the DL models described in different DL frameworks as input, and then generate optimized codes for diverse DL hardware as output.</p>
+<p>Generally, the DL hardware can be divided into the following categories:</p>
+<ol>
+<li>General-purpose hardware with software-hardware co-design;</li>
+<li>Dedicated hardware fully customized for DL models;</li>
+<li>Neuromorphic hardware inspired by biological brain science.</li>
+</ol>
+<p>However, the drawback of relying on the libraries is that they usually fall behind the rapid development of DL models, and thus fail to utilize the DL chips efficiently.</p>
+<p>To address the drawback of DL libraries and tools, as well as alleviate the burden of optimizing the DL models on each DL hardware manually, the DL community has resorted to the domain specific compilers for rescue.</p>
+<p>The DL compilers take the model definitions described in the DL frameworks as
+inputs, and generate efficient code implementations on various DL hardware as outputs.</p>
+<h2 id="2-background">2. BACKGROUND</h2>
+<h3 id="21-deep-learning-frameworks">2.1. Deep Learning Frameworks</h3>
+<p>&hellip;</p>
+<h3 id="23-hardware-specific-dl-code-generator">2.3. Hardware-specific DL Code Generator</h3>
+<p>Field Programmable Gate Arrays (FPGAs) are reprogrammable integrated circuits that contain an array of programmable logic blocks. Programmers can configure them after manufacturing.</p>
+<p>The FPGA can bridge the gap between CPUs/GPUs and ASICs, which causes the FPGA to be an attractive platform for deep learning.</p>
+<p>Mapping DL models to FPGAs remains a complicated work even with HLS, because:</p>
+<ol>
+<li>DL models are usually described by the languages of DL frameworks rather than bare mental C/C++ code;</li>
+<li>DL-specific information and optimizations are hard to be leveraged.</li>
+</ol>
+<p>The hardware-specific code generator targeting FPGA take the DL models or their <strong>domain-specific languages</strong> (DSLs) as the input, conduct the domain-specific (about FPGA and DL) optimizations and mappings, then generate the HLS or Verilog/VHDL and finally generate the bitstream. They can be classified into two categories according to the generated architectures of FPGA-based accelerators: the processor architecture and the streaming architecture.</p>
+<p><strong>The processor architecture</strong> has similarities with general-purpose processors. An FPGA accelerator of this architecture usually comprises several Processing Units (PUs), which are comprised of on-chip buffers and multiple smaller Processing Engines (PEs).</p>
+<p><strong>The streaming architecture</strong> has similarities with pipelines. An FPGA accelerator of this architecture consists of multiple different hardware blocks, and it nearly has one hardware block for each layer of an input DL mode</p>
+<h2 id="3-common-design-architecture-of-dl-compilers">3. COMMON DESIGN ARCHITECTURE OF DL COMPILERS</h2>
+<p><img alt="fig-1" loading="lazy" src="/imgs/blogs/mlir/common-design-architecture-of-dl-compiler.png"></p>
+<p><em>Figure 1. Common Design Architecture of DL Compilers.</em></p>
+<h3 id="41-high-level-ir">4.1. High-level IR</h3>
+<p><strong>DAG-based IR</strong> - DAG-based IR is one of the most traditional ways for the compilers to build a computation graph, with nodes and edges organized as a directed acyclic graph (DAG). In DL compilers, the nodes of a DAG represent the atomic DL operators (convolution, pooling, etc.), and the edges represent the tensors. And the graph is acyclic without loops, which differs from the data dependence graphs (DDG) of generic compilers.</p>
+<p><strong>Let-binding-based IR</strong> - Let-binding is one method to solve the semantic ambiguity by offering let expression to certain functions with restricted scope used by many high-level programming languages such as Javascript, F#, and Scheme. When using the <code>let</code> keyword to define an expression, a let node is generated, and then it points to the operator and variable in the expression instead of just building computational relation between variables as a DAG.</p>
+<p><strong>Representing Tensor Computation</strong> - Different graph IRs have different ways to represent the computation on tensors:</p>
+<ul>
+<li>Function Based</li>
+<li>Lambda Based</li>
+<li>Einstein notation</li>
+</ul>
+<p><strong>Data representation</strong> - The data in DL compilers (e.g., inputs, weights, and intermediate data) are usually organized in the form of tensors, which are also known as multi-dimensional arrays.  The DL compilers can represent tensor data directly by memory pointers, or in a more flexible way by placeholders. A placeholder contains the size for each dimension of a tensor. Alternatively, the dimension sizes of the tensor can be marked as unknown. For optimizations, the DL compilers require the data layout information. In addition, the bound of iterators should be inferred according to the placeholders.</p>
+<h3 id="42-low-level-ir">4.2. Low-level IR</h3>
+<p>Low-level IR describes the computation of a DL model in a more fine-grained representation than that in high-level IR, which enables the target-dependent optimizations by providing interfaces to tune the computation and memory access.</p>
+<p><strong>Halide-based IR</strong> - Halide is firstly proposed to parallelize image processing, and it is proven to be extensible and efficient in DL compilers (e.g., TVM). The fundamental philosophy of Halide is the separation of computation and schedule.</p>
+<p><strong>Polyhedral-based IR</strong> - The polyhedral model is an important technique adopted in DL compilers. It uses linear programming, affine transformations, and other mathematical methods to optimize loop-based codes with static control flow of bounds and branches.</p>
+<h3 id="43-frontend-optimizations">4.3. Frontend Optimizations</h3>
+<p>After constructing the computation graph, the frontend applies graph-level optimizations.</p>
+<p>The frontend optimizations are usually defined by <strong>passes</strong>, and can be applied by traversing the nodes of the computation graph and performing the graph transformations:</p>
+<ol>
+<li>Capture the specific features from the computation graph;</li>
+<li>Rewrite the graph for optimization.</li>
+</ol>
+<p><img alt="fig-2" loading="lazy" src="/imgs/blogs/mlir/computation-graph-optimization.png"></p>
+<p><em>Figure 2. Example of computation graph optimizations, taken from the HLO graph of AlexNet on Volta GPU using TensorFlow XLA.</em></p>
+<h4 id="431-node-level-optimizations">4.3.1. Node-level optimizations</h4>
+<p>The nodes of the computation graph are coarse enough to enable optimizations inside a single node. And the node-level optimizations include node elimination that eliminates unnecessary nodes and node replacement that replaces nodes with other lower-cost nodes.</p>
+<h4 id="432-block-level-optimizations">4.3.2. Block-level optimizations</h4>
+<p><strong>Algebraic simplification</strong></p>
+<p>The algebraic simplification opti- mizations consist of :</p>
+<ol>
+<li>algebraic identification;</li>
+<li>strength reduction, with which we can replace more expensive operators by cheaper ones;</li>
+<li>constant folding, with which we can replace the constant expressions by their values.</li>
+</ol>
+<p>Such optimizations consider a sequence of nodes, then take advantage of commutativity, associativity, and distributivity of different kinds of nodes to simplify the computation.</p>
+<p><strong>Operator fusion</strong></p>
+<p>Operator fusion is indispensable optimization of DL compilers. It enables better sharing of computation, eliminates intermediate allocations, facilitates further optimization by combining loop nests, as well as reduces launch and synchronization overhead.</p>
+<p><strong>Operator sinking</strong></p>
+<p>This optimization sinks the operations such as transposes below operations such as batch normalization, ReLU, sigmoid, and channel shuffle. By this optimization, many similar operations are moved closer to each other, creating more opportunities for algebraic simplification.</p>
+<h4 id="433-dataflow-level-optimizations">4.3.3. Dataflow-level optimizations</h4>
+<ul>
+<li>Common sub-expression elimination (CSE)</li>
+<li>Dead code elimination (DCE)</li>
+<li>Static memory planning - Static memory planning optimizations are performed to reuse the memory buffers as much as possible. Usually, there are two approaches: in-place memory sharing and standard memory sharing.</li>
+<li>Layout transformation - Layout transformation tries to find the best data layouts to store tensors in the computation graph and then inserts the layout transformation nodes to the graph.</li>
+</ul>
+<h3 id="44-backend-optimizations">4.4. Backend Optimizations</h3>
+<p>The backends of DL compilers have commonly included various hardware-specific optimizations, auto-tuning techniques, and optimized kernel libraries. Hardware-specific optimizations enable efficient code generation for different hardware targets. Whereas, auto-tuning has been essential in the compiler backend to alleviate the manual efforts to derive the optimal parameter configurations. Besides, highly-optimized kernel libraries are also widely used on general-purpose processors and other customized DL accelerators.</p>
+<p><img alt="fig-3" loading="lazy" src="/imgs/blogs/mlir/hardware-specific-optimization.png"></p>
+<p><em>Figure 3. Overview of hardware-specific optimizations applied in DL compilers.</em></p>
+<h2 id="5-future-directions">5. FUTURE DIRECTIONS</h2>
+<ol>
+<li>Dynamic shape and pre/post processing</li>
+<li>Advanced auto-tuning</li>
+<li>Polyhedral model</li>
+<li>Subgraph partitioning</li>
+<li>Quantization</li>
+<li>Unified optimizations</li>
+<li>Differentiable programming</li>
+<li>Privacy protection</li>
+<li>Training support</li>
+</ol>
+]]></content:encoded></item></channel></rss>

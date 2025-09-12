@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Nvidia on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/nvidia/</link><description>Recent content in Nvidia on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 21:45:48 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/nvidia/index.xml" rel="self" type="application/rss+xml"/><item><title>Docker Container with Nvidia GPU Support</title><link>https://jamesnulliu.github.io/blogs/docker-container-with-nvidia-gpu-support/</link><pubDate>Thu, 08 Aug 2024 12:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/docker-container-with-nvidia-gpu-support/</guid><description>How to create a Docker container with Nvidia GPU support.</description><content:encoded><![CDATA[<blockquote>
+<p>Offical Docs:</p>
+<ol>
+<li><a href="https://docs.docker.com/engine/install/ubuntu/">Install Docker Engine on Ubuntu</a></li>
+<li><a href="https://docs.docker.com/engine/install/centos/">Install Docker Engine on CentOS</a></li>
+<li><a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html">Installing the NVIDIA Container Toolkit</a></li>
+</ol></blockquote>
+<h2 id="1-installation">1. Installation</h2>
+<h3 id="11-uninstall-docker">1.1. Uninstall Docker</h3>
+<p>For Ubuntu/Debian:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Uninstall old versions</span>
+</span></span><span class="line"><span class="cl">sudo apt-get remove docker.io docker-doc docker-compose docker-compose-v2 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    podman-docker containerd runc
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Uninstall docker engine</span>
+</span></span><span class="line"><span class="cl">sudo apt-get purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-compose-plugin docker-ce-rootless-extras
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For CentOS/RHEL:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Uninstall old versions</span>
+</span></span><span class="line"><span class="cl">sudo yum remove docker docker-client docker-client-latest docker-common <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-latest docker-latest-logrotate docker-logrotate docker-engine
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Uninstall docker engine</span>
+</span></span><span class="line"><span class="cl">sudo yum remove docker-ce docker-ce-cli containerd.io docker-buildx-plugin <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-compose-plugin docker-ce-rootless-extras
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo rm -rf /var/lib/docker
+</span></span><span class="line"><span class="cl">sudo rm -rf /var/lib/containerd
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="12-install-docker">1.2. Install Docker</h3>
+<p>For Ubuntu/Debian:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Add Docker&#39;s official GPG key:</span>
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">sudo apt-get install ca-certificates curl
+</span></span><span class="line"><span class="cl">sudo install -m <span class="m">0755</span> -d /etc/apt/keyrings
+</span></span><span class="line"><span class="cl">sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -o /etc/apt/keyrings/docker.asc
+</span></span><span class="line"><span class="cl">sudo chmod a+r /etc/apt/keyrings/docker.asc
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Add the repository to Apt sources:</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  <span class="s2">&#34;deb [arch=</span><span class="k">$(</span>dpkg --print-architecture<span class="k">)</span><span class="s2"> signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+</span></span></span><span class="line"><span class="cl"><span class="s2">  </span><span class="k">$(</span>. /etc/os-release <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$VERSION_CODENAME</span><span class="s2">&#34;</span><span class="k">)</span><span class="s2"> stable&#34;</span> <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  sudo tee /etc/apt/sources.list.d/docker.list &gt; /dev/null
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Install Docker Engine:</span>
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">sudo apt-get install docker-ce docker-ce-cli containerd.io <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-buildx-plugin docker-compose-plugin
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Enable and start the Docker service:</span>
+</span></span><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> docker
+</span></span><span class="line"><span class="cl">sudo systemctl start docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For CentOS/RHEL:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo yum install -y yum-utils
+</span></span><span class="line"><span class="cl">sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo yum install docker-ce docker-ce-cli containerd.io docker-buildx-plugin <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-compose-plugin
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> docker
+</span></span><span class="line"><span class="cl">sudo systemctl start docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="13-install-nvidia-container-toolkit">1.3. Install Nvidia Container Toolkit</h3>
+<p>For Ubuntu/Debian:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey <span class="p">|</span> sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  <span class="o">&amp;&amp;</span> curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    sed <span class="s1">&#39;s#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g&#39;</span> <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Optionally, configure the repository to use experimental packages:</span>
+</span></span><span class="line"><span class="cl">sed -i -e <span class="s1">&#39;/experimental/ s/^#//g&#39;</span> /etc/apt/sources.list.d/nvidia-container-toolkit.list
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo apt-get install -y nvidia-container-toolkit
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo systemctl restart docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For CentOS/RHEL:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Optionally, configure the repository to use experimental packages:</span>
+</span></span><span class="line"><span class="cl">sudo yum-config-manager --enable nvidia-container-toolkit-experimental
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo yum install -y nvidia-container-toolkit
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo systemctl restart docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2-create-a-container">2. Create a Container</h2>
+<p>Choose a base image that supports Nvidia GPU in doker hub of <a href="https://hub.docker.com/r/nvidia/cuda/">nvidia/cuda</a>, run the following command to create a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -it  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --gpus all <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --name &lt;container_name&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -v <span class="nv">$HOME</span>/data:/root/data <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -p &lt;host_port&gt;:&lt;container_port&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --entrypoint /bin/bash <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --shm-size &lt;shm-size&gt;G <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    &lt;image_name&gt;:&lt;tag&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>If you need a concise mannual for docker images and containers, see this blog: <a href="/blogs/something-about-docker/">Something about Docker</a></p>
+]]></content:encoded></item></channel></rss>

@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Environment on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/environment/</link><description>Recent content in Environment on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 21:45:48 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/environment/index.xml" rel="self" type="application/rss+xml"/><item><title>WSL is All You Need</title><link>https://jamesnulliu.github.io/blogs/wsl-is-all-you-need/</link><pubDate>Fri, 10 Jan 2025 13:25:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/wsl-is-all-you-need/</guid><description>How do I work with WSL</description><content:encoded><![CDATA[<h2 id="1-motivation">1. Motivation</h2>
+<p>Coding on Windows feels like a nightmare, but most games do not run on Linux, and I hate MacOS 🤢🤮 from many aspects.</p>
+<p>After trying many ways, now I firmly believe that WSL (as a Docker launcher 🤣) is the best solution if:</p>
+<ul>
+<li>You are a programmer specifically relying on Unix environment, for example, Deep Learning, CUDA, C++, etc.</li>
+<li>You are a gamer who wants to play games on Windows.</li>
+<li>You want to switch between Linux and Windows with zero cost.</li>
+</ul>
+<blockquote>
+<p>💡<strong>NOTE</strong><br>
+<strong>Windows Subsystem for Linux (WSL)</strong> is a feature of Windows that allows you to run a Linux environment on your Windows machine, without the need for a separate virtual machine or dual booting. WSL is designed to provide a seamless and productive experience for developers who want to use both Windows and Linux at the same time.</p></blockquote>
+<h2 id="2-installation">2. Installation</h2>
+<blockquote>
+<p>Official Doc: <a href="https://learn.microsoft.com/en-us/windows/wsl/install" target="_blank" rel="noopener noreferrer">
+    How to install Linux on Windows with WSL
+</a>
+</p></blockquote>
+<blockquote>
+<p>⚠️<strong>WARNING</strong><br>
+If you are using scoop on Windows, make sure uninstall it before the first-time installation of a WSL distribution. You can reinstall scoop after the installation.</p></blockquote>
+<p>List all available WSL distributions:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-list</span> <span class="p">-</span><span class="n">-online</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Install a specific WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-install</span> <span class="n">-d</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Run a WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="n">-d</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="3-change-the-storage-location-of-a-distribution">3. Change the Storage Location of a Distribution</h2>
+<p>List installed WSL distributions:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="n">-l</span> <span class="n">-v</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Shutdown WSL service:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-shutdown</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Export a WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-export</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="nb">path-to</span><span class="n">-exported-tar</span><span class="p">&gt;.</span><span class="py">tar</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Unregister the target WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wslconfig</span> <span class="p">/</span><span class="n">u</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Import a WSL distribution from tar and specify the storage location; Note that you can specify any new distro name here:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-import</span> <span class="p">&lt;</span><span class="nb">new-distro</span><span class="n">-name</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="nb">path-to</span><span class="n">-the-new-storage-dir</span><span class="p">&gt;</span> <span class="p">&lt;</span><span class="nb">path-to</span><span class="n">-exported-tar</span><span class="p">&gt;.</span><span class="py">tar</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>After importing, the default user of <code>&lt;new-distro-name&gt;</code> would become <code>root</code>. You can set the default user for a WSL distribution by modifying the <code>/etc/wsl.conf</code> file. See <a href="#7-default-user">
+    7. Default User
+</a>
+.</p>
+<h2 id="4-work-with-vscode">4. Work with VSCode</h2>
+<p>Run a WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="n">-d</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Open a directory in WSL with VSCode:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">code</span> <span class="p">&lt;</span><span class="nb">path-to</span><span class="n">-a-directory-in-wsl</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="5-install-docker-in-wsl">5. Install Docker in WSL</h2>
+<p><del>I don&rsquo;t like Docker Desktop for Windows</del>. Instead, you can install Docker in WSL as you do in a normal Linux system.</p>
+<p>If you want to play with cuda and deep learning in your WSL, see this blog: <a href="/blogs/docker-container-with-nvidia-gpu-support" target="_blank" rel="noopener noreferrer">
+    Docker Container with Nvidia GPU Support
+</a>
+</p>
+<p>If you need a concise mannual for docker images and containers, see this blog: <a href="/blogs/something-about-docker" target="_blank" rel="noopener noreferrer">
+    Something about Docker
+</a>
+</p>
+<p>To open a directory inside a running container with VSCode, install extension <code>ms-vscode-remote.remote-containers</code>, and:</p>
+<ol>
+<li>Open a directory in a WSL (where you installed docker and ran containers) with VSCode following <a href="#4-work-with-vscode">
+    4. Work with VSCode
+</a>
+.</li>
+<li>Press <code>ctrl</code> + <code>shift</code> + <code>p</code>, search for command &ldquo;Dev Containers: Attach to Running Container&hellip;&rdquo;.</li>
+<li>Choose and click the container you want to open.</li>
+<li>That&rsquo;s it.</li>
+</ol>
+<h2 id="6-proxy">6. Proxy</h2>
+<p>Somethimes you may need to set the proxy for your subsystem.</p>
+<p>From my experience, the easiest way is to turn on <code>System Proxy</code> and <code>TUN Mode</code> in clash or v2ray on windows, and your WSL and the running containers will automatically use the proxy.</p>
+<h2 id="7-default-user">7. Default User</h2>
+<p>You can set the default user for a WSL distribution by modifying the <code>/etc/wsl.conf</code> file.</p>
+<p>First, login to a WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="n">-d</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Then, create or modify the <code>/etc/wsl.conf</code> file:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo vim /etc/wsl.conf
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Add the following lines to the file:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="line"><span class="cl"><span class="k">[user]</span>
+</span></span><span class="line"><span class="cl"><span class="na">default</span><span class="o">=</span><span class="s">&lt;your-username&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="8-hostname">8. Hostname</h2>
+<p>You can set the hostname for a WSL distribution by modifying the <code>/etc/hostname</code> file.</p>
+<p>First, login to a WSL distribution:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="n">-d</span> <span class="p">&lt;</span><span class="nb">distro-name</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Then, create or modify the <code>/etc/wsl.conf</code> file:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo vim /etc/wsl.conf
+</span></span></code></pre></div><p>Add the following lines to the file:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="line"><span class="cl"><span class="k">[network]</span>
+</span></span><span class="line"><span class="cl"><span class="na">hostname</span> <span class="o">=</span> <span class="s">&lt;your-hostname&gt;</span>
+</span></span></code></pre></div><h2 id="9-compress-the-wsl-file-system">9. Compress the WSL File System</h2>
+<blockquote>
+<p>Virtual disk files will grow automatically as you add files, but they will not shrink automatically when you delete files. This can lead to a large virtual disk file that takes up a lot of space on your hard drive.</p></blockquote>
+<p>First, search for a <code>.vdhx</code> file in your computer, which is the virtual disk file for your WSL distribution. The default location is &ldquo;C:/Users/&lt;your-username&gt;/AppData/Local/wsl/&lt;hash-value&gt;/ext4.vhdx&rdquo;.</p>
+<p>Then, run the following command in PowerShell:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">wsl</span> <span class="p">-</span><span class="n">-shutdown</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>After that, run <code>diskpart</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="n">diskpart</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>In the pop-up window, run the following commands:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="nb">select </span><span class="n">vdisk</span> <span class="n">file</span><span class="p">=</span><span class="s2">&#34;&lt;path-to-your-vhdx-file&gt;&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="n">compact</span> <span class="n">vdisk</span>
+</span></span><span class="line"><span class="cl"><span class="n">detach</span> <span class="n">vdisk</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item><item><title>Environment Variable Management on Linux</title><link>https://jamesnulliu.github.io/blogs/environment-variable-management-on-linux/</link><pubDate>Wed, 31 Jul 2024 14:51:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/environment-variable-management-on-linux/</guid><description>An easy way to manage environment variables on Linux using load and unload.</description><content:encoded><![CDATA[<p>Open <code>~/.bashrc</code> file.</p>
+<p>Create 2 functions to load and unload environment variables:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">env_load<span class="o">()</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">env_var</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">path</span><span class="o">=</span><span class="nv">$2</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">[[</span> <span class="s2">&#34;:</span><span class="si">${</span><span class="p">!env_var</span><span class="si">}</span><span class="s2">:&#34;</span> !<span class="o">=</span> *<span class="s2">&#34;:</span><span class="nv">$path</span><span class="s2">:&#34;</span>* <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">export</span> <span class="nv">$env_var</span><span class="o">=</span><span class="s2">&#34;</span><span class="si">${</span><span class="p">!env_var</span><span class="si">}</span><span class="s2">:</span><span class="nv">$path</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">env_unload<span class="o">()</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">env_var</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">path</span><span class="o">=</span><span class="nv">$2</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">paths_array</span><span class="o">=(</span><span class="si">${</span><span class="p">!env_var//:/ </span><span class="si">}</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">new_paths</span><span class="o">=()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> item in <span class="s2">&#34;</span><span class="si">${</span><span class="nv">paths_array</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="o">[[</span> <span class="s2">&#34;</span><span class="nv">$item</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;</span><span class="nv">$path</span><span class="s2">&#34;</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">            <span class="nv">new_paths</span><span class="o">+=(</span><span class="s2">&#34;</span><span class="nv">$item</span><span class="s2">&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">    <span class="k">done</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">export</span> <span class="nv">$env_var</span><span class="o">=</span><span class="k">$(</span><span class="nv">IFS</span><span class="o">=</span>:<span class="p">;</span> <span class="nb">echo</span> <span class="s2">&#34;</span><span class="si">${</span><span class="nv">new_paths</span><span class="p">[*]</span><span class="si">}</span><span class="s2">&#34;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Now, you can use <code>env_load</code> and <code>env_unload</code> to manage environment variables.</p>
+<p>For example, to manage CUDA environment, add these lines to <code>~/.bashrc</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">CUDA_HOME</span><span class="o">=</span><span class="s2">&#34;/usr/local/cuda-12.1&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">alias</span> <span class="nv">LOAD_CUDA</span><span class="o">=</span><span class="s2">&#34;env_load PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/bin; env_load LD_LIBRARY_PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/lib64&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">alias</span> <span class="nv">UNLOAD_CUDA</span><span class="o">=</span><span class="s2">&#34;env_unload PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/bin; env_unload LD_LIBRARY_PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/lib64&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="related-blogs">Related Blogs</h2>
+<ul>
+<li><a href="/blogs/user-management-on-linux" target="_blank" rel="noopener noreferrer">
+    User Management on Linux
+</a>
+</li>
+</ul>
+]]></content:encoded></item></channel></rss>

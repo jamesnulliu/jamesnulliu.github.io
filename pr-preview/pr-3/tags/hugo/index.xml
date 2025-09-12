@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Hugo on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/hugo/</link><description>Recent content in Hugo on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 21:45:48 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/hugo/index.xml" rel="self" type="application/rss+xml"/><item><title>Render Mathematics in Hugo</title><link>https://jamesnulliu.github.io/blogs/render-mathematics-in-hugo/</link><pubDate>Tue, 08 Oct 2024 13:39:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/render-mathematics-in-hugo/</guid><description>How to render mathematics in Hugo</description><content:encoded><![CDATA[<blockquote>
+<p>This blog should be a complete guide to render mathematics in Hugo. However, if you have problems reproducing this blog, note that the <strong>official documentation</strong> is always the best place to start:</p>
+<ol>
+<li><a href="https://gohugo.io/content-management/mathematics/">HUGO - Mathematics in Markdown</a></li>
+<li><a href="https://developers.cloudflare.com/pages/framework-guides/deploy-a-hugo-site/#use-a-specific-or-newer-hugo-version">Cloudfare - Use a Newer HUGO Verseion</a></li>
+</ol></blockquote>
+<p>First, add following code to <code>hugo.yaml</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">params</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">math</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># ...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">markup</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">goldmark</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">extensions</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">passthrough</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">delimiters</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">block</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- - <span class="l">\[</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span>- <span class="l">\]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- - <span class="l">$$</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span>- <span class="l">$$</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">inline</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- - <span class="l">\(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span>- <span class="l">\)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span>- - <span class="l">$</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span>- <span class="l">$</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">enable</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>Second, create a new file <code>layouts/partials/extend_head.html</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl">{{ if .Param &#34;math&#34; }}
+</span></span><span class="line"><span class="cl">  {{ partialCached &#34;math.html&#34; . }}
+</span></span><span class="line"><span class="cl">{{ end }}
+</span></span></code></pre></div><blockquote>
+<p>Note that name and path of the created file is based on your theme configuration.</p>
+<p>For example, in theme PaperMode (which I use), &ldquo;<a href="https://github.com/adityatelange/hugo-PaperMod/blob/master/layouts/partials/extend_head.html#L3">extend_head.html</a>&rdquo; indicates that, to extend the head, I can create a file named <code>extend_head.html</code> in <code>./layouts/partials/</code> (so-called <strong>global layouts</strong>, without modifying layouts inside the theme).</p>
+<p>In other words, if your theme does not support this feature, you may need to copy the <code>head.html</code> from the theme to global layouts and modify it, or simply modify the theme directly (but rememenber that modifications in git submodules will not be committed to the remote repository).</p></blockquote>
+<p>Next, create a new file <code>layouts/partials/math.html</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">script</span> <span class="na">id</span><span class="o">=</span><span class="s">&#34;MathJax-script&#34;</span> <span class="na">async</span> <span class="na">src</span><span class="o">=</span><span class="s">&#34;https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js&#34;</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">script</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="nx">MathJax</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tex</span><span class="o">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">displayMath</span><span class="o">:</span> <span class="p">[[</span><span class="s1">&#39;\\[&#39;</span><span class="p">,</span> <span class="s1">&#39;\\]&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;$$&#39;</span><span class="p">,</span> <span class="s1">&#39;$$&#39;</span><span class="p">]],</span>  <span class="c1">// block
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>      <span class="nx">inlineMath</span><span class="o">:</span> <span class="p">[[</span><span class="s1">&#39;\\(&#39;</span><span class="p">,</span> <span class="s1">&#39;\\)&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;$&#39;</span><span class="p">,</span> <span class="s1">&#39;$&#39;</span><span class="p">]]</span>      <span class="c1">// inline
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="p">};</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Now, you can render both block and inline mathematics in your content files. For example, the following code renders the equation $O=Attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V$:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-markdown" data-lang="markdown"><span class="line"><span class="cl">$$
+</span></span><span class="line"><span class="cl">O=Attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V
+</span></span><span class="line"><span class="cl">$$
+</span></span></code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>Test it locally by running <code>hugo server -D .</code> to see if the equation rendered correctly.</p></blockquote>
+<p>Finally, there is one more thing to note before deploying your website.</p>
+<p>You should always use <strong>the newest version of hugo</strong> to support all features (in goldmark).</p>
+<blockquote>
+<p>Why? In previous versions, the <code>passthrough</code> extension is not supported, and consequently, <code>\\</code> inside the equation will be rendered as <code>\</code> instead of a new line.</p></blockquote>
+<p>Based on the <a href="https://developers.cloudflare.com/pages/framework-guides/deploy-a-hugo-site/#use-a-specific-or-newer-hugo-version">official doc</a>, if you are using <strong>Cloudflare</strong> to deploy your website:</p>
+<ol>
+<li>Go to <strong>Workers &amp; Pages</strong> -&gt; Your Porject -&gt; <strong>Settings</strong> -&gt; <strong>Variables and Secrets</strong>;</li>
+<li>Add a new variable <code>HUGO_VERSION</code> with value <code>0.135.0</code> at least.</li>
+</ol>
+<p>This will specify the version of Hugo used by Cloudflare to build your website.</p>
+]]></content:encoded></item></channel></rss>

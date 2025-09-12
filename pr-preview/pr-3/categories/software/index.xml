@@ -1,0 +1,1106 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Software on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/categories/software/</link><description>Recent content in Software on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 21:45:48 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/categories/software/index.xml" rel="self" type="application/rss+xml"/><item><title>My vimrc</title><link>https://jamesnulliu.github.io/blogs/my-vimrc/</link><pubDate>Thu, 21 Nov 2024 13:54:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/my-vimrc/</guid><description>My configurations of vim.</description><content:encoded><![CDATA[<p>Nothing but my self-use configurations of vim.</p>
+<p>Create a file &ldquo;~/.vimrc&rdquo; and write the following content:</p>
+<pre tabindex="0"><code>&#34; All system-wide defaults are set in $VIMRUNTIME/debian.vim and sourced by
+&#34; the call to :runtime you can find below.  If you wish to change any of those
+&#34; settings, you should do it in this file (/etc/vim/vimrc), since debian.vim
+&#34; will be overwritten everytime an upgrade of the vim packages is performed.
+&#34; It is recommended to make changes after sourcing debian.vim since it alters
+&#34; the value of the &#39;compatible&#39; option.
+
+runtime! debian.vim
+
+&#34; Uncomment the next line to make Vim more Vi-compatible
+&#34; NOTE: debian.vim sets &#39;nocompatible&#39;.  Setting &#39;compatible&#39; changes
+&#34; numerous options, so any other options should be set AFTER changing
+&#34; &#39;compatible&#39;.
+&#34;set compatible
+
+&#34; Vim5 and later versions support syntax highlighting. Uncommenting the next
+&#34; line enables syntax highlighting by default.
+if has(&#34;syntax&#34;)
+  syntax on
+endif
+
+&#34; If using a dark background within the editing area and syntax highlighting
+&#34; turn on this option as well
+&#34;set background=dark
+
+&#34; Uncomment the following to have Vim jump to the last position when
+&#34; reopening a file
+au BufReadPost * if line(&#34;&#39;\&#34;&#34;) &gt; 1 &amp;&amp; line(&#34;&#39;\&#34;&#34;) &lt;= line(&#34;$&#34;) | exe &#34;normal! g&#39;\&#34;&#34; | endif
+
+&#34; Uncomment the following to have Vim load indentation rules and plugins
+&#34; according to the detected filetype.
+&#34;filetype plugin indent on
+
+&#34; Source a global configuration file if available
+if filereadable(&#34;/etc/vim/vimrc.local&#34;)
+  source /etc/vim/vimrc.local
+endif
+
+&#34; The following are commented out as they cause vim to behave a lot
+&#34; differently from regular Vi. They are highly recommended though.
+set showcmd             &#34; Show (partial) command in status line.
+set showmatch           &#34; Show matching brackets.
+set ignorecase          &#34; Do case insensitive matching
+set smartcase           &#34; Do smart case matching
+set incsearch           &#34; Incremental search
+set autowrite           &#34; Automatically save before commands like :next and :make
+set hidden              &#34; Hide buffers when they are abandoned
+set mouse=a             &#34; Enable mouse usage (all modes)
+
+set number
+set cursorline
+set cursorcolumn
+set shiftwidth=4
+set tabstop=4
+set expandtab
+set scrolloff=10
+set showmode
+set hlsearch
+
+set autoindent
+set smartindent
+set cindent
+filetype indent on
+
+&#34; Set the menu &amp; message to English
+set langmenu=en_US
+let $LANG=&#39;en_US&#39;
+source $VIMRUNTIME/delmenu.vim
+source $VIMRUNTIME/menu.vim
+
+augroup numbertoggle
+  autocmd!
+  autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if &amp;nu &amp;&amp; mode() != &#34;i&#34; | set rnu   | endif
+  autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &amp;nu                  | set nornu | endif
+augroup END
+
+&#34; Set the menu &amp; message to English
+set langmenu=en_US
+let $LANG=&#39;en_US&#39;
+source $VIMRUNTIME/delmenu.vim
+source $VIMRUNTIME/menu.vim
+</code></pre>]]></content:encoded></item><item><title>Docker Container with Nvidia GPU Support</title><link>https://jamesnulliu.github.io/blogs/docker-container-with-nvidia-gpu-support/</link><pubDate>Thu, 08 Aug 2024 12:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/docker-container-with-nvidia-gpu-support/</guid><description>How to create a Docker container with Nvidia GPU support.</description><content:encoded><![CDATA[<blockquote>
+<p>Offical Docs:</p>
+<ol>
+<li><a href="https://docs.docker.com/engine/install/ubuntu/">Install Docker Engine on Ubuntu</a></li>
+<li><a href="https://docs.docker.com/engine/install/centos/">Install Docker Engine on CentOS</a></li>
+<li><a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html">Installing the NVIDIA Container Toolkit</a></li>
+</ol></blockquote>
+<h2 id="1-installation">1. Installation</h2>
+<h3 id="11-uninstall-docker">1.1. Uninstall Docker</h3>
+<p>For Ubuntu/Debian:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Uninstall old versions</span>
+</span></span><span class="line"><span class="cl">sudo apt-get remove docker.io docker-doc docker-compose docker-compose-v2 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    podman-docker containerd runc
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Uninstall docker engine</span>
+</span></span><span class="line"><span class="cl">sudo apt-get purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-compose-plugin docker-ce-rootless-extras
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For CentOS/RHEL:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Uninstall old versions</span>
+</span></span><span class="line"><span class="cl">sudo yum remove docker docker-client docker-client-latest docker-common <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-latest docker-latest-logrotate docker-logrotate docker-engine
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Uninstall docker engine</span>
+</span></span><span class="line"><span class="cl">sudo yum remove docker-ce docker-ce-cli containerd.io docker-buildx-plugin <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-compose-plugin docker-ce-rootless-extras
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo rm -rf /var/lib/docker
+</span></span><span class="line"><span class="cl">sudo rm -rf /var/lib/containerd
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="12-install-docker">1.2. Install Docker</h3>
+<p>For Ubuntu/Debian:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Add Docker&#39;s official GPG key:</span>
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">sudo apt-get install ca-certificates curl
+</span></span><span class="line"><span class="cl">sudo install -m <span class="m">0755</span> -d /etc/apt/keyrings
+</span></span><span class="line"><span class="cl">sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -o /etc/apt/keyrings/docker.asc
+</span></span><span class="line"><span class="cl">sudo chmod a+r /etc/apt/keyrings/docker.asc
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Add the repository to Apt sources:</span>
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  <span class="s2">&#34;deb [arch=</span><span class="k">$(</span>dpkg --print-architecture<span class="k">)</span><span class="s2"> signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+</span></span></span><span class="line"><span class="cl"><span class="s2">  </span><span class="k">$(</span>. /etc/os-release <span class="o">&amp;&amp;</span> <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$VERSION_CODENAME</span><span class="s2">&#34;</span><span class="k">)</span><span class="s2"> stable&#34;</span> <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  sudo tee /etc/apt/sources.list.d/docker.list &gt; /dev/null
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Install Docker Engine:</span>
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">sudo apt-get install docker-ce docker-ce-cli containerd.io <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-buildx-plugin docker-compose-plugin
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Enable and start the Docker service:</span>
+</span></span><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> docker
+</span></span><span class="line"><span class="cl">sudo systemctl start docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For CentOS/RHEL:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo yum install -y yum-utils
+</span></span><span class="line"><span class="cl">sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo yum install docker-ce docker-ce-cli containerd.io docker-buildx-plugin <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    docker-compose-plugin
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> docker
+</span></span><span class="line"><span class="cl">sudo systemctl start docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="13-install-nvidia-container-toolkit">1.3. Install Nvidia Container Toolkit</h3>
+<p>For Ubuntu/Debian:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey <span class="p">|</span> sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  <span class="o">&amp;&amp;</span> curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    sed <span class="s1">&#39;s#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g&#39;</span> <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Optionally, configure the repository to use experimental packages:</span>
+</span></span><span class="line"><span class="cl">sed -i -e <span class="s1">&#39;/experimental/ s/^#//g&#39;</span> /etc/apt/sources.list.d/nvidia-container-toolkit.list
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo apt-get install -y nvidia-container-toolkit
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo systemctl restart docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For CentOS/RHEL:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -s -L https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo <span class="p">|</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  sudo tee /etc/yum.repos.d/nvidia-container-toolkit.repo
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Optionally, configure the repository to use experimental packages:</span>
+</span></span><span class="line"><span class="cl">sudo yum-config-manager --enable nvidia-container-toolkit-experimental
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo yum install -y nvidia-container-toolkit
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo systemctl restart docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2-create-a-container">2. Create a Container</h2>
+<p>Choose a base image that supports Nvidia GPU in doker hub of <a href="https://hub.docker.com/r/nvidia/cuda/">nvidia/cuda</a>, run the following command to create a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker run <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -it  <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --gpus all <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --name &lt;container_name&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -v <span class="nv">$HOME</span>/data:/root/data <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -p &lt;host_port&gt;:&lt;container_port&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --entrypoint /bin/bash <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --shm-size &lt;shm-size&gt;G <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    &lt;image_name&gt;:&lt;tag&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>If you need a concise mannual for docker images and containers, see this blog: <a href="/blogs/something-about-docker/">Something about Docker</a></p>
+]]></content:encoded></item><item><title>Something about Docker</title><link>https://jamesnulliu.github.io/blogs/something-about-docker/</link><pubDate>Thu, 08 Aug 2024 12:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/something-about-docker/</guid><description>Something about docker.</description><content:encoded><![CDATA[<blockquote>
+<p>Check this blog if you want a <a href="/blogs/docker-container-with-nvidia-gpu-support/">Docker Container with Nvidia GPU Support</a>.</p></blockquote>
+<h2 id="1-about-image">1. About Image</h2>
+<h3 id="11-check-existing-images-and-statistics">1.1. Check Existing Images and Statistics</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># List all images</span>
+</span></span><span class="line"><span class="cl">docker images
+</span></span><span class="line"><span class="cl"><span class="c1"># Check disk usage of docker (images, conatiners)</span>
+</span></span><span class="line"><span class="cl">docker system df
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To list all images not being used by any container, run:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker images --filter <span class="s2">&#34;dangling=false&#34;</span> -q <span class="p">|</span> xargs -r docker inspect --format <span class="s1">&#39;{{ .Id }} {{ .RepoTags }}&#39;</span> <span class="p">|</span> grep -v <span class="s1">&#39;&lt;none&gt;&#39;</span> <span class="p">|</span> <span class="k">while</span> <span class="nb">read</span> id tags<span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> ! docker ps -a --format <span class="s1">&#39;{{.Image}}&#39;</span> <span class="p">|</span> grep -q <span class="s2">&#34;</span><span class="k">$(</span><span class="nb">echo</span> <span class="nv">$tags</span> <span class="p">|</span> cut -d<span class="s1">&#39;[&#39;</span> -f2 <span class="p">|</span> cut -d<span class="s1">&#39;]&#39;</span> -f1<span class="k">)</span><span class="s2">&#34;</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">echo</span> <span class="s2">&#34;</span><span class="nv">$id</span><span class="s2"> </span><span class="nv">$tags</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">fi</span>
+</span></span><span class="line"><span class="cl"><span class="k">done</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="12-rename-an-image">1.2. Rename an Image</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker tag &lt;image-id&gt; &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="13-pull-an-image">1.3. Pull an Image</h3>
+<p>Search for an image in <a href="https://hub.docker.com/">Docker Hub</a>.</p>
+<p>Pull the image by running:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker pull &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Or download the layers to <code>&lt;dir-path&gt;</code> by using <a href="https://github.com/moby/moby/blob/master/contrib/download-frozen-image-v2.sh">this script</a>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir -p &lt;dir-path&gt;  <span class="c1"># Directory to store the layers</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">bash download-frozen-image-v2.sh &lt;dir-path&gt; &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Load the image</span>
+</span></span><span class="line"><span class="cl">tar -cC &lt;dir-path&gt; . <span class="p">|</span> docker load
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="14-build-an-image">1.4. Build an Image</h3>
+<p>Use a Dockerfile to build a new image based on an existing image.</p>
+<p>Check this example project: <a href="https://github.com/jamesnulliu/deeplearning-docker-build/blob/main/Dockerfile" target="_blank" rel="noopener noreferrer">
+    jamesnulliu/deeplearning-docker-build
+</a>
+.</p>
+<p>The following command in <a href="https://github.com/jamesnulliu/deeplearning-docker-build/blob/main/scripts/build.sh" target="_blank" rel="noopener noreferrer">
+    ./scripts/build.sh
+</a>
+ would build image <code>&lt;image-name&gt;:&lt;image-tag&gt;</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker build <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -f Dockerfile <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -t jamesnulliu/deeplearning:torch2.6-cuda12.6-ubuntu24.04 <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    .
+</span></span></code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>Note that <code>.</code> specifiles the build context, where docker can reference (e.g., <code>COPY</code> and <code>ADD</code>) the containing files during the build process. You can change it to other directory path according to your needs.</p></blockquote>
+<p>You will find the new image after building by runing <code>docker images</code>.</p>
+<h3 id="15-save-an-image-to-a-tar-file">1.5. Save an Image to a tar File</h3>
+<p>To export an image to a tar file with reusable layer imformations, run the following command:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker save -o &lt;some-name&gt;.tar &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># Or</span>
+</span></span><span class="line"><span class="cl">docker save -o &lt;some-name&gt;.tar &lt;image-id&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>See <a href="/blogs/something-about-docker/#16-load-an-image">1.6. Load an Image</a> to load the generated tar file to an image.</p>
+<h3 id="16-load-an-image">1.6. Load an Image</h3>
+<p>Suppose you have a tar file <code>&lt;some-name&gt;.tar</code>, if the file is generated by <code>docker save</code> (see <a href="/blogs/something-about-docker/#15-save-an-image-to-a-tar-file">1.5. Save an Image to a tar File</a>), load the image by running:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker load -i &lt;some-name&gt;.tar
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Or if the file is generated by <code>docker export</code> (see <a href="/blogs/something-about-docker/#24-export-a-container-to-a-tar-file">2.4 Export a container to a tar File</a>), load the container to an image by running:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker import &lt;some-name&gt;.tar &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="17-remove-an-image">1.7. Remove an Image</h3>
+<p>Before removing an image, you need to:</p>
+<ul>
+<li>Stop containers using the image: <code>docker stop &lt;container-id&gt;</code>.</li>
+<li>Remove containers using the image: <code>docker rm &lt;container-id&gt;</code>.</li>
+</ul>
+<p>Then remove the image:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker rmi &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># Or</span>
+</span></span><span class="line"><span class="cl">docker rmi &lt;image-id&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2-about-container">2. About Container</h2>
+<h3 id="21-check-existing-containers-and-statistics">2.1. Check Existing Containers and Statistics</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># List running/[all] containers</span>
+</span></span><span class="line"><span class="cl">docker ps <span class="o">[</span>-a<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Check statistics of all/[some] containers</span>
+</span></span><span class="line"><span class="cl">docker stats <span class="o">[</span>&lt;container-id&gt;<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Check disk usage of docker (images, conatiners)</span>
+</span></span><span class="line"><span class="cl">docker system df
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="22-create-a-container">2.2. Create a Container</h3>
+<p>Basic Parameters:</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to expand</summary>
+    <div><ul>
+<li><code>-it</code>: Interactive mode with pseudo-TTY terminal</li>
+<li><code>--name &lt;container-name&gt;</code>: Assign a name to the container for easier reference</li>
+<li><code>-p &lt;host-port&gt;:&lt;container-port&gt;</code>: Map host port to container port (e.g. <code>8888:22</code>)</li>
+<li><code>--entrypoint /bin/bash</code>: Override default entrypoint with bash shell</li>
+<li><code>&lt;image-name&gt;</code>: Name of the Docker image to use (e.g. <code>ubuntu</code>, <code>nvidia/cuda</code>)</li>
+<li><code>&lt;image-tag&gt;</code>: Version/tag of the image (e.g. <code>latest</code>, <code>20.04</code>)</li>
+</ul>
+</div>
+</details><br>
+<p>Additional Options:</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to expand</summary>
+    <div><ul>
+<li><code>--shm-size &lt;shm-size&gt;G</code>: Set size of /dev/shm (shared memory) in GB (e.g. <code>2G</code>)</li>
+<li><code>--gpus all</code>: [Optional] Give container access to all GPUs (requires nvidia-docker)</li>
+<li><code>-v &lt;host-path&gt;:&lt;container-path&gt;</code>: Mount host directory into container</li>
+<li><code>-e KEY=VALUE</code>: Set environment variables</li>
+<li><code>--network=host</code>: Use host network stack; If set, <code>-p</code> is not needed, and you can access host services directly with <code>localhost</code></li>
+<li><code>--ipc=host</code>: Use host IPC namespace</li>
+<li><code>--privileged</code>: Give extended privileges to container</li>
+<li><code>-u $(id -u):$(id -g)</code>: Run as current user instead of root</li>
+<li><code>--rm</code>: Automatically remove container when it exits</li>
+</ul>
+</div>
+</details><br>
+<p>Example:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Create and run a container from &lt;image-name&gt;:&lt;image-tag&gt;</span>
+</span></span><span class="line"><span class="cl">docker run -it <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --gpus all <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --name &lt;container-name&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -p &lt;host-port&gt;:&lt;container-port&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --entrypoint /bin/bash <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --shm-size &lt;shm-size&gt;G <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    &lt;image-name&gt;:&lt;image-tag&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># Now you are in the container.</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To exit container and return to host, run <code>exit</code>, which will stop the containter; Or type <code>Ctrl+P+Q</code>, which will detach from container without stopping it.</p>
+<h3 id="23-start-stop-remove-and-rename-a-container">2.3. Start, Stop, Remove and Rename a Container</h3>
+<p>Start a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker start &lt;container-name&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Attach to a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker <span class="nb">exec</span> -it &lt;container-name&gt; bash
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Stop a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker stop &lt;contianer-name&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Remove a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker rm &lt;container-name&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Rename a container:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker rename &lt;container-id&gt; &lt;new-name&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># or</span>
+</span></span><span class="line"><span class="cl">docker rename &lt;old-name&gt; &lt;new-name&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="24-export-a-container-to-a-tar-file">2.4. Export a Container to a tar File</h3>
+<p>Note that <code>docker export</code> only exports the container&rsquo;s filesystem without layer information. It is more recommended to use <code>docker save</code> to save a image to a tar file (see <a href="/blogs/something-about-docker/#15-save-an-image-to-a-tar-file">1.5. Save an Image to a tar File</a>).</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker <span class="nb">export</span> &lt;container-id&gt; &gt; &lt;some-name&gt;.tar
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>See <a href="/blogs/something-about-docker/#16-load-an-image">1.6. Load an Image</a> to load the generated tar file to an image.</p>
+<h2 id="3-change-docker-root-directory-to-a-different-location">3. Change Docker Root Directory to a Different Location</h2>
+<p>Check current docker root directory:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker info <span class="p">|</span> grep <span class="s2">&#34;Docker Root Dir&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Stop docker daemon:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">systemctl stop docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Edit (or create) the docker configuration file:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">vim /etc/docker/daemon.json
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Add or modify the configuration:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;data-root&#34;</span><span class="p">:</span> <span class="s2">&#34;&lt;target-docker-root&gt;&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Copy the existing docker data to target location:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rsync -aP &lt;current-docker-root&gt; &lt;target-docker-root&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Restart docker daemon:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">systemctl daemon-reload
+</span></span><span class="line"><span class="cl">systemctl start docker
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Verify the new location:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker info <span class="p">|</span> grep <span class="s2">&#34;Docker Root Dir&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item><item><title>Offline Installation of vscode-server and Extensions</title><link>https://jamesnulliu.github.io/blogs/offline-installation-of-vscode-server-and-extensions/</link><pubDate>Thu, 08 Aug 2024 11:34:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/offline-installation-of-vscode-server-and-extensions/</guid><description>How to install VSCode Server offline.</description><content:encoded><![CDATA[<h2 id="1-introduction">1. Introduction</h2>
+<p>Here is a common scenario:</p>
+<ol>
+<li>You have a target linux server without public network access, but you want to connect to it using VSCode Remote SSH.</li>
+<li>Or even further, your target server is running several Docker containers, and you want to attach to the containers on VSCode.</li>
+<li>You also need compatible extensions to be installed, so that you can actually work with your target server or containers.</li>
+</ol>
+<p>What a pain! But don&rsquo;t worry, this article will show several methods to install VSCode Server and extensions offline, which can hopefully save you a lot of time and effort.</p>
+<h2 id="2-method-1-copy-from-another-linux-server">2. Method 1: Copy from Another Linux Server</h2>
+<blockquote>
+<p>😎 This is the easiest method!</p></blockquote>
+<ol>
+<li>Connect to another Linux server (or WSL) which has access to the public network with VSCode Remote SSH on your local machine.</li>
+<li>On the server, you would find the <code>~/.vscode-server</code> directory, which contains everything you need for SSH connection and all the extensions you have installed.</li>
+<li>Copy the <code>~/.vscode-server</code> directory to your target server.</li>
+<li>If you want to attach to a container on the server, copy the <code>~/.vscode-remote</code> directory to the container; For example:
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker cp ~/.vscode-remote &lt;container_id&gt;:/root/.vscode-remote
+</span></span></code></pre></td></tr></table>
+</div>
+</div></li>
+<li>Now you can connect to the target server from your local machine using VSCode Remote SSH, and you can also attach to the container after connecting to the server.</li>
+</ol>
+<p>⚠️ Note that each time you update your local VSCode, you need to first connect to another linux server and then repeat the above steps to copy the <code>~/.vscode-server</code> directory to the target server or container.</p>
+<h2 id="3-method-2-install-manually">3. Method 2: Install Manually</h2>
+<blockquote>
+<ol>
+<li>😵‍💫 This is a relatively complex method, recommended only if you cannot use <a href="/blogs/offline-installation-of-vscode-server-and-extensions/#2-method-1-copy-from-another-linux-server">Method 1</a>!</li>
+<li>Moreover, this method does not support installing extentions in your target server or container.</li>
+<li>To use extentions, you will have to copy the <code>~/.vscode-server/extenstions</code> directory on another server to the target machine manually and then modify <code>~/.vscode-server/extensions/extensions.json</code>, replacing all the extention paths to a correct path based on your environment.</li>
+</ol></blockquote>
+<h3 id="31-vscode-version-and-commit-id">3.1. VSCode Version and Commit-ID</h3>
+<p>If your vscode binary is in <code>env:PATH</code>, you can get the version and commit-id by running the following command:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">code --version
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Or if not, open vscode, click <code>Help</code> =&gt; <code>About</code>. Find the version and commit-id in the pop-up window:</p>
+<div class="image-container">
+    <img src="/imgs/blogs/offline-installation-of-vscode-server-and-extensions/commit-id.png" 
+        alt="" 
+        class="image" 
+        width="90%"/>
+    <div class="image-caption">
+        Click Help =&gt; Click About =&gt; Find the version and commit-id in the pop-up window.
+    </div>
+</div>
+<h3 id="32-case-a-if-your-vscode-version-is-less-than-119-eg-1181">3.2. Case A: If Your VSCode Version is Less than <code>1.19</code> (e.g, <code>1.18.1</code>)</h3>
+<p>Download <code>vscode-server-linux-x64</code> with the following link and send it to the target server:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 1. Download the vscode-server-linux-x64 with the commit-id</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#    If your local machine is Linux:</span>
+</span></span><span class="line"><span class="cl">wget https://update.code.visualstudio.com/commit:&lt;commit-id&gt;/server-linux-x64/stable
+</span></span><span class="line"><span class="cl"><span class="c1">#    Or if your local machine is Windows:</span>
+</span></span><span class="line"><span class="cl">curl -O https://update.code.visualstudio.com/commit:&lt;commit-id&gt;/server-linux-x64/stable
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 2. Send &#34;./stable&#34; from host to &#34;~&#34; on server with scp and rename it to </span>
+</span></span><span class="line"><span class="cl"><span class="c1">#    &#34;~/vscode-server-linux-x64.tar.gz&#34;</span>
+</span></span><span class="line"><span class="cl">scp -P &lt;port&gt; ./stable &lt;username&gt;@&lt;server-ip&gt;:~/vscode-server-linux-x64.tar.gz
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Now login to the the server with SSH on your local terminal:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 3. Create directory &#34;~/.vscode-server/bin&#34;</span>
+</span></span><span class="line"><span class="cl">mkdir -p ~/.vscode-server/bin 
+</span></span><span class="line"><span class="cl"><span class="c1"># 4. Extract &#34;~/vscode-server-linux-x64.tar.gz&#34; to &#34;~/.vscode-server/bin&#34;</span>
+</span></span><span class="line"><span class="cl">tar -xf ~/vscode-server-linux-x64.tar.gz -C ~/.vscode-server/bin
+</span></span><span class="line"><span class="cl"><span class="c1"># 5. Rename the extracted directory &#34;vscode-server&#34; to &#34;&lt;commit-id&gt;&#34;</span>
+</span></span><span class="line"><span class="cl">mv ~/.vscode-server/bin/vscode-server ~/.vscode-server/bin/&lt;commit-id&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 6. Optional: Copy the &#34;.vscode-server&#34; directory to target container</span>
+</span></span><span class="line"><span class="cl">docker cp ~/.vscode-server &lt;container_id&gt;:/root/.vscode-server
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Finally, go back to your local machine and connect to your server with VSCode Remote SSH, and everything should be okay.</p>
+<h3 id="32-case-b-if-your-vscode-version-is-greater-than-119">3.2. Case B: If Your VSCode Version is Greater than <code>1.19</code></h3>
+<p>Download <code>vscode-cli</code> with the following link and send it to the target server:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 1. Download the vscode-cli with the commit-id</span>
+</span></span><span class="line"><span class="cl"><span class="c1">#    If your local machine is Linux:</span>
+</span></span><span class="line"><span class="cl">wget https://update.code.visualstudio.com/commit:&lt;commit-id&gt;/cli-alpine-x64/stable
+</span></span><span class="line"><span class="cl"><span class="c1">#    Or if your local machine is Windows:</span>
+</span></span><span class="line"><span class="cl">curl -O https://update.code.visualstudio.com/commit:&lt;commit-id&gt;/cli-alpine-x64/stable
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 2. Send &#34;./stable&#34; from host to &#34;~&#34; on server and rename it to &#34;~/vscode-cli.tar.gz&#34;</span>
+</span></span><span class="line"><span class="cl">scp -P &lt;port&gt; ./stable &lt;username&gt;@&lt;server-ip&gt;:~/vscode-cli.tar.gz
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Now login to the the server with SSH on your local terminal:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 3. Create directory &#34;~/.vscode-server/cli/servers/Stable-&lt;commit-id&gt;&#34;</span>
+</span></span><span class="line"><span class="cl">mkdir -p ~/.vscode-server/cli/servers/Stable-&lt;commit-id&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 4. Extract &#34;~/vscode-cli.tar.gz&#34; to &#34;~/.vscode-server&#34;</span>
+</span></span><span class="line"><span class="cl">tar -xzf ~/vscode-cli.tar.gz -C ~/.vscode-server
+</span></span><span class="line"><span class="cl"><span class="c1"># 5. Rename the extracted binary to &#34;~/.vscode-server/code-&lt;commit-id&gt;&#34;</span>
+</span></span><span class="line"><span class="cl">mv ~/.vscode-server/code ~/.vscode-server/code-&lt;commit-id&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 6. Optional: Copy the &#34;.vscode-server&#34; directory to target container</span>
+</span></span><span class="line"><span class="cl">docker cp ~/.vscode-server &lt;container_id&gt;:/root/.vscode-server
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Finally, go back to your local machine and connect to your server with VSCode Remote SSH, and everything should be okay.</p>
+]]></content:encoded></item><item><title>Environment Variable Management on Linux</title><link>https://jamesnulliu.github.io/blogs/environment-variable-management-on-linux/</link><pubDate>Wed, 31 Jul 2024 14:51:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/environment-variable-management-on-linux/</guid><description>An easy way to manage environment variables on Linux using load and unload.</description><content:encoded><![CDATA[<p>Open <code>~/.bashrc</code> file.</p>
+<p>Create 2 functions to load and unload environment variables:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">env_load<span class="o">()</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">env_var</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">path</span><span class="o">=</span><span class="nv">$2</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="o">[[</span> <span class="s2">&#34;:</span><span class="si">${</span><span class="p">!env_var</span><span class="si">}</span><span class="s2">:&#34;</span> !<span class="o">=</span> *<span class="s2">&#34;:</span><span class="nv">$path</span><span class="s2">:&#34;</span>* <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">export</span> <span class="nv">$env_var</span><span class="o">=</span><span class="s2">&#34;</span><span class="si">${</span><span class="p">!env_var</span><span class="si">}</span><span class="s2">:</span><span class="nv">$path</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">fi</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">env_unload<span class="o">()</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">env_var</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">path</span><span class="o">=</span><span class="nv">$2</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">paths_array</span><span class="o">=(</span><span class="si">${</span><span class="p">!env_var//:/ </span><span class="si">}</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">local</span> <span class="nv">new_paths</span><span class="o">=()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> item in <span class="s2">&#34;</span><span class="si">${</span><span class="nv">paths_array</span><span class="p">[@]</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">;</span> <span class="k">do</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="o">[[</span> <span class="s2">&#34;</span><span class="nv">$item</span><span class="s2">&#34;</span> !<span class="o">=</span> <span class="s2">&#34;</span><span class="nv">$path</span><span class="s2">&#34;</span> <span class="o">]]</span><span class="p">;</span> <span class="k">then</span>
+</span></span><span class="line"><span class="cl">            <span class="nv">new_paths</span><span class="o">+=(</span><span class="s2">&#34;</span><span class="nv">$item</span><span class="s2">&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">fi</span>
+</span></span><span class="line"><span class="cl">    <span class="k">done</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">export</span> <span class="nv">$env_var</span><span class="o">=</span><span class="k">$(</span><span class="nv">IFS</span><span class="o">=</span>:<span class="p">;</span> <span class="nb">echo</span> <span class="s2">&#34;</span><span class="si">${</span><span class="nv">new_paths</span><span class="p">[*]</span><span class="si">}</span><span class="s2">&#34;</span><span class="k">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Now, you can use <code>env_load</code> and <code>env_unload</code> to manage environment variables.</p>
+<p>For example, to manage CUDA environment, add these lines to <code>~/.bashrc</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">CUDA_HOME</span><span class="o">=</span><span class="s2">&#34;/usr/local/cuda-12.1&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">alias</span> <span class="nv">LOAD_CUDA</span><span class="o">=</span><span class="s2">&#34;env_load PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/bin; env_load LD_LIBRARY_PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/lib64&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">alias</span> <span class="nv">UNLOAD_CUDA</span><span class="o">=</span><span class="s2">&#34;env_unload PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/bin; env_unload LD_LIBRARY_PATH </span><span class="nv">$CUDA_HOME</span><span class="s2">/lib64&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="related-blogs">Related Blogs</h2>
+<ul>
+<li><a href="/blogs/user-management-on-linux" target="_blank" rel="noopener noreferrer">
+    User Management on Linux
+</a>
+</li>
+</ul>
+]]></content:encoded></item><item><title>Install GCC-13 on Rocky 9</title><link>https://jamesnulliu.github.io/blogs/install-gcc-13-on-rocky-9/</link><pubDate>Sat, 06 Jul 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/install-gcc-13-on-rocky-9/</guid><description>How to install GCC-13 in Rocky 9.</description><content:encoded><![CDATA[<p>Install build essentials.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnf groupinstall <span class="s2">&#34;Development Tools&#34;</span>  <span class="c1"># gcc-11 is installed by default</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Enable devel repository and install gcc toolset 13:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnf config-manager --set-enabled devel
+</span></span><span class="line"><span class="cl">sudo dnf update
+</span></span><span class="line"><span class="cl">sudo dnf install gcc-toolset-13
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To enable gcc-13:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">scl <span class="nb">enable</span> gcc-toolset-13 bash
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To disable gcc-13, just exit the shell:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">exit</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item><item><title>Install Nvidia Driver and CUDA Toolkit on Rocky 9</title><link>https://jamesnulliu.github.io/blogs/install-nvidia-driver-and-cuda-toolkit-on-rocky-9/</link><pubDate>Sat, 06 Jul 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/install-nvidia-driver-and-cuda-toolkit-on-rocky-9/</guid><description>How to install Nvidia driver and CUDA toolkit on Rocky 9.</description><content:encoded><![CDATA[<p>To stop and disable gdm service (which is the default display manager):</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo systemctl disable gdm
+</span></span><span class="line"><span class="cl">sudo systemctl stop gdm
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To disable the default nouveau driver:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo bash -c <span class="s2">&#34;echo blacklist nouveau &gt; /etc/modprobe.d/blacklist-nvidia-nouveau.conf&#34;</span>
+</span></span><span class="line"><span class="cl">sudo bash -c <span class="s2">&#34;echo options nouveau modeset=0 &gt;&gt; /etc/modprobe.d/blacklist-nvidia-nouveau.conf&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Update the kernel initramfs</span>
+</span></span><span class="line"><span class="cl">sudo dracut --force
+</span></span><span class="line"><span class="cl"><span class="c1"># Reboot</span>
+</span></span><span class="line"><span class="cl">sudo reboot
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Install epel-release and dkms:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnf install epel-release
+</span></span><span class="line"><span class="cl">sudo dnf install dkms
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Download the installation <strong>LOCAL RUN FILE</strong> of <strong>THE LATEST</strong> CUDA Toolkit (&gt;=12.5) from <a href="https://developer.nvidia.com/cuda-downloads">NVIDIA official website</a> and install it (with driver).</p>
+<blockquote>
+<p>💬 There is a bug of the compatibility of the new linux kernel and previous cuda derviers (less than 555). You could install other versions of cuda toolkit but keep the latest driver.</p></blockquote>
+<p>To enable and start gdm service:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> gdm
+</span></span><span class="line"><span class="cl">sudo systemctl start gdm
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item><item><title>Build FFmpeg against NVENC</title><link>https://jamesnulliu.github.io/blogs/build-ffmpeg-against-nvenc/</link><pubDate>Sat, 29 Jun 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/build-ffmpeg-against-nvenc/</guid><description>How to build FFmpeg against NVENC.</description><content:encoded><![CDATA[<p>FFmpeg is a powerful tool for video processing. It supports a wide range of codecs and formats. In this post, I will show you how to build FFmpeg with NVENC support.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Install cuda 12.2 first</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo apt update
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo apt install autoconf automake build-essential cmake libass-dev <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    libfreetype6-dev libsdl2-dev libtool libva-dev libvdpau-dev <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    libvorbis-dev libxcb1-dev libxcb-shm0-dev libxcb-xfixes0-dev <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    pkg-config texinfo wget yasm zlib1g-dev
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">git clone https://git.videolan.org/git/ffmpeg/nv-codec-headers.git
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> nv-codec-headers <span class="o">&amp;&amp;</span> sudo make install
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> ..
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">git clone git@github.com:FFmpeg/FFmpeg.git
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> FFmpeg
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">./configure --prefix<span class="o">=</span>/usr/local/ffmpeg --enable-nonfree <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --enable-cuda-nvcc --disable-x86asm --nvcc<span class="o">=</span><span class="nv">$CUDA_HOME</span>/nvcc <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --enable-gpl --enable-libass --enable-libfreetype --enable-libvorbis <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --enable-libx265 --enable-cuvid --enable-nvenc --enable-libnpp <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --extra-cflags<span class="o">=</span>-I<span class="nv">$CUDA_HOME</span>/include --extra-ldflags<span class="o">=</span>-L<span class="nv">$CUDA_HOME</span>/lib64
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Example: Following code encode a video with nvenc</span>
+</span></span><span class="line"><span class="cl">ffmpeg -i input.mp4 -c:v hevc_nvenc -preset fast -rc:v vbr_hq <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -cq:v <span class="m">19</span> -b:v <span class="m">0</span> -s 1280x720 output.mp4
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item><item><title>Install GCC-13 on Ubuntu 20 (or Earlier)</title><link>https://jamesnulliu.github.io/blogs/install-gcc-13-on-ubuntu-20/</link><pubDate>Sat, 29 Jun 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/install-gcc-13-on-ubuntu-20/</guid><description>This blog is a tutorial on how to install GCC-13 in Ubuntu 20 (or earlier).</description><content:encoded><![CDATA[<p>Install build essentials.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo apt install build-essential
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Check which version of gcc and g++ is installed on your system:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">gcc -v  <span class="c1"># or g++ -v</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>Suppose</strong> that your currently installed gcc and g++ version is 11, you should be able to find gcc-11 and g++-11 under &ldquo;/usr/bin/&rdquo;:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">ls /usr/bin
+</span></span><span class="line"><span class="cl"><span class="c1"># All files under &#34;/usr/bin&#34; would be listd.</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Now, install gcc-13 and g++-13, while keeping older version existed:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Install gcc-13 and g++-13</span>
+</span></span><span class="line"><span class="cl">sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">sudo apt-get install gcc-13 g++-13
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Register gcc-11 and g++-11 as one group of alternatives</span>
+</span></span><span class="line"><span class="cl">sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 <span class="m">110</span> --slave /usr/bin/g++ g++ /usr/bin/g++-11
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Register gcc-13 and g++-13 as another group of alternatives</span>
+</span></span><span class="line"><span class="cl">sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 <span class="m">130</span> --slave /usr/bin/g++ g++ /usr/bin/g++-13
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Pop a prompt to select the default version of gcc, and g++ would be updated automatically</span>
+</span></span><span class="line"><span class="cl">sudo update-alternatives --config gcc
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For general purpose of C++ programing, it is suggested that gcc-11 and g++-11 is installed on your system. Some softwares may have a strict rule for gcc version not larger than 12.</p>
+]]></content:encoded></item></channel></rss>

@@ -1,0 +1,1045 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Notes on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/categories/notes/</link><description>Recent content in Notes on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 21:45:48 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/categories/notes/index.xml" rel="self" type="application/rss+xml"/><item><title>CUDA Programming Notes | 01: Memory Coalescing</title><link>https://jamesnulliu.github.io/blogs/cuda-programming-notes-01-memory-coalescing/</link><pubDate>Sun, 16 Mar 2025 01:39:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/cuda-programming-notes-01-memory-coalescing/</guid><description>Introduction to memory coalescing with Nsight Compute.</description><content:encoded><![CDATA[<h2 id="1-introduction-to-memory-coalescing">1. Introduction to Memory Coalescing</h2>
+<h3 id="11-dynamic-random-access-memories-drams">1.1. Dynamic Random Access Memories (DRAMs)</h3>
+<p>Accessing data in the global memory is critical to the performance of a CUDA application.</p>
+<p>In addition to tiling techniques utilizing shared memories, we discuss memory coalescing techniques to move data efficiently <strong>from global memory into shared memory and registers</strong>.</p>
+<p>Global memory is implemented with dynamic random access memories (DRAMs). Reading one DRAM is a very slow process.</p>
+<p>Modern DRAMs use a parallel process: <strong>Each time a location is accessed, many consecutive locations that includes the requested location are accessed</strong>.</p>
+<p>If an application uses data from consecutive locations before moving on to other locations, the DRAMs work close to the advertised peak global memory bandwidth.</p>
+<h3 id="12-memory-coalescing">1.2. Memory Coalescing</h3>
+<p>Recall that <strong>all threads in a warp execute the same instruction</strong>.</p>
+<p>When all threads in a warp execute a load instruction, the hardware detects whether the threads access consecutive memory locations.</p>
+<p>The most favorable global memory access is achieved when the same instruction for all threads in a warp accesses global memory locations.</p>
+<p>In this favorable case, the hardware coalesces all memory accesses into a consolidated access to consecutive DRAM locations.</p>
+<blockquote>
+<p><strong>Definition: Memory Coalescing</strong><br>
+If, in a warp, thread $0$ accesses location $n$, thread $1$ accesses location $n + 1$, &hellip; thread $31$ accesses location $n + 31$, then all these accesses are coalesced, that is: <strong>combined into one single access</strong>.</p></blockquote>
+<p>The CUDA C Best Practices Guide gives a high priority recommendation to coalesced access to global memory.</p>
+<h2 id="2-example-vector-addition">2. Example: Vector Addition</h2>
+<h3 id="21-coalesced-access">2.1. Coalesced Access</h3>
+<p><strong>Coalesced Memory Access</strong> means that each thread in a warp accesses consecutive memory locations so that the hardware can combine all these accesses into one single access. By doing so, fewer wasted data are transferred and the memory bandwidth is fully utilized.</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to See Example Code</summary>
+    <div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">__global__</span> <span class="kt">void</span> <span class="nf">vecAddKernel</span><span class="p">(</span><span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">b</span><span class="p">,</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">c</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                             <span class="kt">int32_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">gtid</span> <span class="o">=</span> <span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">blockDim</span><span class="p">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">gtid</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// [DRAM] 2 load, 1 store, 3 inst
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">c</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">gtid</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">launchVecAdd</span><span class="p">(</span><span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">d_A</span><span class="p">,</span> <span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">d_B</span><span class="p">,</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">d_C</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">dim3</span> <span class="n">blockSize</span> <span class="o">=</span> <span class="p">{</span><span class="n">std</span><span class="o">::</span><span class="n">min</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1024</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
+</span></span><span class="line"><span class="cl">    <span class="n">dim3</span> <span class="n">gridSize</span> <span class="o">=</span> <span class="p">{</span><span class="n">ceilDiv</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">blockSize</span><span class="p">.</span><span class="n">x</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">vecAddKernel</span><span class="o">&lt;&lt;&lt;</span><span class="n">gridSize</span><span class="p">,</span> <span class="n">blockSize</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">d_A</span><span class="p">,</span> <span class="n">d_B</span><span class="p">,</span> <span class="n">d_C</span><span class="p">,</span> <span class="kt">int32_t</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></div>
+</details><br>
+<p>Note that in NVIDIA GPUs:</p>
+<ul>
+<li><strong>WARP</strong> is the smallest unit of execution, which contains 32 threads.</li>
+<li><strong>SECTOR</strong> is the smallest unit of data that can be accessed from global memory, which is exactly 32 bytes.</li>
+</ul>
+<p>In the example above, all threads in a warp access consecutive memory locations both for <code>a</code>, <code>b</code>, and <code>c</code>, and for each $32 * 4 / 32 = 4$ sectors, only <strong>ONE</strong> instruction to a warp is needed to access the data. This is so-called <strong>coalesced memory access</strong>.</p>
+<div class="image-container">
+    <img src="https://docs.google.com/drawings/d/e/2PACX-1vRXwpIJWOSYT4fXZ3ZwR8UZOXpqO0R_-AG5JLZQkm3BEZQ16KExQdAH58LkP1pvZbisQOI2-Gr0N1v_/pub?w=1006&amp;h=371" 
+        alt="" 
+        class="image" 
+        width="100%"/>
+    <div class="image-caption">
+        Coalesced Memory Access. There are 2N loads operations and 1N store operations in the kernel, which in all are 2N/32 load instructions and 1N/32 store instructions for warps (each warp executes 1 instruction). Since the access to memroy is coalesced, one instruction will transfer 4 sectors of data. There are no any wasted data.
+    </div>
+</div>
+<p>Another example of coalesced memory access is shown below:</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to See Example Code</summary>
+    <div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">__global__</span> <span class="kt">void</span> <span class="nf">vecAddKernelv1</span><span class="p">(</span><span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">b</span><span class="p">,</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">c</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                               <span class="kt">int32_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">gtid</span> <span class="o">=</span> <span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">blockDim</span><span class="p">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">gtid</span> <span class="o">=</span> <span class="n">gtid</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">?</span> <span class="n">gtid</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">:</span> <span class="n">gtid</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">gtid</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// [DRAM] 2 load, 1 store, 3 inst
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">c</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">gtid</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></div>
+</details><br>
+<p>Crompared to the previous example, each 2 threads exchange their access positions. However, the access to memory is still coalesced.</p>
+<div class="image-container">
+    <img src="https://docs.google.com/drawings/d/e/2PACX-1vTGbAM6z2ZZwcftUcB4E80_PUqOMCr2Y6ErnGx5DCPqVqUqFaxlDV9IbcPHjUKI1PX7v6cwcZHWH2nT/pub?w=1006&amp;h=371" 
+        alt="" 
+        class="image" 
+        width="100%"/>
+    <div class="image-caption">
+        Another Example of Coalesced Memory Access. 1 intruction will transfer 4 sectors of data. There are no any wasted data.
+    </div>
+</div>
+<h3 id="22-non-coalesced-access">2.2. Non-Coalesced Access</h3>
+<p><strong>Non-Coalesced Memory Access</strong> means that some thread in a warp accesses non-consecutive memory locations so that the hardware cannot combine all these accesses into one single access. By doing so, more wasted data are transferred and the memory bandwidth is not fully utilized.</p>
+<p>See the example code below. Originally, 32 threads in a warp would access 32 consecutive fp32 elements. However, I make the first thread in each warp access the 33th fp32 element (which should be accessed by the next warp), making an intented non-coalesced access.</p>
+<details class="custom-details">
+    <summary class="custom-summary">Click to See Example Code</summary>
+    <div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">__global__</span> <span class="kt">void</span> <span class="nf">vecAddKernelv1</span><span class="p">(</span><span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">b</span><span class="p">,</span> <span class="n">fp32_t</span><span class="o">*</span> <span class="n">c</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                               <span class="kt">int32_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">gtid</span> <span class="o">=</span> <span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">blockDim</span><span class="p">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">gtid</span> <span class="o">%</span> <span class="n">warpSize</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">gtid</span> <span class="o">=</span> <span class="p">(</span><span class="n">gtid</span> <span class="o">+</span> <span class="n">warpSize</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">ceilDiv</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">warpSize</span><span class="p">)</span> <span class="o">*</span> <span class="n">warpSize</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">gtid</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// [DRAM] 2 load, 1 store, 3 inst
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">c</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">gtid</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">gtid</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div></div>
+</details><br>
+<p>The memory access pattern is shown in the figure below. Campare to the previous examples, you can see that despite the total number of load/store instructions is the same (2N/32 load instructions and 1N/32 store instructions), for each warp, 5 sectors of data are now being transferred per instruction. From the perspective of hardware, more data are being transferred than needed.</p>
+<div class="image-container">
+    <img src="https://docs.google.com/drawings/d/e/2PACX-1vS26Ml2jmtIYgk4jhrnmAihGKhuGMcjnwM3aqh784REEtZVLh2_fEva6GbyaroJ9ZrF-w1QmRONlxQm/pub?w=1006&amp;h=371" 
+        alt="" 
+        class="image" 
+        width="100%"/>
+    <div class="image-caption">
+        Non-Coalesced Memory Access. There are 2N/32 load instructions and 1N/32 store instructions for warps. But one instruction will transfer 5 sectors of data, as shown in the first warp with 5 orange sectors.
+    </div>
+</div>
+<p>In Nsight Compute, you can see the performance analysis in the &ldquo;Memory Workload Analysis&rdquo; section. Optimization suggestions are provided for reducing wasted data transfer.</p>
+<div class="image-container">
+    <img src="/imgs/blogs/cuda-programming-notes-01-memory-coalescing/non-coalesced-nsight-compute.png" 
+        alt="" 
+        class="image" 
+        width="100%"/>
+    <div class="image-caption">
+        Performance analysis of non-coalesced memory access using Nsight Compute.
+    </div>
+</div>
+<h2 id="references">References</h2>
+<ol>
+<li><a href="https://www.elsevier.com/books/programming-massively-parallel-processors/kirk/978-0-12-811986-0" target="_blank" rel="noopener noreferrer">
+    Programming Massively Parallel Processors: A Hands-on Approach, 4th Edition
+</a>
+</li>
+<li><a href="https://www.bilibili.com/video/BV1NYCtYTEFH" target="_blank" rel="noopener noreferrer">
+    【CUDA调优指南】合并访存
+</a>
+</li>
+<li><a href="https://homepages.math.uic.edu/~jan/mcs572/memory_coalescing.pdf" target="_blank" rel="noopener noreferrer">
+    Memory Coalescing Techniques
+</a>
+</li>
+</ol>
+]]></content:encoded></item><item><title>MLIR Tutorial 01 | Running and Testing a Lowering</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/mlir-tutorial-01-running-and-testing-a-lowering/</link><pubDate>Thu, 29 Aug 2024 11:05:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/mlir-tutorial-01-running-and-testing-a-lowering/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<blockquote>
+<p>Reference: <a href="https://www.jeremykun.com/2023/08/10/mlir-running-and-testing-a-lowering/">https://www.jeremykun.com/2023/08/10/mlir-running-and-testing-a-lowering/</a></p></blockquote>
+<p><strong>Note</strong>: Check <a href="../setup-the-environment-of-mlir/">Setup the Environment of MLIR</a> for the environment setup.</p>
+<h2 id="1-implementing-a-lowering">1. Implementing a Lowering</h2>
+<p>Create a file &ldquo;ctlz.mlir&rdquo;:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mlir" data-lang="mlir"><span class="line"><span class="cl"><span class="kt">func</span><span class="p">.</span><span class="kt">func</span> <span class="nf">@main</span><span class="p">(</span><span class="nv">%arg0</span><span class="p">:</span> <span class="k">i32</span><span class="p">)</span> <span class="p">-&gt;</span> <span class="k">i32</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nv">%0</span> <span class="p">=</span> math<span class="p">.</span>ctlz <span class="nv">%arg0</span> <span class="p">:</span> <span class="k">i32</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">func</span><span class="p">.</span><span class="kt">return</span> <span class="nv">%0</span> <span class="p">:</span> <span class="k">i32</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Lower the <code>math.ctlz</code> operation to the <code>llvm.ctlz</code> operation with <code>mlir-opt</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mlir-opt --convert-math-to-funcs<span class="o">=</span>convert-ctlz ./ctlz.mlir
+</span></span></code></pre></div>]]></content:encoded></item><item><title>Toy Ch4 | Enabling Generic Transformation with Interfaces</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch4-enabling-generic-transformation-with-interfaces/</link><pubDate>Thu, 01 Aug 2024 11:11:11 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch4-enabling-generic-transformation-with-interfaces/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<blockquote>
+<p>Reference: <a href="https://mlir.llvm.org/docs/Tutorials/Toy/Ch-4/">https://mlir.llvm.org/docs/Tutorials/Toy/Ch-4/</a></p></blockquote>
+<p><strong>Note</strong>: Check <a href="../setup-the-environment-of-mlir/">Setup the Environment of MLIR</a> for the environment setup.</p>
+<h2 id="1-introduction">1. Introduction</h2>
+<p><strong>Problem</strong>: Naively implementing each transformation for each dialect leads to large amounts of code duplication, as the internal algorithms are generally very similar.</p>
+<p><strong>Solution</strong>: To provide the ability for transformations to opaquely hook into dialects like Toy to get the information they need.</p>
+<h2 id="2-add-opprintinterface">2. Add OpPrintInterface</h2>
+<p>Define a new env var:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">TOY_CH4_HOME</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$MLIR_HOME</span><span class="s2">/examples/toy/Ch4&#34;</span>
+</span></span></code></pre></div><h3 id="21-define-opprintinterface">2.1. Define OpPrintInterface</h3>
+<p>First, create a new file <code>$TOY_CH4_HOME/include/toy/OpPrintInterface.td</code>, define <code>OpPrintOpInterface</code> with method <code>opPrint</code> which returns a <code>std::string</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-tablegen" data-lang="tablegen"><span class="line"><span class="cl"><span class="cp">#ifndef PRINT_INTERFACE</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define PRINT_INTERFACE</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">include</span> <span class="s">&#34;mlir/IR/OpBase.td&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nv">OpPrintOpInterface</span> <span class="p">:</span> <span class="nv">OpInterface</span><span class="p">&lt;</span><span class="s">&#34;OpPrint&#34;</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">let</span> <span class="nv">description</span> <span class="p">=</span> <span class="s">[{
+</span></span></span><span class="line"><span class="cl"><span class="s">        Interface to print something in an operator.
+</span></span></span><span class="line"><span class="cl"><span class="s">    }]</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">let</span> <span class="nv">methods</span> <span class="p">=</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">        <span class="nv">InterfaceMethod</span><span class="p">&lt;</span> <span class="s">&#34;Print some information in the current operation&#34;</span><span class="p">,</span> <span class="s">&#34;std::string&#34;</span><span class="p">,</span> <span class="s">&#34;opPrint&#34;</span> <span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#endif</span> <span class="c">// PRINT_INTERFACE
+</span></span></span></code></pre></div><p>Second, create a file <code>$TOY_CH4_HOME/include/toy/OpPrintInterface.hpp</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#ifndef OPPRINTINTERFACE_HPP_
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define OPPRINTINTERFACE_HPP_
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/IR/OpDefinition.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">namespace</span> <span class="n">mlir</span><span class="o">::</span><span class="n">toy</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">/// Include the auto-generated declarations.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintOpInterface.h.inc&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="c1">// namespace mlir::toy
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#endif 
+</span></span></span></code></pre></div><p>Third, in <code>$TOY_CH4_HOME/include/toy/Dialect.h</code>, include the new interface:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintInterface.hpp&#34;</span><span class="cp">
+</span></span></span></code></pre></div><p>Fourth, make some modifications in <code>$TOY_CH4_HOME/include/toy/Ops.td</code>. Include the interface&rsquo;s td at the beginning of the file:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-td" data-lang="td"><span class="line"><span class="cl"><span class="nv">include</span> <span class="s">&#34;toy/OpPrintInterface.td&#34;</span>
+</span></span></code></pre></div><p>Then, for example, change the <code>AddOp</code> to declare that it implements the <code>OpPrint</code> interface:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-tablegen" data-lang="tablegen"><span class="line"><span class="cl"><span class="k">def</span> <span class="nv">AddOp</span> <span class="p">:</span> <span class="nv">Toy_Op</span><span class="p">&lt;</span><span class="s">&#34;add&#34;</span><span class="p">,</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">Pure</span><span class="p">,</span> 
+</span></span><span class="line"><span class="cl">    <span class="nv">DeclareOpInterfaceMethods</span><span class="p">&lt;</span><span class="nv">ShapeInferenceOpInterface</span><span class="p">&gt;,</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">DeclareOpInterfaceMethods</span><span class="p">&lt;</span><span class="nv">OpPrintOpInterface</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">]&gt;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="c">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c"></span><span class="p">}</span>
+</span></span></code></pre></div><blockquote>
+<p>You can also do the similar declaration for other operations.</p></blockquote>
+<p>Finally, some CMakeLists need to be modified.</p>
+<p>Add following lines in <code>$TOY_CH4_HOME/include/toy/CMakeLists.txt</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cmake" data-lang="cmake"><span class="line"><span class="cl"><span class="nb">set</span><span class="p">(</span><span class="s">LLVM_TARGET_DEFINITIONS</span> <span class="s">OpPrintInterface.td</span><span class="p">)</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">OpPrintOpInterface.h.inc</span> <span class="s">-gen-op-interface-decls</span><span class="p">)</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="nb">mlir_tablegen</span><span class="p">(</span><span class="s">OpPrintOpInterface.cpp.inc</span> <span class="s">-gen-op-interface-defs</span><span class="p">)</span><span class="err">
+</span></span></span><span class="line"><span class="cl"><span class="err"></span><span class="nb">add_public_tablegen_target</span><span class="p">(</span><span class="s">ToyCh4OpPrintInterfaceIncGen</span><span class="p">)</span><span class="err">
+</span></span></span></code></pre></div><p>Change the <code>add_toy_chapter</code> in <code>$TOY_CH4_HOME/CMakelists.txt</code> to:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cmake" data-lang="cmake"><span class="line"><span class="cl"><span class="nb">add_toy_chapter</span><span class="p">(</span><span class="s">toyc-ch4</span>
+</span></span><span class="line"><span class="cl">  <span class="s">toyc.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">parser/AST.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">mlir/MLIRGen.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">mlir/Dialect.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">mlir/ShapeInferencePass.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">mlir/OpPrintInterfacePass.cpp</span>
+</span></span><span class="line"><span class="cl">  <span class="s">mlir/ToyCombine.cpp</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="s">DEPENDS</span>
+</span></span><span class="line"><span class="cl">  <span class="s">ToyCh4OpsIncGen</span>
+</span></span><span class="line"><span class="cl">  <span class="s">ToyCh4ShapeInferenceInterfaceIncGen</span>
+</span></span><span class="line"><span class="cl">  <span class="s">ToyCh4CombineIncGen</span>
+</span></span><span class="line"><span class="cl">  <span class="s">ToyCh4OpPrintInterfaceIncGen</span>
+</span></span><span class="line"><span class="cl">  <span class="p">)</span><span class="err">
+</span></span></span></code></pre></div><p>To match the listed source files, create a blank file <code>$TOY_CH4_HOME/mlir/OpPrintInterfacePass.cpp</code>. We will implement the pass later.</p>
+<p>Now build the MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">bash <span class="nv">$LLVM_PROJ_HOME</span>/scripts/build-mlir.sh
+</span></span></code></pre></div><p>Errors pop out because we haven&rsquo;t implemented the <code>OpPrintInterface</code> which is declared in <code>AddOp</code>. Don&rsquo;t worry, it will be implemented in the next section.</p>
+<p>Now you can check the generated C++ class declarations in, for example,  <code>$LLVM_PROJ_HOME/build/tools/mlir/examples/toy/Ch4/include/toy/OpPrintOpInterface.h.inc</code>.</p>
+<h3 id="23-implement-opprintinterface">2.3. Implement OpPrintInterface</h3>
+<p>Since the interface is declared in <code>AddOp</code> (which is actually implemented by inheriting <code>OpPrintOpInterface</code> which provides a pure virtual function <code>opPrint</code>), we need to implement the function.</p>
+<p>In <code>$TOY_CH4_HOME/mlir/Dialect.cpp</code>, add the following code:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">AddOp</span><span class="o">::</span><span class="n">opPrint</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="s">&#34;I am AddOp&#34;</span><span class="p">;</span> <span class="p">}</span>
+</span></span></code></pre></div><h3 id="24-implement-opprintpass">2.4. Implement OpPrintPass</h3>
+<p>In <code>$TOY_CH4_HOME/include/toy/Passes.h</code>, add the following line under <code>mlir/examples/toy/Ch4/include/toy/Passes.h</code> (inside namespace <code>mlir::toy</code>):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Pass</span><span class="o">&gt;</span> <span class="n">createOpPrintPass</span><span class="p">();</span>
+</span></span></code></pre></div><p>In <code>$TOY_CH4_HOME/mlir/OpPrintInterfacePass.cpp</code>, add the following code:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/IR/Operation.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Pass/Pass.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Support/LLVM.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Support/TypeID.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/Dialect.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintInterface.hpp&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/Passes.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;memory&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">using</span> <span class="k">namespace</span> <span class="n">mlir</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">using</span> <span class="k">namespace</span> <span class="n">toy</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintOpInterface.cpp.inc&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">namespace</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="nc">OpPrintIntercfacePass</span>
+</span></span><span class="line"><span class="cl">    <span class="o">:</span> <span class="k">public</span> <span class="n">mlir</span><span class="o">::</span><span class="n">PassWrapper</span><span class="o">&lt;</span><span class="n">OpPrintIntercfacePass</span><span class="p">,</span> <span class="n">OperationPass</span><span class="o">&lt;</span><span class="n">toy</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID</span><span class="p">(</span><span class="n">OpPrintIntercfacePass</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="n">runOnOperation</span><span class="p">()</span> <span class="k">override</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">auto</span> <span class="n">f</span> <span class="o">=</span> <span class="n">getOperation</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">        <span class="n">f</span><span class="p">.</span><span class="n">walk</span><span class="p">([</span><span class="o">&amp;</span><span class="p">](</span><span class="n">mlir</span><span class="o">::</span><span class="n">Operation</span><span class="o">*</span> <span class="n">op</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="k">auto</span> <span class="n">shapeOp</span> <span class="o">=</span> <span class="n">dyn_cast</span><span class="o">&lt;</span><span class="n">OpPrint</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">shapeOp</span><span class="p">.</span><span class="n">opPrint</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">});</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">}</span>  <span class="c1">// namespace
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Pass</span><span class="o">&gt;</span> <span class="n">createOpPrintPass</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">OpPrintIntercfacePass</span><span class="o">&gt;</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h3 id="25-add-pass-to-pass-manager">2.5. Add Pass to Pass Manager</h3>
+<p>In <code>$TOY_CH4_HOME/toyc.cpp</code>, add the following line after <code>mlir::OpPassManager &amp;optPM = pm.nest&lt;mlir::toy::FuncOp&gt;();</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">optPM</span><span class="p">.</span><span class="n">addPass</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">toy</span><span class="o">::</span><span class="n">createOpPrintPass</span><span class="p">());</span>
+</span></span></code></pre></div><p>Implement <code>OpPrintPass</code> in <code>$TOY_CH4_HOME/mlir/OpPrintInterfacePass.cpp</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/IR/Operation.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Pass/Pass.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Support/LLVM.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;mlir/Support/TypeID.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/Dialect.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintInterface.hpp&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/Passes.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;memory&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">using</span> <span class="k">namespace</span> <span class="n">mlir</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">using</span> <span class="k">namespace</span> <span class="n">toy</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;toy/OpPrintOpInterface.cpp.inc&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">namespace</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="nc">OpPrintIntercfacePass</span>
+</span></span><span class="line"><span class="cl">    <span class="o">:</span> <span class="k">public</span> <span class="n">mlir</span><span class="o">::</span><span class="n">PassWrapper</span><span class="o">&lt;</span><span class="n">OpPrintIntercfacePass</span><span class="p">,</span> <span class="n">OperationPass</span><span class="o">&lt;</span><span class="n">toy</span><span class="o">::</span><span class="n">FuncOp</span><span class="o">&gt;&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID</span><span class="p">(</span><span class="n">OpPrintIntercfacePass</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="n">runOnOperation</span><span class="p">()</span> <span class="k">override</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">auto</span> <span class="n">f</span> <span class="o">=</span> <span class="n">getOperation</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">        <span class="n">f</span><span class="p">.</span><span class="n">walk</span><span class="p">([</span><span class="o">&amp;</span><span class="p">](</span><span class="n">mlir</span><span class="o">::</span><span class="n">Operation</span><span class="o">*</span> <span class="n">op</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="k">auto</span> <span class="n">shapeOp</span> <span class="o">=</span> <span class="n">dyn_cast</span><span class="o">&lt;</span><span class="n">OpPrint</span><span class="o">&gt;</span><span class="p">(</span><span class="n">op</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">shapeOp</span><span class="p">.</span><span class="n">opPrint</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">});</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">}</span>  <span class="c1">// namespace
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Pass</span><span class="o">&gt;</span> <span class="n">mlir</span><span class="o">::</span><span class="n">toy</span><span class="o">::</span><span class="n">createOpPrintPass</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">OpPrintIntercfacePass</span><span class="o">&gt;</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h3 id="26-test-the-pass">2.6. Test the Pass</h3>
+<p>Now, rebuild the MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">bash <span class="nv">$LLVM_PROJ_HOME</span>/scripts/build-mlir.sh
+</span></span></code></pre></div><p>Run the Test:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">toyc-ch4 <span class="nv">$MLIR_HOME</span>/test/Examples/Toy/Ch4/codegen.toy -emit<span class="o">=</span>mlir -opt
+</span></span></code></pre></div>]]></content:encoded></item><item><title>Toy Ch3 | High-Level Language Specific Analysis and Transformation</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch3-high-level-language-specific-analysis-and-transformation/</link><pubDate>Wed, 31 Jul 2024 11:11:11 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch3-high-level-language-specific-analysis-and-transformation/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<blockquote>
+<p>Reference: <a href="https://mlir.llvm.org/docs/Tutorials/Toy/Ch-3/">https://mlir.llvm.org/docs/Tutorials/Toy/Ch-3/</a></p></blockquote>
+<p><strong>Note</strong>: Check <a href="../setup-the-environment-of-mlir/">Setup the Environment of MLIR</a> for the environment setup.</p>
+<h2 id="1-run-example">1. Run Example</h2>
+<p>Emit MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">toyc-ch3 <span class="nv">$MLIR_HOME</span>/test/Examples/Toy/Ch3/codegen.toy -emit<span class="o">=</span>mlir -opt
+</span></span></code></pre></div><p><strong>Key Points:</strong></p>
+<ul>
+<li>Pattern-match and rewrite;</li>
+<li>Declarative, rule-based pattern-match and rewrite (DRR);</li>
+</ul>
+]]></content:encoded></item><item><title>Toy Ch2 | Emitting Basic MLIR</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch2-emitting-basic-mlir/</link><pubDate>Tue, 30 Jul 2024 14:45:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/toy-ch2-emitting-basic-mlir/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<blockquote>
+<p>Reference: <a href="https://mlir.llvm.org/docs/Tutorials/Toy/Ch-2/">https://mlir.llvm.org/docs/Tutorials/Toy/Ch-2/</a></p></blockquote>
+<p><strong>Note</strong>: Check <a href="../setup-the-environment-of-mlir/">Setup the Environment of MLIR</a> for the environment setup.</p>
+<h2 id="1-run-example">1. Run Example</h2>
+<p>Define a new env var:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">TOY_CH2_HOME</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$MLIR_HOME</span><span class="s2">/examples/toy/Ch2&#34;</span>
+</span></span></code></pre></div><p>Create a file <code>$TOY_CH2_HOME/input.toy</code> ; Add the following content to the file:</p>
+<pre tabindex="0"><code class="language-toy" data-lang="toy"># User defined generic function that operates on unknown shaped arguments.
+def multiply_transpose(a, b) {
+  return transpose(a) * transpose(b);
+}
+
+def main() {
+  var a&lt;2, 3&gt; = [[1, 2, 3], [4, 5, 6]];
+  var b&lt;2, 3&gt; = [1, 2, 3, 4, 5, 6];
+  var c = multiply_transpose(a, b);
+  var d = multiply_transpose(b, a);
+  print(d);
+}
+</code></pre><p>Emit to AST (Abstract Syntax Tree):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">toy-ch2 <span class="nv">$TOY_CH2_HOME</span>/input.toy -emit<span class="o">=</span>ast
+</span></span></code></pre></div><p>Emit to MLIR (Multi-Level Intermediate Representation):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">toyc-ch2 <span class="nv">$TOY_CH2_HOME</span>/input.toy -emit<span class="o">=</span>mlir
+</span></span></code></pre></div><h2 id="2-add-an-operator">2. Add an Operator</h2>
+<h3 id="21-define-the-operation">2.1. Define the Operation</h3>
+<p>Add following code to <code>$TOY_CH2_HOME/include/toy/Ops.td</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-tablegen" data-lang="tablegen"><span class="line"><span class="cl"><span class="c">// SubtractOp
+</span></span></span><span class="line"><span class="cl"><span class="c"></span>
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nv">SubtractOp</span> <span class="p">:</span> <span class="nv">Toy_Op</span><span class="p">&lt;</span><span class="s">&#34;subtract&#34;</span><span class="p">&gt;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">let</span> <span class="nv">summary</span> <span class="p">=</span> <span class="s">&#34;element-wise subtraction operation&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">let</span> <span class="nv">description</span> <span class="p">=</span> <span class="s">[{
+</span></span></span><span class="line"><span class="cl"><span class="s">    The &#34;subtract&#34; operation performs element-wise subtraction between two
+</span></span></span><span class="line"><span class="cl"><span class="s">    tensors. The shapes of the tensor operands are expected to match.
+</span></span></span><span class="line"><span class="cl"><span class="s">  }]</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">let</span> <span class="nv">arguments</span> <span class="p">=</span> <span class="p">(</span><span class="nv">ins</span> <span class="nv">F64Tensor</span><span class="p">:</span><span class="nv">$lhs</span><span class="p">,</span> <span class="nv">F64Tensor</span><span class="p">:</span><span class="nv">$rhs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">let</span> <span class="nv">results</span> <span class="p">=</span> <span class="p">(</span><span class="nv">outs</span> <span class="nv">F64Tensor</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c">// Indicate that the operation has a custom parser and printer method.
+</span></span></span><span class="line"><span class="cl"><span class="c"></span>  <span class="k">let</span> <span class="nv">hasCustomAssemblyFormat</span> <span class="p">=</span> <span class="m">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c">// Allow building an AddOp with from the two input operands.
+</span></span></span><span class="line"><span class="cl"><span class="c"></span>  <span class="k">let</span> <span class="nv">builders</span> <span class="p">=</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">    <span class="nv">OpBuilder</span><span class="p">&lt;(</span><span class="nv">ins</span> <span class="s">&#34;Value&#34;</span><span class="p">:</span><span class="nv">$lhs</span><span class="p">,</span> <span class="s">&#34;Value&#34;</span><span class="p">:</span><span class="nv">$rhs</span><span class="p">)&gt;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Build MLIR again to imply the modifications:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">bash <span class="nv">$LLVM_PROJ_HOME</span>/scripts/build-mlir.sh
+</span></span></code></pre></div><p>Build errors pop out, because:</p>
+<ul>
+<li><code>hasCustomAssemblyFormat</code> is assigned with <code>1</code>, but the custom parser and printer method is not implemented.</li>
+<li><code>OpBuilder</code> is not implemented.</li>
+</ul>
+<p>These errors will be handled later.</p>
+<p>Note that the C++ implementation of class <code>SubtractOp</code> has been generated in <code>$LLVM_PROJ_HOME/build/tools/mlir/examples/toy/Ch2/include/toy/Ops.h.inc</code>, and as a result, you are now able to use class <code>SubtractOp</code> with code completion and syntax highlighting of clangd.</p>
+<h3 id="22-implement-the-operations">2.2. Implement the Operations</h3>
+<p>To implement custom parser and printer methods as well as <code>OpBuilder</code>, add the following code to <code>$TOY_CH2_HOME/mlir/Dialect.cpp</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// SubtractOp
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="n">SubtractOp</span><span class="o">::</span><span class="n">build</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">OpBuilder</span> <span class="o">&amp;</span><span class="n">builder</span><span class="p">,</span> <span class="n">mlir</span><span class="o">::</span><span class="n">OperationState</span> <span class="o">&amp;</span><span class="n">state</span><span class="p">,</span> <span class="n">mlir</span><span class="o">::</span><span class="n">Value</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">mlir</span><span class="o">::</span><span class="n">Value</span> <span class="n">rhs</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="n">state</span><span class="p">.</span><span class="n">addTypes</span><span class="p">(</span><span class="n">UnrankedTensorType</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="n">builder</span><span class="p">.</span><span class="n">getF64Type</span><span class="p">()));</span>
+</span></span><span class="line"><span class="cl">  <span class="n">state</span><span class="p">.</span><span class="n">addOperands</span><span class="p">({</span><span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">});</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">mlir</span><span class="o">::</span><span class="n">ParseResult</span> <span class="n">SubtractOp</span><span class="o">::</span><span class="n">parse</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">OpAsmParser</span> <span class="o">&amp;</span><span class="n">parser</span><span class="p">,</span> <span class="n">mlir</span><span class="o">::</span><span class="n">OperationState</span> <span class="o">&amp;</span><span class="n">result</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="nf">parseBinaryOp</span><span class="p">(</span><span class="n">parser</span><span class="p">,</span> <span class="n">result</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="n">SubtractOp</span><span class="o">::</span><span class="n">print</span><span class="p">(</span><span class="n">mlir</span><span class="o">::</span><span class="n">OpAsmPrinter</span> <span class="o">&amp;</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span> <span class="n">printBinaryOp</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="o">*</span><span class="k">this</span><span class="p">);</span> <span class="p">}</span>
+</span></span></code></pre></div><h3 id="23-emit---operator">2.3. Emit <code>-</code> Operator</h3>
+<p>Go to <code>$TOY_CH2_HOME/mlir/MLIRGen.cpp</code>, locate function <code>mlirGen</code> and add the specific case for <code>-</code>, as shown below:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">mlir</span><span class="o">::</span><span class="n">Value</span> <span class="n">mlirGen</span><span class="p">(</span><span class="n">BinaryExprAST</span> <span class="o">&amp;</span><span class="n">binop</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">switch</span> <span class="p">(</span><span class="n">binop</span><span class="p">.</span><span class="n">getOp</span><span class="p">())</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="sc">&#39;+&#39;</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">      <span class="k">return</span> <span class="n">builder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">AddOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="sc">&#39;*&#39;</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">      <span class="k">return</span> <span class="n">builder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">MulOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="sc">&#39;-&#39;</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">      <span class="k">return</span> <span class="n">builder</span><span class="p">.</span><span class="n">create</span><span class="o">&lt;</span><span class="n">SubtractOp</span><span class="o">&gt;</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></div><p>Rebuild the MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">$LLVM_PROJ_HOME</span>/scripts/build-mlir.sh
+</span></span></code></pre></div><h3 id="24-test-the---operator">2.4. Test the <code>-</code> Operator</h3>
+<p>Change the content of <code>$MLIR_HOME/input.toy</code> to:</p>
+<pre tabindex="0"><code class="language-toy" data-lang="toy"># User defined generic function that operates on unknown shaped arguments.
+def multiply_transpose(a, b) {
+  return transpose(a) * transpose(b);
+}
+
+def main() {
+  var a&lt;2, 3&gt; = [[1, 2, 3], [4, 5, 6]];
+  var b&lt;2, 3&gt; = [1, 2, 3, 4, 5, 6];
+  var c = multiply_transpose(a, b);
+  var d = multiply_transpose(b, a);
+  var e = a - b;
+  print(e);
+}
+</code></pre><p>Generate MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">toyc-ch2 <span class="nv">$TOY_CH2_HOME</span>/input.toy -emit<span class="o">=</span>mlir
+</span></span></code></pre></div>]]></content:encoded></item><item><title>Setup the Environment of MLIR</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/setup-the-environment-of-mlir/</link><pubDate>Tue, 30 Jul 2024 10:45:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/setup-the-environment-of-mlir/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<p>To build MLIR, follow the official guide: <a href="https://mlir.llvm.org/getting_started/">Getting Started</a>.</p>
+<p>Set up some environment variables to make our life easier when working with MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">LLVM_PROJ_HOME</span><span class="o">=</span><span class="s2">&#34;/path/to/llvm-project&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">MLIR_HOME</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$LLVM_PROJ_HOME</span><span class="s2">/mlir&#34;</span>
+</span></span></code></pre></div><p>Write a script to help build MLIR from source:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># @file $LLVM_PROJ_HOME/scripts/build-mlir.sh</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> <span class="nv">$LLVM_PROJ_HOME</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nv">CC</span><span class="o">=</span>clang <span class="nv">CXX</span><span class="o">=</span>clang++ <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>cmake -S . -B ./build -G Ninja ./llvm <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DCMAKE_BUILD_TYPE<span class="o">=</span>Release <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DLLVM_ENABLE_PROJECTS<span class="o">=</span>mlir <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DLLVM_BUILD_EXAMPLES<span class="o">=</span>ON <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DLLVM_TARGETS_TO_BUILD<span class="o">=</span><span class="s2">&#34;Native;NVPTX;AMDGPU&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DCMAKE_BUILD_TYPE<span class="o">=</span>Release <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DLLVM_ENABLE_ASSERTIONS<span class="o">=</span>ON <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DCMAKE_EXPORT_COMPILE_COMMANDS<span class="o">=</span>ON <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -DLLVM_ENABLE_LLD<span class="o">=</span>ON
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">cmake --build . --target check-mlir -j <span class="k">$(</span>nproc<span class="k">)</span>
+</span></span></code></pre></div><p>Now we can run the script to build the MLIR easily:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">bash <span class="nv">$LLVM_PROJ_HOME</span>/scripts/build-mlir.sh
+</span></span></code></pre></div><p>The generated binary files are in <code>$LLVM_PROJ_HOME/build/bin</code>.</p>
+<p>It would be more convenient to add this directory to <code>PATH</code> when working with MLIR:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">export</span> <span class="nv">PATH</span><span class="o">=</span><span class="s2">&#34;</span><span class="nv">$LLVM_PROJ_HOME</span><span class="s2">/build/bin:</span><span class="nv">$PATH</span><span class="s2">&#34;</span>
+</span></span></code></pre></div>]]></content:encoded></item><item><title>Paper Review: The Deep Learning Compiler: A Comprehensive Survey</title><link>https://jamesnulliu.github.io/blogs/learning-notes-mlir/paper-review-the-deep-learning-compiler-a-comprehensive-survey/</link><pubDate>Mon, 29 Jul 2024 11:07:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-mlir/paper-review-the-deep-learning-compiler-a-comprehensive-survey/</guid><description>My learning notes of MLIR.</description><content:encoded><![CDATA[<blockquote>
+<p>Reference: <a href="https://arxiv.org/pdf/2002.03794">The Deep Learning Compiler: A Comprehensive Survey</a></p></blockquote>
+<h2 id="1-abstract">1. ABSTRACT</h2>
+<p>The DL compilers take the DL models described in different DL frameworks as input, and then generate optimized codes for diverse DL hardware as output.</p>
+<p>Generally, the DL hardware can be divided into the following categories:</p>
+<ol>
+<li>General-purpose hardware with software-hardware co-design;</li>
+<li>Dedicated hardware fully customized for DL models;</li>
+<li>Neuromorphic hardware inspired by biological brain science.</li>
+</ol>
+<p>However, the drawback of relying on the libraries is that they usually fall behind the rapid development of DL models, and thus fail to utilize the DL chips efficiently.</p>
+<p>To address the drawback of DL libraries and tools, as well as alleviate the burden of optimizing the DL models on each DL hardware manually, the DL community has resorted to the domain specific compilers for rescue.</p>
+<p>The DL compilers take the model definitions described in the DL frameworks as
+inputs, and generate efficient code implementations on various DL hardware as outputs.</p>
+<h2 id="2-background">2. BACKGROUND</h2>
+<h3 id="21-deep-learning-frameworks">2.1. Deep Learning Frameworks</h3>
+<p>&hellip;</p>
+<h3 id="23-hardware-specific-dl-code-generator">2.3. Hardware-specific DL Code Generator</h3>
+<p>Field Programmable Gate Arrays (FPGAs) are reprogrammable integrated circuits that contain an array of programmable logic blocks. Programmers can configure them after manufacturing.</p>
+<p>The FPGA can bridge the gap between CPUs/GPUs and ASICs, which causes the FPGA to be an attractive platform for deep learning.</p>
+<p>Mapping DL models to FPGAs remains a complicated work even with HLS, because:</p>
+<ol>
+<li>DL models are usually described by the languages of DL frameworks rather than bare mental C/C++ code;</li>
+<li>DL-specific information and optimizations are hard to be leveraged.</li>
+</ol>
+<p>The hardware-specific code generator targeting FPGA take the DL models or their <strong>domain-specific languages</strong> (DSLs) as the input, conduct the domain-specific (about FPGA and DL) optimizations and mappings, then generate the HLS or Verilog/VHDL and finally generate the bitstream. They can be classified into two categories according to the generated architectures of FPGA-based accelerators: the processor architecture and the streaming architecture.</p>
+<p><strong>The processor architecture</strong> has similarities with general-purpose processors. An FPGA accelerator of this architecture usually comprises several Processing Units (PUs), which are comprised of on-chip buffers and multiple smaller Processing Engines (PEs).</p>
+<p><strong>The streaming architecture</strong> has similarities with pipelines. An FPGA accelerator of this architecture consists of multiple different hardware blocks, and it nearly has one hardware block for each layer of an input DL mode</p>
+<h2 id="3-common-design-architecture-of-dl-compilers">3. COMMON DESIGN ARCHITECTURE OF DL COMPILERS</h2>
+<p><img alt="fig-1" loading="lazy" src="/imgs/blogs/mlir/common-design-architecture-of-dl-compiler.png"></p>
+<p><em>Figure 1. Common Design Architecture of DL Compilers.</em></p>
+<h3 id="41-high-level-ir">4.1. High-level IR</h3>
+<p><strong>DAG-based IR</strong> - DAG-based IR is one of the most traditional ways for the compilers to build a computation graph, with nodes and edges organized as a directed acyclic graph (DAG). In DL compilers, the nodes of a DAG represent the atomic DL operators (convolution, pooling, etc.), and the edges represent the tensors. And the graph is acyclic without loops, which differs from the data dependence graphs (DDG) of generic compilers.</p>
+<p><strong>Let-binding-based IR</strong> - Let-binding is one method to solve the semantic ambiguity by offering let expression to certain functions with restricted scope used by many high-level programming languages such as Javascript, F#, and Scheme. When using the <code>let</code> keyword to define an expression, a let node is generated, and then it points to the operator and variable in the expression instead of just building computational relation between variables as a DAG.</p>
+<p><strong>Representing Tensor Computation</strong> - Different graph IRs have different ways to represent the computation on tensors:</p>
+<ul>
+<li>Function Based</li>
+<li>Lambda Based</li>
+<li>Einstein notation</li>
+</ul>
+<p><strong>Data representation</strong> - The data in DL compilers (e.g., inputs, weights, and intermediate data) are usually organized in the form of tensors, which are also known as multi-dimensional arrays.  The DL compilers can represent tensor data directly by memory pointers, or in a more flexible way by placeholders. A placeholder contains the size for each dimension of a tensor. Alternatively, the dimension sizes of the tensor can be marked as unknown. For optimizations, the DL compilers require the data layout information. In addition, the bound of iterators should be inferred according to the placeholders.</p>
+<h3 id="42-low-level-ir">4.2. Low-level IR</h3>
+<p>Low-level IR describes the computation of a DL model in a more fine-grained representation than that in high-level IR, which enables the target-dependent optimizations by providing interfaces to tune the computation and memory access.</p>
+<p><strong>Halide-based IR</strong> - Halide is firstly proposed to parallelize image processing, and it is proven to be extensible and efficient in DL compilers (e.g., TVM). The fundamental philosophy of Halide is the separation of computation and schedule.</p>
+<p><strong>Polyhedral-based IR</strong> - The polyhedral model is an important technique adopted in DL compilers. It uses linear programming, affine transformations, and other mathematical methods to optimize loop-based codes with static control flow of bounds and branches.</p>
+<h3 id="43-frontend-optimizations">4.3. Frontend Optimizations</h3>
+<p>After constructing the computation graph, the frontend applies graph-level optimizations.</p>
+<p>The frontend optimizations are usually defined by <strong>passes</strong>, and can be applied by traversing the nodes of the computation graph and performing the graph transformations:</p>
+<ol>
+<li>Capture the specific features from the computation graph;</li>
+<li>Rewrite the graph for optimization.</li>
+</ol>
+<p><img alt="fig-2" loading="lazy" src="/imgs/blogs/mlir/computation-graph-optimization.png"></p>
+<p><em>Figure 2. Example of computation graph optimizations, taken from the HLO graph of AlexNet on Volta GPU using TensorFlow XLA.</em></p>
+<h4 id="431-node-level-optimizations">4.3.1. Node-level optimizations</h4>
+<p>The nodes of the computation graph are coarse enough to enable optimizations inside a single node. And the node-level optimizations include node elimination that eliminates unnecessary nodes and node replacement that replaces nodes with other lower-cost nodes.</p>
+<h4 id="432-block-level-optimizations">4.3.2. Block-level optimizations</h4>
+<p><strong>Algebraic simplification</strong></p>
+<p>The algebraic simplification opti- mizations consist of :</p>
+<ol>
+<li>algebraic identification;</li>
+<li>strength reduction, with which we can replace more expensive operators by cheaper ones;</li>
+<li>constant folding, with which we can replace the constant expressions by their values.</li>
+</ol>
+<p>Such optimizations consider a sequence of nodes, then take advantage of commutativity, associativity, and distributivity of different kinds of nodes to simplify the computation.</p>
+<p><strong>Operator fusion</strong></p>
+<p>Operator fusion is indispensable optimization of DL compilers. It enables better sharing of computation, eliminates intermediate allocations, facilitates further optimization by combining loop nests, as well as reduces launch and synchronization overhead.</p>
+<p><strong>Operator sinking</strong></p>
+<p>This optimization sinks the operations such as transposes below operations such as batch normalization, ReLU, sigmoid, and channel shuffle. By this optimization, many similar operations are moved closer to each other, creating more opportunities for algebraic simplification.</p>
+<h4 id="433-dataflow-level-optimizations">4.3.3. Dataflow-level optimizations</h4>
+<ul>
+<li>Common sub-expression elimination (CSE)</li>
+<li>Dead code elimination (DCE)</li>
+<li>Static memory planning - Static memory planning optimizations are performed to reuse the memory buffers as much as possible. Usually, there are two approaches: in-place memory sharing and standard memory sharing.</li>
+<li>Layout transformation - Layout transformation tries to find the best data layouts to store tensors in the computation graph and then inserts the layout transformation nodes to the graph.</li>
+</ul>
+<h3 id="44-backend-optimizations">4.4. Backend Optimizations</h3>
+<p>The backends of DL compilers have commonly included various hardware-specific optimizations, auto-tuning techniques, and optimized kernel libraries. Hardware-specific optimizations enable efficient code generation for different hardware targets. Whereas, auto-tuning has been essential in the compiler backend to alleviate the manual efforts to derive the optimal parameter configurations. Besides, highly-optimized kernel libraries are also widely used on general-purpose processors and other customized DL accelerators.</p>
+<p><img alt="fig-3" loading="lazy" src="/imgs/blogs/mlir/hardware-specific-optimization.png"></p>
+<p><em>Figure 3. Overview of hardware-specific optimizations applied in DL compilers.</em></p>
+<h2 id="5-future-directions">5. FUTURE DIRECTIONS</h2>
+<ol>
+<li>Dynamic shape and pre/post processing</li>
+<li>Advanced auto-tuning</li>
+<li>Polyhedral model</li>
+<li>Subgraph partitioning</li>
+<li>Quantization</li>
+<li>Unified optimizations</li>
+<li>Differentiable programming</li>
+<li>Privacy protection</li>
+<li>Training support</li>
+</ol>
+]]></content:encoded></item><item><title>03 | Resource Management</title><link>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/03-resource-management/</link><pubDate>Sat, 29 Jun 2024 00:03:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/03-resource-management/</guid><description>My learning notes of &amp;#34;Effective C++&amp;#34; by Scott Meyers.</description><content:encoded><![CDATA[<h2 id="term-13-use-objects-to-manage-resources">Term 13: Use objects to manage resources</h2>
+<p>Do not make multiple <code>std::auto_ptr</code>s point to the same object.<br>
+If one is destroyed, the object would be released automatically.</p>
+<p>Simply put, do not use <code>std::auto_ptr</code>.</p>
+<p>Use <strong>RCSP (reference-counting smart pointer)</strong> to manage resources:<br>
+<code>std::shared_ptr</code></p>
+<p>Remember: both <code>auto_ptr</code> and <code>shared_ptr</code> use <code>delete</code> instead of <code>delete[]</code>. As a result, do not write <code>std::shared_ptr&lt;int&gt; spi(new int[1024])</code>.</p>
+<h2 id="term-14-think-carefully-about-copying-behavior-in-resource-managing-classes">Term 14: Think carefully about copying behavior in resource-managing classes.</h2>
+<p>Term 13 introduces such concept: <strong>Resource Acquisition Is Initialization, RAII</strong>. This concept is performed when <code>std::auto_ptr</code> and <code>std::shared_ptr</code> manage heap-based resource.<br>
+Not all resource is  heap-based, and it is usual that RCSP is not suitable resource handlers for these resource.<br>
+That is why sometimes you should write your own resource-managing classes.</p>
+<p>Suppose we use a mutex object with class <code>Mutex</code>, and there are two functions <code>lock()</code> and <code>unlock()</code>. In order not to forget to unlock any locked mutex, it is feasible to write a class <code>Lock</code> to manage the mutex. Example is shown as following:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Lock</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="k">explicit</span> <span class="n">Lock</span><span class="p">(</span><span class="n">Mutex</span><span class="o">*</span> <span class="n">pm</span><span class="p">)</span> <span class="o">:</span> <span class="n">mutexPtr</span><span class="p">(</span><span class="n">pm</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="n">lock</span><span class="p">(</span><span class="n">mutexPtr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="o">~</span><span class="n">Lock</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="n">unlock</span><span class="p">(</span><span class="n">mutexPtr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Mutex</span><span class="o">*</span> <span class="n">mutexPtr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>If we copy a <code>Lock</code> object to another, in most cases you would choose one of the following four options.</p>
+<ul>
+<li><strong>To Forbid Copying</strong>. By following term 6, you can make class <code>Lock</code> inherit from a base class whose copy constructor is declared private.</li>
+<li><strong>Use Reference-Count for Underlying Resource</strong>. Use <code>std::shared_ptr&lt;Mutex&gt;</code> to manage <code>Lock::mutexPtr</code> in stead of <code>Mutex*</code>. However, one question is that what a <code>std::shared_ptr</code> do is when reference-count equals to 0, the underlying pointer is deleted, and that is not what we want. We want to call function <code>unlock</code>. The lucky thing is that <code>std::share_ptr</code> allow users to specify a <strong>deleter</strong>, so the class <code>Lock</code> can be written as follow:
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Lock</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">explicit</span> <span class="n">Lock</span><span class="p">(</span><span class="n">Mutex</span><span class="o">*</span> <span class="n">pm</span><span class="p">)</span> <span class="o">:</span> <span class="n">mutexPtr</span><span class="p">(</span><span class="n">pm</span><span class="p">,</span> <span class="n">unlock</span><span class="p">)</span> <span class="c1">// Use func {unlock} to sepecify a deleter and initialize a std::shared_ptr
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  	  <span class="n">lock</span><span class="p">(</span><span class="n">mutexPtr</span><span class="p">.</span><span class="n">get</span><span class="p">());</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Destructor is omitted because {mutexPtr} would automatically invoke func {unlock}.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Mutex</span><span class="o">&gt;</span> <span class="n">mutexPtr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div></li>
+<li><strong>Deep Copying</strong>.</li>
+<li><strong>Transfer Ownership</strong>. For example: <code>std::auto_ptr</code>.</li>
+</ul>
+<h2 id="term-15-provide-access-to-raw-resources-in-resource-managing-classes">Term 15: Provide access to raw resources in resource-managing classes</h2>
+<p><code>std::shared_ptr</code> and <code>std::auto_ptr</code> both provide <code>get()</code> methods to give access to the underlying raw pointers.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Font</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="k">explicit</span> <span class="n">Font</span><span class="p">(</span><span class="n">FontHandle</span> <span class="n">fh</span><span class="p">)</span> <span class="o">:</span> <span class="n">f</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span> <span class="p">{}</span>
+</span></span><span class="line"><span class="cl">	<span class="o">~</span><span class="n">Font</span><span class="p">()</span> <span class="p">{</span> <span class="n">releaseFont</span><span class="p">(</span><span class="n">f</span><span class="p">);</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="n">FontHandle</span> <span class="nf">get</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">f</span><span class="p">;</span> <span class="p">}</span>  <span class="c1">// Explicit conversion
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">operator</span> <span class="nf">FontHandle</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">f</span><span class="p">;</span> <span class="p">}</span>  <span class="c1">// Implicit conversion
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">FontHandle</span> <span class="n">f</span><span class="p">;</span>  <span class="c1">// Raw font resource
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></div><p>Implicit conversion could be dangerous.</p>
+<h2 id="term-16-use-the-same-form-in-corresponding-uses-of-new-and-delete">Term 16: Use the same form in corresponding uses of new and delete.</h2>
+<h2 id="term-17-store-new-objects-in-smart-pointers-in-standalone-statements">Term 17: Store new objects in smart pointers in standalone statements.</h2>
+<p>Suppose there is a function:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">processWidget</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Widget</span><span class="o">&gt;</span> <span class="n">pw</span><span class="p">,</span> <span class="kt">int</span> <span class="n">priority</span><span class="p">);</span>
+</span></span></code></pre></div><p>Following call of the function is invalid:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">processWidget</span><span class="p">(</span><span class="k">new</span> <span class="n">Widget</span><span class="p">,</span> <span class="n">priority</span><span class="p">());</span>
+</span></span></code></pre></div><p>The reason is that construction of <code>std::shared_ptr</code> is declared explicitly. If we adjust the statement to:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">processWidget</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">share_ptr</span><span class="o">&lt;</span><span class="n">Widget</span><span class="o">&gt;</span><span class="p">(</span><span class="k">new</span> <span class="n">Widget</span><span class="p">),</span> <span class="n">priority</span><span class="p">());</span>
+</span></span></code></pre></div><p>This could cause memory leak. The above statement has to do 3 things:</p>
+<ul>
+<li>Call <code>priority()</code></li>
+<li>Run <code>new Widget</code></li>
+<li>Call constructor of <code>std::shared_ptr</code></li>
+</ul>
+<p>In C++, in order to generate more efficient code, the execution sequence could be:</p>
+<ol>
+<li>Run <code>new Widget</code></li>
+<li>Call <code>priority()</code></li>
+<li>Call constructor of <code>std::share_ptr</code></li>
+</ol>
+<p>In this situation, if an exception is thrown when <code>priority()</code> is called, the resource accuired by <code>new Widget</code> would not be free properly. This is memory leak.</p>
+<p>To avoid this, write as following:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Widget</span><span class="o">&gt;</span> <span class="n">pw</span><span class="p">(</span><span class="k">new</span> <span class="n">Widget</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="n">processWidget</span><span class="p">(</span><span class="n">pw</span><span class="p">,</span> <span class="n">priority</span><span class="p">());</span>
+</span></span></code></pre></div>]]></content:encoded></item><item><title>02 | Constructors, Destructorsm and Assignment Operators</title><link>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/02-constructors-destructors-and-assignment-operators/</link><pubDate>Sat, 29 Jun 2024 00:02:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/02-constructors-destructors-and-assignment-operators/</guid><description>My learning notes of &amp;#34;Effective C++&amp;#34; by Scott Meyers.</description><content:encoded><![CDATA[<h2 id="term-05-know-what-functions-c-silently-writes-and-calls">Term 05 Know what functions C++ silently writes and calls</h2>
+<p>A compiler will automatically generate four functions for a class if the class does not define them by itself:</p>
+<ul>
+<li>default constructor</li>
+<li>copy constructor</li>
+<li>copy assignment operator</li>
+<li>destructor</li>
+</ul>
+<p>The destructor compiler automatically generates is non-virtual, unless that the base class&rsquo;s destructor is virtual. (The virtualness mainly comes from the base class.)</p>
+<p>If a class has reference members or const members, you have to define a copy assignment operator by yourself. The compiler would not generate a default copy assignment operator.</p>
+<p>If some base class declares that its copy assignment operator is private, the compiler will refuse to generate a default copy assignment operator for its derived class.</p>
+<h2 id="term-06-explicitly-disallow-the-use-of-compiler-generated-functions-you-do-not-want">Term 06 Explicitly disallow the use of compiler-generated functions you do not want</h2>
+<p>One way to disallow the use of copy constructor and copy assignment (more specifically, the compiler-generated ones) is to inherit a class that declared private copy constructor and copy assignment operator.</p>
+<h2 id="term-07-declare-destructor-virtual-in-polymorphic-base-classes">Term 07 Declare destructor virtual in polymorphic base classes</h2>
+<p>When deleting a base pointer pointing to a instance of a derived class, if destructor is declared non-virtual in base class, only the memory of base part would be released.</p>
+<p>Consider about a class <code>Point</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Point</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Point</span><span class="p">(</span><span class="kt">int</span> <span class="n">xCoord</span><span class="p">,</span> <span class="kt">int</span> <span class="n">yCoord</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="o">~</span><span class="n">Point</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>If &ldquo;int&rdquo; takes 32 bits, a <code>Point</code> instance takes 64 bits, and can be easily passed to other languages such as C and FORTRAN.</p>
+<p>However, if we declare <code>~Point()</code> as a virtual function, a <strong>vptr</strong> (virtual table pointer) would be added to the instance. That causes the instance takes upto 128 bits (2 32-bit integer and 1 64-bit pointer). Moreover, since C and FORTRAN does not have vptr, the class is not portable any more.</p>
+<p>To create an abstract class, you could (I think you&rsquo;d better declare other functions pure virtual) declare a pure virtual destructor; But you has to offer a definition for the destructor outside the class (maybe in a cpp file).<br>
+The reason is that when an instance of a derived class is dectructed, the destructor of the most derived class is called, and each base class of them is called after. So there is an actor that the pure virtual destructor (of base class) is called inside the derived class.</p>
+<h3 id="sum-up">Sum up</h3>
+<ul>
+<li>Do not delcare a function virtual with no reason.</li>
+<li>Do not inherit frome a class that does not have a virtual destructor (e.g., std::string, std::set, std::vector, std::map) when the class is not designed for polymorphism.</li>
+</ul>
+<h2 id="term-08-prevent-exceptions-from-leaving-destructors">Term 08 Prevent exceptions from leaving destructors</h2>
+<p>Trow exceptions out from a destructor is not encouraged by C++.</p>
+<p>Suppose there are several objects in a block. At the end of the block, all the objects are destroyed automatically.<br>
+If destructor of the first object throws an exception, every thing is okay; Destructors of the other objects would be called porperly.<br>
+However, if the second destructor also throws an exception, the program would either be terminated or cause an undefined behavior (that would be fatal).</p>
+<p>A good strategy is to give the chance to users that they can handle the exceptions themselves.</p>
+<p>In the following example code, db is an instance of class <code>DBConnect</code>, and meanwhile it is a member of class <code>DBConn</code>.<br>
+Before calling <code>~DBConn()</code> automatically, user (instead of the compiler) should call <code>DBConn::close()</code> at first and handle the possible exception thrown by <code>DBConnect::close()</code>.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">DBConn</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="p">...</span>
+</span></span><span class="line"><span class="cl">	<span class="kt">void</span> <span class="n">close</span><span class="p">()</span> <span class="c1">// A close function for users to use
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="n">db</span><span class="p">.</span><span class="n">close</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">		<span class="n">closed</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	
+</span></span><span class="line"><span class="cl">	<span class="o">~</span><span class="n">DBConn</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">closed</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">			<span class="k">try</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="n">db</span><span class="p">.</span><span class="n">close</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span> <span class="k">catch</span><span class="p">(...)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="n">Log</span> <span class="n">the</span> <span class="n">faliure</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">DBConnection</span> <span class="n">db</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="kt">bool</span> <span class="n">closed</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h3 id="sum-up-1">Sum up</h3>
+<ul>
+<li>Do not give any chance for an exception to leave a destructor. Destructor should catch and handle the exceptions inside itself.</li>
+<li>Offer a function to let user handle the exception that inside the destructor.</li>
+</ul>
+<h2 id="term-09-never-call-virtual-functions-during-construction-or-distruction">Term 09: Never call virtual functions during construction or distruction.</h2>
+<p>In C++, when constructing a derived class, the base part is constructed first; And during the construction of base part, the vptr is still pointing at the base class. This means, if you invoke a virtual function in the constructor of a base class, when you create an instance of a derived class, the actual called virtual function is the base version, not the overrided one.</p>
+<h2 id="term-10-have-assignment-operator-return-a-reference-to-this">Term 10: Have assignment operator return a reference to <code>*this</code></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Widget</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Widget</span><span class="o">&amp;</span> <span class="k">operator</span><span class="o">+=</span><span class="p">(</span><span class="k">const</span> <span class="n">Widget</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="p">...;</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Widget</span><span class="o">&amp;</span> <span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="kt">int</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="p">...;</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Bitmap</span><span class="o">*</span> <span class="n">pb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></div><h2 id="term-11-handle-assignment-to-self-in-operator">Term 11: Handle assignment to self in <code>operator=</code></h2>
+<p>Self-assignment could cause a question that the resources are released before they are assigned.</p>
+<p>Traditionally, <strong>identity test</strong> can check whether there is an assignment to self:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">Widget</span><span class="o">&amp;</span> <span class="n">Widget</span><span class="o">::</span><span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="k">const</span> <span class="n">Widget</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span><span class="p">(</span><span class="k">this</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">rhs</span><span class="p">)</span> <span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>  <span class="c1">// Identity test
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">delete</span> <span class="n">pb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="n">pb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Bitmap</span><span class="p">(</span><span class="o">*</span><span class="n">rhs</span><span class="p">.</span><span class="n">pb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>However, if the exception occurs (either because the memory is not enough when allocation or the copy constructor throws one exception), the pointer <code>pb</code> would ultimately points to a deleted Bitmap, and that is harmful.</p>
+<p>Nowadays more people tends to care for <strong>exception safety</strong> rather than <strong>self-allocation safety</strong>. For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">Widget</span><span class="o">&amp;</span> <span class="n">Widget</span><span class="o">::</span><span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="k">const</span> <span class="n">Widget</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Bitmap</span><span class="o">*</span> <span class="n">pOrigin</span> <span class="o">=</span> <span class="n">pb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="n">pb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Bitmap</span><span class="p">(</span><span class="o">*</span><span class="n">rhs</span><span class="p">.</span><span class="n">pb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">delete</span> <span class="n">pOrigin</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Even if without identity test, self-assignment can be handled, and <code>pb</code> has no chance to point to a deleted Bitmap.</p>
+<p>Identity test can be put back to the begin of the funtion; But that may lower the efficiency, since self-assignment does not happen so much.</p>
+<p>There is another way called <strong>copy and swap</strong> technic. For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">Widget</span><span class="o">&amp;</span> <span class="n">Widget</span><span class="o">::</span><span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="k">const</span> <span class="n">Widget</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Widget</span> <span class="nf">temp</span><span class="p">(</span><span class="n">rhs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">this</span><span class="o">-&gt;</span><span class="n">swap</span><span class="p">(</span><span class="n">temp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Or:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">Widget</span><span class="o">&amp;</span> <span class="n">Widget</span><span class="o">::</span><span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="n">Widget</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">this</span><span class="o">-&gt;</span><span class="n">swap</span><span class="p">(</span><span class="n">thd</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>The second way sacrificces clearity; However, because it moves &ldquo;copy&rdquo; action from the function body to &ldquo;parameter-constructing stage&rdquo;, sometimes the compiler could generate more efficient codes.</p>
+<h2 id="term-12-copy-all-parts-of-an-object">Term 12: Copy all parts of an object.</h2>
+<p>Compiler would not warn you if there is a particial copy, and do not let that happen.</p>
+<p>Copy constructor of a derived class should invoke the copy constructor of base class:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Base</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Base</span><span class="p">(</span><span class="k">const</span> <span class="n">Base</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="o">:</span> <span class="n">name</span><span class="p">(</span><span class="n">rhs</span><span class="p">.</span><span class="n">name</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">			<span class="n">lastTransaction</span><span class="p">(</span><span class="n">rhs</span><span class="p">.</span><span class="n">lastTransaction</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="n">log</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">name</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Date</span> <span class="n">lastTransaction</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Derived</span> <span class="o">:</span> <span class="n">Base</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Derived</span><span class="p">(</span><span class="k">const</span> <span class="n">Derived</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="o">:</span> <span class="n">Base</span><span class="p">(</span><span class="n">rhs</span><span class="p">),</span>  <span class="c1">// Invoke the copy constructor of base class
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>			<span class="n">priority</span><span class="p">(</span><span class="n">rhs</span><span class="p">.</span><span class="n">priority</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="n">log</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="kt">int</span> <span class="n">priority</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Do not have copy assignment operator call copy constructor, vice versa.<br>
+If you want, you can write a function <code>init()</code> additionally and call it in both functions.</p>
+]]></content:encoded></item><item><title>01 | Accustoming Yourself to C++</title><link>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/01-accustoming-yourself-to-cxx/</link><pubDate>Sat, 29 Jun 2024 00:01:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/01-accustoming-yourself-to-cxx/</guid><description>My learning notes of &amp;#34;Effective C++&amp;#34; by Scott Meyers.</description><content:encoded><![CDATA[<h2 id="term-01-view-c-as-a-federation-of-languages">Term 01: View C++ as a federation of languages.</h2>
+<p>Today&rsquo;s C++ is a multiparadigm programming language, one supporting a combination of procedural, object-oriented, functional, generic, and metaprogramming features.</p>
+<h2 id="term-02-prefer-consts-enums-inlines-to-defines">Term 02: Prefer consts, enums, inlines to #defines</h2>
+<p>The substitution of a macro could result in multiple copies of the object in your object code, while the use of the constant should never result in more than one copy.</p>
+<h3 id="-constant-pointer">🎼 Constant Pointer</h3>
+<p>To define a constant char*-based string in a header file, for example, you have to write const twice:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// File header.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="k">const</span> <span class="n">authorName</span> <span class="o">=</span> <span class="s">&#34;Scott Meyers&#34;</span><span class="p">;</span>
+</span></span></code></pre></div><blockquote>
+<p>💡 <strong>Note</strong>: A constant object can be defined in a header file, and there will be no redefinition error when the header file is included in multiple source files.</p></blockquote>
+<h3 id="-static-constant-members-of-a-class">🎼 Static Constant Members of a Class</h3>
+<p>To limit the scope of a constant to a class, you must make it a member, and to ensure there&rsquo;s at most one copy of the constant, you must make it a static member:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// File GamePlayer.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">class</span> <span class="nc">GamePlayer</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">static</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">NumTurns</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>  <span class="c1">// Declaration of a const
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">scores</span><span class="p">[</span><span class="n">NumTurns</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>What you see above is a declaration for <code>NumTurns</code>, not a definition.</p>
+<p>Usually, C++ requires that you provide a definition for anything you use, but classspecific constants that are <strong>static and of integral type</strong> (e.g., integers, chars, bools) are an exception.</p>
+<p>As long as you don&rsquo;t take their address, you can declare them and use them without providing a definition. If you do take the address of a class constant, or if your compiler incorrectly insists on a definition even if you don&rsquo;t take the address, you should provide a separate definition like this:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// File GamePlayer.cpp
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">int</span> <span class="n">GamePlayer</span><span class="o">::</span><span class="n">NumTurns</span><span class="p">;</span>  <span class="c1">// Definition of a const
+</span></span></span></code></pre></div><p>You put this in an implementation file, not a header file. Because the initial value of class constants is provided where the constant is declared (e.g., <code>NumTurns</code> is initialized to 5 when it is declared), no initial value is permitted at the point of definition.</p>
+<p>For non-integral types, you must provide a definition for the constant in the header file, like this:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// File CostEstimate.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">class</span> <span class="nc">A</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">static</span> <span class="k">const</span> <span class="kt">double</span> <span class="n">FudgeFactor</span><span class="p">;</span>  <span class="c1">// Declaration of a class static const
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// File CostEstimate.cpp
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">double</span> <span class="n">CostEstimate</span><span class="o">::</span><span class="n">FudgeFactor</span> <span class="o">=</span> <span class="mf">1.35</span><span class="p">;</span>  <span class="c1">// Defination of a class static const
+</span></span></span></code></pre></div><blockquote>
+<p>💡 <strong>Keypoints</strong>:</p>
+<ol>
+<li>Declare class-specific constants as <code>static</code> members of the class.</li>
+<li>Provide a separate definition in an implementation file if the compiler requires it.</li>
+<li>Only for <strong>static</strong> <strong>constants</strong> of <strong>integral</strong> type, provide an initial value at the point of declaration. Otherwise, provide an initial value of a static member at the point of definition.</li>
+</ol></blockquote>
+<h3 id="-enum-hack">🎼 Enum Hack</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">GamePlayer2</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">enum</span> <span class="p">{</span> <span class="n">NumTurns</span> <span class="o">=</span> <span class="mi">5</span><span class="p">};</span>  <span class="c1">// &#34;the enum hack&#34; - let {NumTurns} be a marker of 5
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">scores</span><span class="p">[</span><span class="n">NumTurns</span><span class="p">];</span>  <span class="c1">// valid
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></div><p>The enum hack is worth knowing about for several reasons.</p>
+<ol>
+<li>The enum hack behaves in some ways more like a #define than a const does, and sometimes that&rsquo;s what you want. It&rsquo;s not legal to take the address of an enum, and it&rsquo;s typically not legal to take the address of a #define, either. Also, like #defines, enums never result in unnecessary memory allocation.</li>
+<li>The enum hack is purely pragmatic. The enum hack is a fundamental technique of template metaprogramming (item 48).</li>
+</ol>
+<h3 id="-inline">🎼 Inline</h3>
+<p>Use inline functions instead of #defines.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#define CALL_WITH_MAX(a, b) f((a)&gt;(b)?(a):(b))
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">CALL_WITH_MAX</span><span class="p">(</span><span class="o">++</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>     <span class="c1">// a is incremented twice
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">CALL_WITH_MAX</span><span class="p">(</span><span class="o">++</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">+</span><span class="mi">10</span><span class="p">);</span>  <span class="c1">// a is incremented once
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">T</span><span class="o">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="kr">inline</span> <span class="kt">void</span> <span class="n">callWithMax</span><span class="p">(</span><span class="k">const</span> <span class="n">T</span><span class="o">&amp;</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="n">T</span><span class="o">&amp;</span> <span class="n">b</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">f</span><span class="p">(</span><span class="n">a</span> <span class="o">&gt;</span> <span class="n">b</span> <span class="o">?</span> <span class="nl">a</span> <span class="p">:</span> <span class="n">b</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h2 id="term-03-use-const-whenever-possible">Term 03: Use <code>const</code> Whenever Possible</h2>
+<h3 id="-const-and-pointers">🎼 <code>const</code> and Pointers</h3>
+<p>If the word const appears to the left of the asterisk, what&rsquo;s pointed to is constant; if the word const appears to the right of the asterisk, the pointer itself is constant; if const appears on both sides, both are constant.</p>
+<p>For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="kt">char</span> <span class="n">greeting</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&#34;Hello&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="kt">char</span><span class="o">*</span> <span class="n">p</span> <span class="o">=</span> <span class="n">greeting</span><span class="p">;</span>  <span class="c1">// non-const pointer, non-const data
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">p</span> <span class="o">=</span> <span class="n">greeting</span><span class="p">;</span>  <span class="c1">// non-const pointer, const data
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kt">char</span><span class="o">*</span> <span class="k">const</span> <span class="n">p</span> <span class="o">=</span> <span class="n">greeting</span><span class="p">;</span>  <span class="c1">// const pointer, non-const data
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="k">const</span> <span class="n">p</span> <span class="o">=</span> <span class="n">greeting</span><span class="p">;</span>  <span class="c1">// const pointer, const data
+</span></span></span></code></pre></div><h3 id="-use-const-to-restrict-the-users-behavior">🎼 Use <code>const</code> to Restrict the User&rsquo;s Behavior</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">A</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">A</span> <span class="k">operator</span><span class="o">+</span><span class="p">(</span><span class="k">const</span> <span class="n">A</span><span class="o">&amp;</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nf">A</span><span class="p">();</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">A</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">a1</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">=</span> <span class="n">A</span><span class="p">();</span>  <span class="c1">// This is not expected.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Where <code>a1 + a2 = A();</code> is not expected, because the result of <code>a1 + a2</code> is a temporary object, and it is not allowed to assign a value to a temporary object.</p>
+<p>To prevent this, you can add <code>const</code> to the return value of the <code>operator+</code> function:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">A</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="n">A</span> <span class="k">operator</span><span class="o">+</span><span class="p">(</span><span class="k">const</span> <span class="n">A</span><span class="o">&amp;</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nf">A</span><span class="p">();</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></div><h3 id="-const-member-functions">🎼 Const Member Functions</h3>
+<p>There are two prevailing notions: <strong><em>bitwise</em> constness</strong> (also known as physical constness) and <strong><em>logical</em> constness</strong>.</p>
+<p>The bitwise const camp believes that a member function is const if and only if it doesn&rsquo;t modify any of the object&rsquo;s data members (excluding those that are static), i.e., if it doesn&rsquo;t modify any of the bits inside the object.</p>
+<p>The nice thing about bitwise constness is that it&rsquo;s easy to detect violations: compilers just look for assignments to data members.</p>
+<p>Unfortunately, many member functions that don&rsquo;t act very const pass the bitwise test. For exapmle:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">CTextBlock</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="p">...</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span><span class="o">&amp;</span> <span class="k">operator</span><span class="p">[](</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">position</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">pText</span><span class="p">[</span><span class="n">position</span><span class="p">];</span>  <span class="c1">// Not suitable
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span><span class="o">*</span> <span class="n">pText</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><blockquote>
+<p>It is worth noting that you should return a <code>const char&amp;</code> instead of a <code>char&amp;</code> in the <code>operator[]</code> function above.</p></blockquote>
+<p>This leads to the notion of <strong>logical constness</strong>. Adherents to this philosophy (and you should be among them) — argue that a const member function might modify some of the bits in the object on which it&rsquo;s invoked, but only in ways that clients cannot detect. For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">CTextBlock</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">length</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">lengthIsValid</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">textLength</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">strlen</span><span class="p">(</span><span class="n">pText</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="n">lengthIsValid</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">textLength</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span><span class="o">*</span> <span class="n">pText</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">mutable</span> <span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">textLength</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">mutable</span> <span class="kt">bool</span> <span class="n">lengthIsValid</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h3 id="-avoiding-duplication-in-const-and-non-const-member-functions">🎼 Avoiding Duplication in const and Non-const Member Functions</h3>
+<p>When you have a const and a non-const member function that have essentially identical implementations, you can <strong>avoid code duplication by having the non-const member function call the const member function</strong>. For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">TextBlock</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">char</span><span class="o">&amp;</span> <span class="k">operator</span><span class="p">[](</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">position</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">text</span><span class="p">[</span><span class="n">position</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span><span class="o">&amp;</span> <span class="k">operator</span><span class="p">[](</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">position</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> 
+</span></span><span class="line"><span class="cl">            <span class="k">const_cast</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">&amp;&gt;</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">                <span class="k">static_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">TextBlock</span><span class="o">&amp;&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">)[</span><span class="n">position</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">            <span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><blockquote>
+<p>💡 <strong>Note</strong>: Do not avoiding duplication by having the const version call the non-const version. A const member function promises never to change the logical state of its object, but a non-const member function makes no such promise.</p></blockquote>
+<h3 id="-things-to-remember">🎼 Things to Remember</h3>
+<ul>
+<li>Declaring something <code>const</code> helps compilers detect usage errors. <code>const</code> can be applied to objects at any scope, to function parameters and return types, and to member functions as a whole.</li>
+<li>Compilers enforce bitwise constness, but you should program using logical constness.</li>
+<li>When <code>const</code> and <code>non-const</code> member functions have essentially identical implementations, code duplication can be avoided by having the non-const version call the const version.</li>
+</ul>
+<h2 id="term-04-make-sure-the-objects-are-initialized-before-they-are-used">Term 04: Make Sure the Objects are initialized before they are used</h2>
+<p>Always initialize objects before they are used.</p>
+<h3 id="-member-initialization-list">🎼 Member initialization list</h3>
+<p>Always use the member initialization list to initialize member objects.</p>
+<p>One aspect of C++ that isn&rsquo;t fickle is the order in which an object&rsquo;s data is initialized. This order is always the same: base classes are initialized before derived classes (see also Item 12), and within a class, data members are initialized in the order in which they are declared.</p>
+<h3 id="-initialize-static-objects">🎼 Initialize Static Objects</h3>
+<p>A <strong>static object</strong> is one that exists from the time it&rsquo;s constructed until the end of the program. Stack and heap-based objects are thus excluded.</p>
+<p>Included are:</p>
+<ul>
+<li>global objects</li>
+<li>objects defined at namespace scope</li>
+<li>objects declared static inside classes</li>
+<li>objects declared static inside functions</li>
+<li>objects declared static at file scope</li>
+</ul>
+<p>Static objects inside functions are known as local static objects (because they&rsquo;re local to a function), and the other kinds of static objects are known as non-local static objects.</p>
+<p>Static objects are destroyed when the program exits, i.e., their destructors are called when main finishes executing.</p>
+<p>⚠ <strong>Warning</strong>: If initialization of a non-local static object in one translation unit uses a non-local static object in a different translation unit, the object it uses could be uninitialized, because <strong>the relative order of initialization of non-local static objects defined in different translation units is undefined</strong>.</p>
+<blockquote>
+<p>💬 Multiple translation units and non-local static objects is generated through implicit template instantiations (which may themselves arise via implicit template instantiations). It&rsquo;s not only impossible to determine the right order of initialization, it&rsquo;s typically not even worth looking for special cases where it is possible to determine the right order.</p></blockquote>
+<p>To avoid the problem of undefined initialization order, you can use <strong>a function-local static object</strong> instead of a non-local static object. These functions return references to the objects they contain. (Aficionados of design patterns will recognize this as a common implementation of the <strong>Singleton Pattern</strong>.)</p>
+<p>For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">FileSystem</span> <span class="p">{...};</span>
+</span></span><span class="line"><span class="cl"><span class="kr">inline</span> <span class="n">FileSystem</span><span class="o">&amp;</span> <span class="n">tfs</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">static</span> <span class="n">FileSystem</span> <span class="n">fs</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">fs</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Directory</span> <span class="p">{...};</span>
+</span></span><span class="line"><span class="cl"><span class="n">Directory</span><span class="o">::</span><span class="n">Directory</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="p">...</span>
+</span></span><span class="line"><span class="cl">    <span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">disks</span> <span class="o">=</span> <span class="n">tfs</span><span class="p">().</span><span class="n">numDisks</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">    <span class="p">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="kr">inline</span> <span class="n">Directory</span><span class="o">&amp;</span> <span class="n">tempDir</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">static</span> <span class="n">Directory</span> <span class="n">td</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">td</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>This approach is founded on C++&rsquo;s guarantee that <strong>local static objects are initialized when the object&rsquo;s definition is first encountered during a call to that function</strong>. So if you replace direct accesses to non-local static objects with calls to functions that return references to local static objects, you&rsquo;re guaranteed that the references you get back will refer to initialized objects. As a bonus, if you never call a function emulating a non-local static object, you never incur the cost of constructing and destructing the object, something that can&rsquo;t be said for true non-local static objects.</p>
+<blockquote>
+<p>However, the fact that these functions contain static objects makes them problematic <strong>in multithreaded systems</strong>. Then again, any kind of non-const static object — local or non-local — is trouble waiting to happen in the presence of multiple threads.</p>
+<p>One way to deal with such trouble is to <strong>manually invoke all the reference-returning functions during the single-threaded startup portion of the program</strong>. This eliminates initialization-related race conditions.</p></blockquote>
+<h3 id="-things-to-remember-1">🎼 Things to Remember</h3>
+<ul>
+<li>Manually initialize objects of built-in type, because C++ only sometimes initializes them itself.</li>
+<li>In a constructor, prefer use of the member initialization list to assignment inside the body of the constructor. List data members in the initialization list in the same order they&rsquo;re declared in the class.</li>
+<li>Avoid initialization order problems across translation units by replacing non-local static objects with local static objects.</li>
+</ul>
+]]></content:encoded></item></channel></rss>

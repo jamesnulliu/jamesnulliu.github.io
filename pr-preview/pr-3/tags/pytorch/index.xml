@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Pytorch on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/pytorch/</link><description>Recent content in Pytorch on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 21:45:48 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/pytorch/index.xml" rel="self" type="application/rss+xml"/><item><title>Create A LibTorch Project</title><link>https://jamesnulliu.github.io/blogs/create-a-libtorch-project/</link><pubDate>Mon, 23 Dec 2024 01:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/create-a-libtorch-project/</guid><description>How to create a LibTorch project.</description><content:encoded><![CDATA[<h2 id="0-introduction">0. Introduction</h2>
+<p>These days I am reading <a href="https://www.elsevier.com/books/programming-massively-parallel-processors/kirk/978-0-12-811986-0" target="_blank" rel="noopener noreferrer">
+    Programming Massively Parallel Processors: A Hands-on Approach, 4th Edition
+</a>
+, and created a <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors" target="_blank" rel="noopener noreferrer">
+    project
+</a>
+ to store my notes as I learn.</p>
+<p>One of the most important parts in the book is writing <strong>cuda kernels</strong>, so I decided to build all kernels into shared libraries and test those implementations both in C++ and Python.</p>
+<p>I generated my project using <a href="https://github.com/jamesnulliu/VSC-Python-Project-Template" target="_blank" rel="noopener noreferrer">
+    this template
+</a>
+ specifically tailored for the similar scenario, but still met some problems such as conflicts when linking libtorch and gtest 🤯.</p>
+<p><strong>So the purpose of this blog is to provide a concise guide to:</strong></p>
+<ol>
+<li>Build a C++, CUDA and LibTorch library, test it with gtest.</li>
+<li>Load the library into torch, call the operaters in Python.</li>
+<li>Resolve problems when linking all the libraries.</li>
+</ol>
+<blockquote>
+<p>⚠️<strong>WARNING</strong><br>
+Find some tutorials on how to use cmake and vcpkg before reading this blog.</p></blockquote>
+<h2 id="1-environment-and-quick-start">1. Environment and Quick Start</h2>
+<p>Check <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/tree/c648649/README.md" target="_blank" rel="noopener noreferrer">
+    README.md
+</a>
+ of the project repository.</p>
+<h2 id="2-create-a-c-cuda-and-libtorch-project">2. Create a C++, CUDA and LibTorch Project</h2>
+<p>I put all C++ codes in &ldquo;<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/tree/96685ab/csrc" target="_blank" rel="noopener noreferrer">
+    ./csrc/
+</a>
+&rdquo; and build them with cmake. The intermediate files should be generated in &ldquo;./build/&rdquo; and that is just about using some command-line arguments, see <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/scripts/build.sh#L42" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+.</p>
+<p>Vcpkg is used to manage the dependencies of the project. I am not going to teach you how to use vcpkg in this blog, but I will mention some pitfalls I met when using it.</p>
+<blockquote>
+<p>😍️ I really enjoy building C++ projects with cmake and vcpkg. Have a try if you haven&rsquo;t used them before.</p></blockquote>
+<h3 id="21-how-to-link-against-libtorch">2.1. How to Link against LibTorch</h3>
+<p>Since you have installed pytorch in <a href="#1-environment">
+    1. Environment
+</a>
+, now you already have libtorch installed in your conda environment. Run this command, and you will get the cmake prefix path of libtorch:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">python -c <span class="s2">&#34;import torch;print(torch.utils.cmake_prefix_path)&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To integrate libtorch into cmake, I create <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/cmake/utils/run-python.cmake" target="_blank" rel="noopener noreferrer">
+    this file
+</a>
+ and <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/cmake/libraries/libtorch.cmake" target="_blank" rel="noopener noreferrer">
+    this file
+</a>
+ to find libtorch in the current project and use them <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/CMakeLists.txt#L27" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+.</p>
+<p>Now you can link your targets against libtorch simply like what I do <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/CMakeLists.txt#L19" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+.</p>
+<blockquote>
+<p>📝<strong>NOTE</strong><br>
+When you link your target against <code>${TORCH_LIBRARIES}</code>, cuda libraries are being linked automatically, which means you don&rsquo;t have to find and link cuda using something like I write <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab6/csrc/cmake/libraries/libcuda.cmake" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+</p></blockquote>
+<h3 id="22-cmake-and-vcpkg-configuration">2.2. CMake and VCPKG Configuration</h3>
+<p>Currently, I am planning to use the C/C++ packages listed in <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/vcpkg.json" target="_blank" rel="noopener noreferrer">
+    this file
+</a>
+. I load the packages with <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/CMakeLists.txt#L30-L36" target="_blank" rel="noopener noreferrer">
+    these lines in &#34;./csrc/CMakeLists.txt&#34;
+</a>
+ . Then I link those packages to my targets <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/CMakeLists.txt#L20-L21" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+ and <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/test/CMakeLists.txt#L11-L13" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+.</p>
+<blockquote>
+<p>📝<strong>NOTE</strong><br>
+<code>libtorch &lt; 2.6</code> is compiled with <code>_GLIBCXX_USE_CXX11_ABI=0</code> to use legacy ABI before C++11, which conflicts with the packages managed by vcpkg in default. Consequentially, you have to create a custom vcpkg triplet to control the behaviors when vcpkg actually build the packages. The triplet file is <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/cmake/vcpkg-triplets/x64-linux.cmake" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+ and is enabled by <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/scripts/build.sh#L47-L48" target="_blank" rel="noopener noreferrer">
+    these lines
+</a>
+ when building the C++ part.</p></blockquote>
+<p>I also set <code>CMAKE_CXX_SCAN_FOR_MODULES</code> to <code>OFF</code> on <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/cmake/compilers/cxx-compiler-configs.cmake#L15" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+ because some compile errors occurs. This is a temporary solution but I am not planning to use modules from C++20 in this project, so just ignoring it.</p>
+<h3 id="23-write-and-register-custom-torch-operators">2.3. Write and Register Custom Torch Operators</h3>
+<p>In order to register a custom torch <strong>operator</strong>, basically what you need to do next is to write a <strong>function</strong> that usually takes several <code>torch::Tensor</code> as input and returns a <code>torch::Tensor</code> as output, and then register this function to torch.</p>
+<p>For example, I implement <code>pmpp::ops::cpu::launchVecAdd</code> in <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/vecAdd/op.cpp" target="_blank" rel="noopener noreferrer">
+    this cpp file
+</a>
+ and <code>pmpp::ops::cuda::launchVecAdd</code> in <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/vecAdd/op.cu" target="_blank" rel="noopener noreferrer">
+    this cu file
+</a>
+ and provide the corresponding torch implentations <code>pmpp::ops::cpu::vectorAddImpl</code> and <code>pmpp::ops::cuda::vectorAddImpl</code> in <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/vecAdd/torch_impl.cpp" target="_blank" rel="noopener noreferrer">
+    this file
+</a>
+.</p>
+<blockquote>
+<p>🤔 I didn&rsquo;t add any of those function declarations in hpp files under &ldquo;./include&rdquo; because I don&rsquo;t think they should be exposed to the users of the library. For the testing part, I will get and test the functions using <code>torch::Dispatcher</code> which aligns with the operaters invoked in python.</p></blockquote>
+<p>To register these implementations as an operater into pytorch, see <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/torch_bind.cpp#L10" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+, <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/torch_bind.cpp#L22" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+, and <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/torch_bind.cpp#L32" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+, where I:</p>
+<ol>
+<li>Define a python function <code>vector_add</code> with signature: <code>vector_add(Tensor a, Tensor b) -&gt; Tensor</code>.</li>
+<li>Register the CPU implementation of the function.</li>
+<li>Register the CUDA implementation of the function.</li>
+</ol>
+<p>Now <code>vector_add</code> is a custom torch operator which can be called in both C++ and Python. All you need to do is to build these codes into a shared library like what I did <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/CMakeLists.txt#L7" target="_blank" rel="noopener noreferrer">
+    here in cmake
+</a>
+.</p>
+<h3 id="24-test-the-custom-torch-operators-in-c">2.4. Test the Custom Torch Operators in C++</h3>
+<p>As long as a custom torch operator is registered, normally one or multiple shared libraries will be generated. For C++ users, you should link your executable target against libtorch and the generated shared libraries so that those registered operators can be called.</p>
+<p>Since I have linked <code>libPmppTorchOps</code> against libtorch as <code>PUBLIC</code> in <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/CMakeLists.txt#L18" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+, the test target will link against libtorch automatically as long as it links against <code>libPmppTorchOps</code>, see <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/test/CMakeLists.txt#L10" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+.</p>
+<blockquote>
+<p>📝<strong>NOTE</strong><br>
+You may be confused about why <code>-Wl,--no-as-needed</code> is added before <code>${PROJECT_NAMESPACE}pmpp-torch-ops</code>. This is because the shared libraries are not directly used in the test target (an operator is register in the library but not called directly in the executable), and the linker will not link against them by default. This flag will force the linker to link against the shared libraries even if they are not directly used.</p></blockquote>
+<p>The registered operators can be dispatched in a not-so-intuitional way 🤣 based on the official documentation, see <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/test/OpTest/vecAdd.cpp#L14-L17" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+.</p>
+<p>Now the only thing is to test the operators in C++ using gtest, but this is not the focus of this blog. So let&rsquo;s move on to the next part.</p>
+<h2 id="3-create-and-package-a-python-project">3. Create and Package a Python Project</h2>
+<h3 id="31-pyprojecttoml-and-setuppy">3.1. <code>pyproject.toml</code> and <code>setup.py</code></h3>
+<p>In modern python, pyproject.toml is a de-facto standard configuration file for packaging, and in this project, setuptools is used as the build backend because I believe it is the most popular one and is easy to cooperate with cmake.</p>
+<p>Particularly, &ldquo;<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/pyproject.toml" target="_blank" rel="noopener noreferrer">
+    ./pyproject.toml
+</a>
+&rdquo; and &ldquo;<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/setup.py" target="_blank" rel="noopener noreferrer">
+    ./setup.py
+</a>
+&rdquo; defines what will happen when you run <code>pip install .</code> in the root directory of the project. I created <code>CMakeExtention</code> and <code>CMakeBuild</code> (<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/setup.py#L23-L68" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+) and pass them to <code>setup</code> function (<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/setup.py#L92-L105" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+) so that the C++ library <code>libPmppTorchOps</code> (under &ldquo;./csrc/&rdquo;) will be built and installed before installing the python package.</p>
+<p>You can easily understand what I did by reading the source code of these two files, and there is one more thing I want to mention.</p>
+<p>Based on <a href="/blogs/create-a-libtorch-project/#2-create-a-c-cuda-and-libtorch-project">2. Create a C++, CUDA and LibTorch Project</a>, you should find that the generated shared library is under <code>./build/lib</code> ending with <code>.so</code> on linux or <code>.dll</code> on windows. Additionally, I added an install procedure <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/setup.py#L62-L68" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+ which will copy the shared libraries to &ldquo;./src/pmpp/_torch_ops&rdquo;.</p>
+<blockquote>
+<p>Note that &ldquo;<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/tree/96685ab/src/pmpp" target="_blank" rel="noopener noreferrer">
+    ./src/pmpp
+</a>
+&rdquo; is already an existing directory being the root of the actual python package, and &ldquo;./src/pmpp/_torch_ops&rdquo; will be created automatically while installing the shared libraries.</p></blockquote>
+<p>The problem is, when packaging the python project, only the directory containing &ldquo;__init__.py&rdquo; will be considered as a package (or module), and I don&rsquo;t want to add this file to &ldquo;./src/pmpp/_torch_ops&rdquo; due to my mysophobia 😷. Therefore, I used <code>find_namespace_packages</code> instead of <code>find_packages</code> and specified <code>package_data</code> to include the shared libraries <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/setup.py#L106-L108" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+.</p>
+<h3 id="32-install-the-python-package">3.2. Install the Python Package</h3>
+<p>If you are planning to build your libraries with dependencies listed <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/pyproject.toml#L26-L31" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+ while installing the python project, I don&rsquo;t really suggest installing it in an isolated python environment (which is the default behavior of setuptools). All packages listed <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/pyproject.toml#L2" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+ have to be re-installed and in our case you need to at least append <code>torch</code> to that list.</p>
+<p>Alternatively, try this command, which will directly use the torch installed in current conda environment:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">pip install --no-build-isolation -v .
+</span></span></code></pre></div><h3 id="33-test-the-custom-torch-operators-in-python">3.3. Test the Custom Torch Operators in Python</h3>
+<p>As long as you have the shared libraries built in <a href="#2-create-a-c-cuda-and-libtorch-project">
+    2. Create a C&#43;&#43;, CUDA and LibTorch Project
+</a>
+, all you need to do is to use <code>torch.ops.load_library</code> to load the shared libraries and call the registered operators.</p>
+<p>I write this process into &ldquo;<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/src/pmpp/__init__.py" target="_blank" rel="noopener noreferrer">
+    src/pmpp/__init__.py
+</a>
+&rdquo;, so the time you import <code>pmpp</code> in python, your custom torch operators will be ready to use. See <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/test/test.py" target="_blank" rel="noopener noreferrer">
+    this file
+</a>
+ for an example of testing the operators.</p>
+]]></content:encoded></item><item><title>A Simple Pytorch Trainpipeline</title><link>https://jamesnulliu.github.io/blogs/a-simple-pytorch-trainpipeline/</link><pubDate>Sun, 30 Jun 2024 01:52:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/a-simple-pytorch-trainpipeline/</guid><description>How to build a simple Pytorch trainpipeline.</description><content:encoded><![CDATA[<h2 id="1-introduction">1. Introduction</h2>
+<p>In general, you will need these things to train a model:</p>
+<ul>
+<li>A Model</li>
+<li>A Dataset</li>
+<li>A Dataloader</li>
+<li>A Loss Function (Criterion)</li>
+<li>An Optimizer</li>
+</ul>
+<h2 id="2-model">2. Model</h2>
+<p>We will build a simple model for demonstration. The model takes a tensor of shape <code>(batch_size, 10)</code> as input and outputs a tensor of shape <code>(batch_size, 2)</code>.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># @file simple_model.py</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">torch</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">SimpleModel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="nb">super</span><span class="p">(</span><span class="n">SimpleModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">model</span> <span class="o">=</span> <span class="n">SimpleModel</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>  <span class="c1"># Shape: (4, 10)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">y</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># Shape: (4, 2)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>You can run the script to check how the model works:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">python simple_model.py
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="3-dataset">3. Dataset</h2>
+<p>We will build a simple dataset for demonstration. The dataset generates random data and labels.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># @file simple_dataset.py</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">torch</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">Dataset</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">SimpleDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># Shape: (10,); Element type: float32</span>
+</span></span><span class="line"><span class="cl">        <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,))</span>  <span class="c1"># Shape: (1,); Element type: int64</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">dataset</span> <span class="o">=</span> <span class="n">SimpleDataset</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># Shape: (10,), (1,)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>You can run the script to check how the dataset works:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">python simple_dataset.py
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="4-dataloader">4. Dataloader</h2>
+<p>As long as the dataset is built, creating a dataloader is quite easy.</p>
+<p>A dataloader will provide <code>batch_size</code> samples in each iteration. For example:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># @file temp.py</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">simple_dataset</span> <span class="kn">import</span> <span class="n">SimpleDataset</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">dataset</span> <span class="o">=</span> <span class="n">SimpleDataset</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Get a sample, shape: (10,), (1,)</span>
+</span></span><span class="line"><span class="cl"><span class="n">sample_x</span><span class="p">,</span> <span class="n">sample_y</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> 
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Suppose batch_size is 16, the dataloader will provide 16 samples in each iteration</span>
+</span></span><span class="line"><span class="cl"><span class="n">dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dataloader</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># Shape: (16, 10), (16, 1)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">break</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>You can run the script to check how the dataloader works:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">python temp.py
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="5-loss-function">5. Loss Function</h2>
+<p>Different tasks require different loss functions. For example, a 2-class classification task can use <code>nn.CrossEntropyLoss</code>, while a regression task can use <code>nn.MSELoss</code>.</p>
+<p>In our case, we will use <code>nn.CrossEntropyLoss</code>.</p>
+<h2 id="6-optimizer">6. Optimizer</h2>
+<p>We will use <code>torch.optim.SGD</code> as the optimizer. <code>torch.optim.Adam</code> is also a good choice. This is a hyperparameter that you can tune.</p>
+<h2 id="7-trainpipeline">7. Trainpipeline</h2>
+<p>Now we can build the trainpipeline. The trainpipeline will train the model on the dataset.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># @file trainpipeline.py</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">torch</span>
+</span></span><span class="line"><span class="cl"><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># This is the model we built</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">simple_model</span> <span class="kn">import</span> <span class="n">SimpleModel</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># This is the dataset we built</span>
+</span></span><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">simple_dataset</span> <span class="kn">import</span> <span class="n">SimpleDataset</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">DEVICE</span> <span class="o">=</span> <span class="s2">&#34;cuda&#34;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&#34;cpu&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">16</span>
+</span></span><span class="line"><span class="cl"><span class="n">EPOCHS</span> <span class="o">=</span> <span class="mi">100</span>
+</span></span><span class="line"><span class="cl"><span class="n">LEARNING_RATE</span> <span class="o">=</span> <span class="mf">0.01</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">def</span> <span class="nf">train</span><span class="p">():</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># Create a model and move it to DEVICE</span>
+</span></span><span class="line"><span class="cl">    <span class="n">model</span> <span class="o">=</span> <span class="n">SimpleModel</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">DEVICE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># Create train dataset and dataloader</span>
+</span></span><span class="line"><span class="cl">    <span class="n">train_dataset</span> <span class="o">=</span> <span class="n">SimpleDataset</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">val_dataset</span> <span class="o">=</span> <span class="n">SimpleDataset</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">val_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">val_dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1"># Create a loss function and an optimizer; The optimizer will update the model&#39;s parameters</span>
+</span></span><span class="line"><span class="cl">    <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">LEARNING_RATE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">EPOCHS</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>  <span class="c1"># Set the model to training mode</span>
+</span></span><span class="line"><span class="cl">        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">            <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">DEVICE</span><span class="p">),</span> <span class="n">y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">DEVICE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">            <span class="n">y_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>  <span class="c1"># Set the model to evaluation mode</span>
+</span></span><span class="line"><span class="cl">        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>  <span class="c1"># Disable gradient calculation</span>
+</span></span><span class="line"><span class="cl">            <span class="n">total_loss</span> <span class="o">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">            <span class="n">total_correct</span> <span class="o">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">            <span class="n">total_samples</span> <span class="o">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">val_dataloader</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">                <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">DEVICE</span><span class="p">),</span> <span class="n">y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">DEVICE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="n">y_pred</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">y_pred</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">                <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">                <span class="n">total_correct</span> <span class="o">+=</span> <span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">y</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">                <span class="n">total_samples</span> <span class="o">+=</span> <span class="n">y</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Epoch: </span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">, Loss: </span><span class="si">{</span><span class="n">total_loss</span> <span class="o">/</span> <span class="n">total_samples</span><span class="si">}</span><span class="s2">, Accuracy: </span><span class="si">{</span><span class="n">total_correct</span> <span class="o">/</span> <span class="n">total_samples</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">train</span><span class="p">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>You can run the script to check how the trainpipeline works:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">python trainpipeline.py
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item></channel></rss>
