@@ -63,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: ./public/
+          folder: .
           branch: gh-pages
           clean-exclude: pr-preview
           force: false
