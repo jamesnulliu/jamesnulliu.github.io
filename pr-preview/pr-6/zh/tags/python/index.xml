@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Python on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/zh/tags/python/</link><description>Recent content in Python on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>zh</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 22:14:12 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/zh/tags/python/index.xml" rel="self" type="application/rss+xml"/><item><title>Dive into Paged Attention</title><link>https://jamesnulliu.github.io/zh/blogs/dive-into-paged-attention/</link><pubDate>Mon, 07 Oct 2024 12:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/zh/blogs/dive-into-paged-attention/</guid><description>Dive into the paged attention mechanism of vLLM.</description><content:encoded><![CDATA[<h2 id="1-证明-attention-的--只与--有关">1. 证明 Attention 的 $O_i$ 只与 $Q_i$ 有关</h2>
+<p>Attention 的公式如下:</p>
+$$
+O=Attention(Q,K,V)=softmax\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+$$<p>假设 $Q=\begin{bmatrix}Q_0\\Q_1\end{bmatrix}$, $K=\begin{bmatrix}K_0\\K_1\end{bmatrix}$</p>
+<p>那么:</p>
+$$
+O=softmax(\frac{\begin{bmatrix}Q_0K_0^T&Q_0K_1^T\\Q_1K_0^T&Q_1K_1^T\end{bmatrix}}{\sqrt{d_k}})V
+$$<p>令:</p>
+$$
+A=\begin{bmatrix}A_0\\A_1\end{bmatrix}=\begin{bmatrix}Q_0K_0^T&Q_0K_1^T\\Q_1K_0^T&Q_1K_1^T\end{bmatrix},f(x)=\frac{softmax(x)}{\sqrt{d_k}}
+$$<p>此时, $A_1$ 只和 $Q_1$ 有关, 和 $Q_0$ 无关, 那么:</p>
+$$
+\begin{bmatrix}O_0\\O_1\end{bmatrix}=O=\begin{bmatrix}f(A_0)\\f(A_1)\end{bmatrix}V=\begin{bmatrix}f(A_0)V\\f(A_1)V\end{bmatrix}
+$$<p>因此, $O_i$ 只和  $A_i$ 相关, 而根据 $A$ 的设定, $A_i$ 只和 $Q_i$ 相关, 即:</p>
+<p>Attention 矩阵的第 $i$ 个输出只和第 $i$ 个 $Q$ 有关, 和之前的 $Q$ 无关.</p>
+<p><strong>总结</strong>:</p>
+<ul>
+<li>在预测下一个 token 时，只需对新 token 计算对应的 <code>Q_new</code>，并与之前已经缓存的 <code>K_cache</code> 和 <code>V_cache</code> 进行注意力计算。</li>
+<li>新的 <code>K_new</code> 和 <code>V_new</code> 会被加入到缓存中，继续为下一个 token 生成提供基础。</li>
+<li>整个过程避免了对所有历史 token 的重复计算，大幅提高了效率。</li>
+</ul>
+<h2 id="2-kv-cache-的增量过程">2. KV Cache 的增量过程</h2>
+<h3 id="21-初始输入完整序列计算">2.1. 初始输入（完整序列）计算：</h3>
+<ul>
+<li>对于初始的输入序列 <code>(seq_len, embed_dim)</code>，我们通过线性变换得到 <code>Q</code>、<code>K</code> 和 <code>V</code>，它们的形状都是 <code>(seq_len, embed_dim)</code>。</li>
+<li>使用 <code>Q</code> 和 <code>K</code> 进行点积计算注意力分数，然后结合 <code>V</code> 计算得到输出 <code>(seq_len, embed_dim)</code>，这是第一次对初始序列的完整计算。</li>
+</ul>
+<h3 id="22-预测下一个-token-时的增量计算">2.2. 预测下一个 token 时的增量计算：</h3>
+<p>在预测下一个 token 时，不需要对整个序列再进行完整的 <code>Q</code>、<code>K</code>、<code>V</code> 计算，而是只需对新生成的 token 进行一次增量计算。这时的操作流程如下：</p>
+<ol>
+<li><strong>输入新的 token</strong>：将已经生成的 token（其形状为 <code>(embed_dim,)</code>）作为输入，通过线性变换得到该 token 对应的 <code>Q_new</code>，形状为 <code>(embed_dim,)</code>。</li>
+<li><strong>与之前缓存的 <code>K</code> 和 <code>V</code> 进行注意力计算</strong>：使用 <code>Q_new</code> 与之前已经计算并缓存的 <code>K_cache</code> 和 <code>V_cache</code> 进行注意力计算。这里的 <code>K_cache</code> 和 <code>V_cache</code> 分别是之前每次生成 token 时得到的 <code>K</code> 和 <code>V</code>，它们的形状是 <code>(seq_len, embed_dim)</code>，即缓存了从最初输入序列到当前已经生成的所有 token 的 <code>K</code> 和 <code>V</code>。<code>Q_new</code> 可以直接与 <code>K_cache</code> 进行点积，得到注意力分数，然后结合 <code>V_cache</code> 得到新的输出。</li>
+<li><strong>更新 <code>KV Cache</code></strong>：新的 <code>K_new</code> 和 <code>V_new</code> 会通过线性变换得到（形状为 <code>(embed_dim,)</code>），并将它们添加到 <code>K_cache</code> 和 <code>V_cache</code> 的末尾，使得缓存的 <code>K_cache</code> 和 <code>V_cache</code> 不断增大，以备后续使用。</li>
+<li><strong>输出</strong>：通过注意力计算后的输出形状为 <code>(embed_dim,)</code>，即新生成的 token。</li>
+</ol>
+<h2 id="4-vllm-中的-paged-attention">4. vllm 中的 Paged Attention</h2>
+<h3 id="41-动机-memory-wastes">4.1. 动机: Memory Wastes</h3>
+<p><img alt="memory-wastes.png" loading="lazy" src="/imgs/blogs/dive-into-paged-attention/memory-wastes.png"></p>
+<p>上图展示了可能的内存浪费情况, 主要时输入 sequence 不知道 eos 在哪里, 如果随机申请内存, 可能导致大量内存碎片, 因此吞吐量下降.</p>
+<h3 id="42-解决方案-用-page-管理内存">4.2. 解决方案: 用 Page 管理内存</h3>
+<p><img alt="paged-attention-animation.webp" loading="lazy" src="/imgs/blogs/dive-into-paged-attention/paged-attention-animation.webp"></p>
+<p>上图展示了 vLLM 用 Paged 管理内存具体怎么做的.</p>
+<p>简单来说, vLLM 在开始推理前为每个 Decoder Layer 申请两个巨长的 Tensor (<code>k_cache</code> 和 <code>v_cache</code>), 把 Tensor 分割成连续等长的 PA blocks (图中的一行为一个 PA Block); 每个 PA Block 能够存放 <code>BLOCK_SIZE</code> 个 token 的 K 或 V cache (每个 cache 的形状可以理解为 <code>(num_heads, head_size)</code>).</p>
+<p>因此, <code>k_cache</code> 和 <code>v_cache</code> 的形状可以理解为 <code>(num_blocks, num_heads, head_size)</code>.</p>
+<p>对于一个连续的 sequnce, 在 prefill 阶段前就会分配好它的 PA blocks, 之后推理时:</p>
+<ul>
+<li>若是计算 prompt 的 Attention, 则先把传入的 K 和 V 按照 PA blocks 存入 <code>k_cache</code> 和 <code>v_cache</code> 中; 然后利用整段的 QKV 计算 attention.</li>
+<li>若是计算新 token, 则利用 Q 和 block table 计算 decode 阶段的 attntion; 此时访存的就是 <code>k_cache</code> 和 <code>v_cache</code> 中的 PA blocks.</li>
+</ul>
+<h2 id="5-paged-attention-kernel-详解">5. Paged Attention Kernel 详解</h2>
+<blockquote>
+<p>References:</p>
+<ul>
+<li><a href="https://docs.vllm.ai/en/latest/dev/kernel/paged_attention.html">vLLM Paged Attention</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/673284781">vLLM皇冠上的明珠：深入浅出理解PagedAttention CUDA实现</a></li>
+</ul></blockquote>
+<p>先看下整体计算流程图 (这个图后面也会出现这里先看一眼):</p>
+<p><img alt="pa-cal.png" loading="lazy" src="/imgs/blogs/dive-into-paged-attention/pa-cal.png"></p>
+<h3 id="51-输入输出输出分析和参数说明">5.1. 输入输出输出分析和参数说明</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// Grid: (num_heads, num_seqs, 1).
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">template</span><span class="o">&lt;</span>
+</span></span><span class="line"><span class="cl"><span class="k">typename</span> <span class="n">scalar_t</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">HEAD_SIZE</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">BLOCK_SIZE</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">NUM_THREADS</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">PARTITION_SIZE</span> <span class="o">=</span> <span class="mi">0</span><span class="o">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="n">__device__</span> <span class="kt">void</span> <span class="n">paged_attention_kernel</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl"><span class="p">...</span> <span class="c1">// Other side args.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="n">scalar_t</span><span class="o">*</span> <span class="n">__restrict__</span> <span class="n">out</span><span class="p">,</span>       <span class="c1">// [num_seqs, num_heads, max_num_partitions, head_size]
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="n">scalar_t</span><span class="o">*</span> <span class="n">__restrict__</span> <span class="n">q</span><span class="p">,</span>         <span class="c1">// [num_seqs, num_heads, head_size]
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="n">scalar_t</span><span class="o">*</span> <span class="n">__restrict__</span> <span class="n">k_cache</span><span class="p">,</span>   <span class="c1">// [num_blocks, num_kv_heads, head_size/x, block_size, x]
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="n">scalar_t</span><span class="o">*</span> <span class="n">__restrict__</span> <span class="n">v_cache</span><span class="p">,</span>   <span class="c1">// [num_blocks, num_kv_heads, head_size, block_size]
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">...</span> <span class="c1">// Other side args.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">)</span>
+</span></span></code></pre></div><p>模板参数说明:</p>
+<ul>
+<li><code>scalar_t</code> 元素类型 (实际代码中还有 <code>cache_t</code> 表示 KV cache 的元素类型).</li>
+<li><code>HEAD_SIZE</code> 每个 head 中元素数量.</li>
+<li><code>BLOCK_SIZE</code> 每个 PA block 中的 token 数量.
+<blockquote>
+<ol>
+<li>KV cache 被存储在不同 PA blocks. 每个 PA block 存储一个 head 中 <code>BLOCK_SIZE</code> 个 token.<br>
+例如, 若 <code>BLOCK_SIZE=16</code>, <code>HEAD_SIZE=128</code>, 则一个  PA block 能存储一个 head 的 <code>16 * 128 = 2048</code> 个元素.</li>
+<li>每个 PA block 可能只包含一部分的 context tokens.</li>
+<li>从 page 角度看, KV cache 是若干个 page 的集合;</li>
+</ol></blockquote>
+</li>
+<li><code>NUM_THREADS</code> 每个 CUDA thread block 中 thread 的数量.</li>
+<li><code>PARTITION_SIZE</code> 参与 TP 的 GPU 数量, 默认 0 表示单卡. (以下都以单卡为例说明)</li>
+</ul>
+<p>额外的一些参数:</p>
+<ul>
+<li><code>num_seqs</code>: 本次推理请求 sequence 数目.
+<blockquote>
+<p>由于这个 kernel 只处理 decode 阶段单 query attention, 所以实际上每个 sequence 只有一个 query token.</p></blockquote>
+</li>
+<li><code>num_heads</code>: Q 的 head 数目</li>
+<li><code>num_kv_heads</code>: KV 的 head 数目, 对于 MHA 其值和 <code>num_heads</code> 相同; 如果是 GQA, MQA 则 <code>num_kv_heads</code> 小于 <code>num_head</code>.</li>
+<li><code>head_size</code>: 即 <code>HEAD_SIZE</code></li>
+<li><code>k_cache: (num_blocks, num_kv_heads, head_size/x, block_size, x)</code>, 其中 <code>x</code> 表示 <code>THREAD_GROUP_SIZE * VEC_SIZE</code> 的大小 (后面会细说).</li>
+</ul>
+<p>下面结合 GPU architecture 初步分析一下参数.</p>
+<p><img alt="gpu-archi.png" loading="lazy" src="/imgs/blogs/dive-into-paged-attention/gpu-archi.png"></p>
+<p>🧐 <strong>为什么要分 thread group?</strong></p>
+<ul>
+<li>因为当一个 cuda block 要取的数据比较少的时候 (计算 QK), 一个 thread group 分别一次取 Q 和 K 中 16B; 当一个 cuda block 要取的数据比较多的时候 (计算 LV), 一个 thread 取 16B.</li>
+</ul>
+<h3 id="52shared-memory-q_vecs-的写入">5.2.Shared Memory: <code>q_vecs</code> 的写入</h3>
+<p>从 kernel 中的第一个申请的 shared memory 开始说.</p>
+<blockquote>
+<p>关于 shared memeory:</p>
+<ol>
+<li>在 kernel 中申请的 shared memory 被当前 cuda block 中的所有 thread 共享.</li>
+<li>shared memory 的作用是为了减少 global memory 的访问次数，提高访存效率.</li>
+</ol></blockquote>
+<p>以下代码申请了一块 shared memroy 被整个 CUDA Block 中所有 kernel 共享:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">__shared__</span> <span class="n">Q_vec</span> <span class="n">q_vecs</span><span class="p">[</span><span class="n">THREAD_GROUP_SIZE</span><span class="p">][</span><span class="n">NUM_VECS_PER_THREAD</span><span class="p">];</span>
+</span></span></code></pre></div><p>首先, <code>q_vecs</code> 覆盖了 Q 中 <code>head_size</code> 个元素 - 这也是一个 cuda block 需要处理的数据量.</p>
+<p>接着再说两个维度的参数的意思:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">constexpr</span> <span class="kt">int</span> <span class="n">NUM_ELEMS_PER_THREAD</span> <span class="o">=</span> <span class="n">HEAD_SIZE</span> <span class="o">/</span> <span class="n">THREAD_GROUP_SIZE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">constexpr</span> <span class="kt">int</span> <span class="n">NUM_VECS_PER_THREAD</span> <span class="o">=</span> <span class="n">NUM_ELEMS_PER_THREAD</span> <span class="o">/</span> <span class="n">VEC_SIZE</span><span class="p">;</span>
+</span></span></code></pre></div><ul>
+<li><code>THREAD_GROUP_SIZE</code>: 每个 thread group 中的 thread 数量. 注意, 一个 cuda block 中有 <code>NUM_THREADS</code> 个 thread, <code>NUM_THREAD_GROUPS</code> 个 thread group. <code>THREAD_GROUP_SIZE = MAX(WARP_SIZE/BLOCK_SIZE, 1)</code>.</li>
+<li><code>NUM_VECS_PER_THREAD</code>: <code>HEAD_SIZE</code> 能被分成多少个 16B. (这个变量这么命名的理由是后面读取 K 的时候每个 thread 会往自己的寄存器内读 <code>NUM_VECS_PER_THREAD</code> 个 k_vec.)</li>
+</ul>
+<blockquote>
+<p>证明: <code>q_vecs</code> 覆盖 Q 的一个 head, 并且 <code>NUM_VECS_PER_THREAD</code> 表示 Q 的一个 head 被分成多少个 16B.<br>
+=&gt; <code>THREAD_GROUP_SIZE</code> * <code>VEC_SIZE</code> = 16B / <code>sizeof(scalar_t)</code>;<br>
+=&gt; <code>NUM_VECS_PER_THREAD</code> * 16B / <code>sizeof(scalar_t)</code> = <code>HEAD_SIZE</code>;</p></blockquote>
+<p>然后看 load Q 的代码, 建议结合下面的图一起看:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl">  <span class="c1">// Load Q to shmem
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#pragma unroll
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">thread_group_idx</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_VECS_PER_THREAD</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">i</span> <span class="o">+=</span> <span class="n">NUM_THREAD_GROUPS</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">int</span> <span class="n">vec_idx</span> <span class="o">=</span> <span class="n">thread_group_offset</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">THREAD_GROUP_SIZE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">q_vecs</span><span class="p">[</span><span class="n">thread_group_offset</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl">        <span class="o">*</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">Q_vec</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">q_ptr</span> <span class="o">+</span> <span class="n">vec_idx</span> <span class="o">*</span> <span class="n">VEC_SIZE</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><ul>
+<li><code>thread_group_idx</code> 表示当前 thread 属于当前 cuda block 中第几个 thread group.</li>
+<li><code>thread_group_offset</code> 表示当前 thread 在当前 thread group 中是第几个 thread.</li>
+</ul>
+<p><img alt="pa-load-q.png" loading="lazy" src="/imgs/blogs/dive-into-paged-attention/pa-load-q.png"></p>
+<p>上图展示了循环具体是怎么跑的.</p>
+<ul>
+<li>一个紫色箭头表示一个 thread group.</li>
+<li><code>NUM_VECS_PER_THREAD</code> 表示 <code>HEAD_SIZE</code> 能被分成多少个 16B.</li>
+<li>实际读取 Q 的内存时, 所有 thread group 从 Q 的起始位置紧密排列, 根据图上看的话一共有 <code>NUM_THREAD_GROUPS</code> 个紫色箭头.</li>
+<li>所有 thread group 读取一次 Q 并存入 <code>q_vecs</code> 对应循环中的一次迭代; 因此下次迭代 thread group 需要向后偏移 <code>NUM_THREAD_GROUPS</code> 个位置 (例如 <code>i</code> 从 1 变为 7).</li>
+<li>此外, 读一次 16B 对应一个 thread 来说自然也是取一个 VEC.</li>
+<li>对应到 kernel 编写, 还需要计算当前 thread 具体读取哪个 vec; 因此得到 <code>vec_idx = thread_group_offset + i * THREAD_GROUP_SIZE</code>.</li>
+</ul>
+<blockquote>
+<p>🤔 这里会不会有 bank conflict?</p></blockquote>
+<p>总之现在我们把 <code>(1, head_size)</code> 大小的元素读到了 cuda block 共享的 shared memory <code>q_vecs</code> 中.</p>
+<h3 id="53-读取-k-cache-并计算-qk">5.3. 读取 K Cache 并计算 QK</h3>
+<p>现在从 cuda block 的角度看, 当前 block 已经获得了自己要算的 Q 中的一个 head (形状为 <code>(1, head_size)</code>), 接下来就是计算 Q 和 K 的点积.</p>
+<p>点积过程是把当前 block 拥有的 Q head 和整个 K Cache (迭代地) 进行点积运算. 参考下图:</p>
+<p><img alt="pa-cal-kq-01.png" loading="lazy" src="/imgs/blogs/dive-into-paged-attention/pa-cal-kq-01.png"></p>
+<p>QK 乘积实际上被暂存在 <code>logits</code> (也是一块 shared memory) 中, 之后会被用来计算 softmax.</p>
+<p>😇 看下循环的具体代码吧:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// Loop 1
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">block_idx</span> <span class="o">=</span> <span class="n">start_block_idx</span> <span class="o">+</span> <span class="n">warp_idx</span><span class="p">;</span> <span class="n">block_idx</span> <span class="o">&lt;</span> <span class="n">end_block_idx</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">block_idx</span> <span class="o">+=</span> <span class="n">NUM_WARPS</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Physical block calculation ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="c1">// Loop 2
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_TOKENS_PER_THREAD_GROUP</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Offset calculation ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">K_vec</span> <span class="n">k_vecs</span><span class="p">[</span><span class="n">NUM_VECS_PER_THREAD</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Loop 3
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="cp">#pragma unroll
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">NUM_VECS_PER_THREAD</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Load K to `k_vecs` ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">float</span> <span class="n">qk</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">Qk_dot</span><span class="o">&lt;</span><span class="n">scalar_t</span><span class="p">,</span> <span class="n">THREAD_GROUP_SIZE</span><span class="o">&gt;::</span><span class="n">dot</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">                        <span class="n">q_vecs</span><span class="p">[</span><span class="n">thread_group_offset</span><span class="p">],</span> <span class="n">k_vecs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Add the ALiBi bias if slopes are given.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">qk</span> <span class="o">+=</span> <span class="p">(</span><span class="n">alibi_slope</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">?</span> <span class="n">alibi_slope</span> <span class="o">*</span> <span class="p">(</span><span class="n">token_idx</span> <span class="o">-</span> <span class="n">seq_len</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">:</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">thread_group_offset</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Store the partial reductions to shared memory.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="c1">// Mask
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="c1">// Update the max value.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>先说第一个循环, 其中比较重要的几个参数定义如下:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// [start_block_idx, end_block_idx) is the range of blocks to process.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">int</span> <span class="n">start_block_idx</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl">    <span class="n">USE_PARTITIONING</span> <span class="o">?</span> <span class="n">partition_idx</span> <span class="o">*</span> <span class="nl">num_blocks_per_partition</span> <span class="p">:</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="c1">// If not using partitioning, `end_block_idx` should be equal to `num_seq_blocks`.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">int</span> <span class="n">end_block_idx</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl">    <span class="n">MIN</span><span class="p">(</span><span class="n">start_block_idx</span> <span class="o">+</span> <span class="n">num_blocks_per_partition</span><span class="p">,</span> <span class="n">num_seq_blocks</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="c1">// Number of blocks to process.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">int</span> <span class="n">num_blocks</span> <span class="o">=</span> <span class="n">end_block_idx</span> <span class="o">-</span> <span class="n">start_block_idx</span><span class="p">;</span>
+</span></span></code></pre></div><p>用文字描述就是:</p>
+<ul>
+<li><code>blk_idx</code> 表示当前 thread 所在 warp 需要处理的 PA block 的在 <code>block_table</code> 中索引 (逻辑上的索引).</li>
+<li><code>start_block_idx</code> 和 <code>end_block_idx</code> 表示当前 cuda block 需要处理的 block 范围.</li>
+<li><code>num_blocks</code> 表示当前 cuda block 需要处理的 block 数量.</li>
+<li><code>NUM_WARPS</code> 表示当前 cuda block 中 warp 的数量. 一个 warp 包含 32 个 thread.</li>
+<li><code>warp_idx</code> 表示当前 warp 在当前 cuda block 中的索引.</li>
+</ul>
+<p>说人话就是每个 warp 处理一个 PA block, 一开始 cuda block 中的所有 warp 紧密地指向最前面的 <code>NUM_WARPS</code> 个 PA block, 每次循环所有 warp 向后偏移 <code>NUM_WARPS</code> 个 PA block 的长度. 参考下图:</p>
+<p><img alt="pa-cal-kq-02.png" loading="lazy" src="/imgs/blogs/dive-into-paged-attention/pa-cal-kq-02.png"></p>
+<blockquote>
+<p>🔔 这里再回顾一下, 一个 PA block 里存放了 <code>BLOCK_SIZE</code> 个 token 的 K 或 V cache.</p></blockquote>
+<p>所以说这个循环和上面读取 Q 的循环一个尿性🤮, 不过是以 warp 的粒度处理数据;</p>
+<p>进入了第一个循环内部, 第一步当然是计算当前 thread 对应的 warp 应该计算哪个 PA block (物理上的索引), 因此得到了 <code>physical_block_number</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">const</span> <span class="kt">int64_t</span> <span class="n">physical_block_number</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl">    <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int64_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">block_table</span><span class="p">[</span><span class="n">block_idx</span><span class="p">]);</span>
+</span></span></code></pre></div><hr>
+<p>然后解释第二个循环, 第二个循环的整体目标就是让当前 warp 计算好自己负责的 PA block 中 <code>BLOCK_SIZE</code> 个 token 的 QK 乘积.</p>
+<p>先看一下 <code>i</code> 的上界:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">constexpr</span> <span class="kt">int</span> <span class="n">NUM_TOKENS_PER_THREAD_GROUP</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl">    <span class="n">DIVIDE_ROUND_UP</span><span class="p">(</span><span class="n">BLOCK_SIZE</span><span class="p">,</span> <span class="n">WARP_SIZE</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// Loop 1
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">block_idx</span> <span class="o">=</span> <span class="n">start_block_idx</span> <span class="o">+</span> <span class="n">warp_idx</span><span class="p">;</span> <span class="n">block_idx</span> <span class="o">&lt;</span> <span class="n">end_block_idx</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">block_idx</span> <span class="o">+=</span> <span class="n">NUM_WARPS</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Loop 2
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_TOKENS_PER_THREAD_GROUP</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></div><p>从 kernel 角度看, 每个 thread 需要辅助当前 warp 计算自己负责的一整个 PA block (包含 <code>BLOCK_SIZE</code> 个 token), 而我们把这个过程拆分为 Loop 2 中的 <code>NUM_TOKEN_PER_THREAD_GROUP</code> (也就是 <code>ceil(BLOCK_SIZE / 32)</code>) 次循环;</p>
+<p>说人话就是<strong>一个 thread group 对应一个 token 中的一个 head</strong>, 如果 BLOCK SIZE 太大了后面每个 thread 向后偏移 <code>i * WARP_SIZE</code> 个 token 继续狠狠算🤣.</p>
+<p>也因此第二个循环内部一上来先计算了几个偏移量, 并且申请了 thread 内部私有的 <code>k_vecs</code> 数组:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">const</span> <span class="kt">int</span> <span class="n">physical_block_offset</span> <span class="o">=</span> <span class="p">(</span><span class="n">thread_group_idx</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">WARP_SIZE</span><span class="p">)</span> <span class="o">%</span> <span class="n">BLOCK_SIZE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">const</span> <span class="kt">int</span> <span class="n">token_idx</span> <span class="o">=</span> <span class="n">block_idx</span> <span class="o">*</span> <span class="n">BLOCK_SIZE</span> <span class="o">+</span> <span class="n">physical_block_offset</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">K_vec</span> <span class="n">k_vecs</span><span class="p">[</span><span class="n">NUM_VECS_PER_THREAD</span><span class="p">];</span>
+</span></span></code></pre></div><ul>
+<li><code>thread_group_idx</code> 表示当前 thread group 在整个 cuda block 中的索引.</li>
+<li>☢️ 一个 thread group 在一次循环中负责 fetch 一个 PA block 中 K cache 的一个 token 中<strong>自己负责的 head</strong>.</li>
+<li>☢️ 一个 thread group 负责计算一个 qk 值; 这个值显然是由一个 Q head 和一个 K head 点积得到的.</li>
+<li><code>physical_block_offset</code> 表示当前要算的 token 在当前 PA block 中的偏移量 (注意和前面的 <code>physical_block_number</code> 区分).</li>
+<li>加 <code>i * WARP_SIZE</code> 的原因是如果 <code>BLOCK_SIZE</code> 大于 32, 那么一个 warp 要多次循环才能处理完一个 PA block 中的所有 token, 对应 <code>thread_group_idx</code> 需要做偏移.</li>
+<li><code>token_idx</code> 表示当前要算的 token 在整个 seq 的 KV cache 中的索引.</li>
+<li><code>k_vecs</code> 中能存放 <code>NUM_VECS_PER_THREAD</code> 个 VEC, 而一整个 thread group 中所有的 thread 的 <code>k_vecs</code> 合起来才能组成一个 K 的 head (推导参考上面 Q 的 😇). 这就是为什么后面算 QK 的时候要 reduce.</li>
+</ul>
+<p>🤔 <strong>看到这里读者可能有一个问题: 一个 token 的 K cache 应该对应多个 head, 为什么上面说一个 thread group 只负责一个 head?</strong><br>
+答: 因为实际计算的时候, 一个 cuda block 只负责计算一个 head, 对应到 K Cache 乃至后面 V Cache 的位置也是一样的.</p>
+<blockquote>
+<p>这里额外说一下, 读 K 的 head 的一个目标应该是在尽量少的 register 中装下一个 head 的所有元素, 这样后续和 shared memory 中的 Q 做点乘并规约的速度更快. 假设一个 head 有 128 个 float16, 则占用 256B, 而 A100 中一个 thread 最多能有 255 个 32-bit register (也就是 1020B), 此时可以认为一个 thread 能装下一个 head 的所有元素.<br>
+但是由于目前 PA kernel 在 <code>BLOCK_SIZE</code> 为 16 的情况下 <code>THREAD_GROUP_SIZE</code> 等于 2, 因此一个 thread 只会装一个 head 的一半元素, 这样可能会导致 register 的使用率不高.</p></blockquote>
+<hr>
+<p>接着进入第三个循环, 目的是让 thread group 从 K cache 中读一个 head, 并存入 <code>k_vecs</code> 中:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// x == THREAD_GROUP_SIZE * VEC_SIZE
+</span></span></span><span class="line"><span class="cl"><span class="c1">// Each thread group fetches x elements from the key at a time.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">constexpr</span> <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">16</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">cache_t</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="c1">//...
+</span></span></span><span class="line"><span class="cl"><span class="c1">// Loop 1
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">block_idx</span> <span class="o">=</span> <span class="n">start_block_idx</span> <span class="o">+</span> <span class="n">warp_idx</span><span class="p">;</span> <span class="n">block_idx</span> <span class="o">&lt;</span> <span class="n">end_block_idx</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">block_idx</span> <span class="o">+=</span> <span class="n">NUM_WARPS</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Loop 2
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_TOKENS_PER_THREAD_GROUP</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">K_vec</span> <span class="n">k_vecs</span><span class="p">[</span><span class="n">NUM_VECS_PER_THREAD</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Loop 3
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">NUM_VECS_PER_THREAD</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">const</span> <span class="n">cache_t</span><span class="o">*</span> <span class="n">k_ptr</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl">                <span class="n">k_cache</span> <span class="o">+</span> <span class="n">physical_block_number</span> <span class="o">*</span> <span class="n">kv_block_stride</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">                <span class="n">kv_head_idx</span> <span class="o">*</span> <span class="n">kv_head_stride</span> <span class="o">+</span> <span class="n">physical_block_offset</span> <span class="o">*</span> <span class="n">x</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">const</span> <span class="kt">int</span> <span class="n">vec_idx</span> <span class="o">=</span> <span class="n">thread_group_offset</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">THREAD_GROUP_SIZE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">const</span> <span class="kt">int</span> <span class="n">offset1</span> <span class="o">=</span> <span class="p">(</span><span class="n">vec_idx</span> <span class="o">*</span> <span class="n">VEC_SIZE</span><span class="p">)</span> <span class="o">/</span> <span class="n">x</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">const</span> <span class="kt">int</span> <span class="n">offset2</span> <span class="o">=</span> <span class="p">(</span><span class="n">vec_idx</span> <span class="o">*</span> <span class="n">VEC_SIZE</span><span class="p">)</span> <span class="o">%</span> <span class="n">x</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// if Fp8KVCacheDataType::kAuto
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="n">k_vecs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="o">*</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">K_vec</span><span class="o">*&gt;</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">              <span class="n">k_ptr</span> <span class="o">+</span> <span class="n">offset1</span> <span class="o">*</span> <span class="n">BLOCK_SIZE</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">offset2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></div><p>老规矩, 先看 <code>j</code>, 本质就是从 0 迭代到 <code>NUM_VECS_PER_THREAD</code>, 每次迭代当前 thread 读取一个 VEC 存入 <code>k_vecs</code> 中.</p>
+<blockquote>
+<p>🔔 回顾:</p>
+<ol>
+<li><code>NUM_VECS_PER_THREAD</code> 表示一个 head 被分成多少个 16B.</li>
+<li><code>k_cache</code> 的 shape 为 <code>(num_blocks, num_kv_heads, head_size/x, block_size, x)</code>.</li>
+</ol></blockquote>
+<p>其中的 <code>x</code> 表示一个 thread group 需要读取的元素数量 (<code>VEC_SIZE</code> * <code>THREAD_GROUP_SIZE</code>); 因此作者将 K Cache 的 layout 的最后一维设置为 <code>x</code> 其实也是方便后续 thread group 对 K cache 的读取.</p>
+<p>下图具体展示了寻址的过程:</p>
+<p><img alt="pa-cal-kq-03.png" loading="lazy" src="/imgs/blogs/dive-into-paged-attention/pa-cal-kq-03.png"></p>
+<p>其中:</p>
+<ul>
+<li>在 MHSA 中, <code>num_kv_heads</code> 等于 <code>num_heads</code>; 而在 GQA, MQA 中, <code>num_kv_heads</code> 小于 <code>num_heads</code>.</li>
+<li>(1) 负责找到当前 thread 属于的 warp 要处理哪个 PA block.</li>
+<li>(2) 负责找到当前 thread 要计算的 head 在 K cache 中的位置. 这个 head 的索引和 Q 中 head 的索引在 MHSA 中相同.</li>
+<li>(3) 负责找到当前 thread group 要计算的 token 在当前 PA block 中的位置.</li>
+<li>(5) 负责找到当前 thread 在需要读取的 head (蓝色长方体) 中 x 的偏移, 通过 <code>j</code> 进行迭代读取. <strong>每次循环 thread group 中的所有 thread 取一个 x.</strong></li>
+<li>(6) 负责找到当前 thread 在 thread gruop 中读取的 x 中 VEC 的偏移; thread 一次读取一个 VEC.</li>
+</ul>
+<p>🤔 <strong>为什么 (5) 在实际寻址时需要 <code>* BLOCK_SIZE * x</code> ?</strong><br>
+答: 这是根据 <code>k_cache</code> 的 layout 得到的 stride. 同理 (3) <code>* x</code> 也是 stride.</p>
+<p>第 3 个循环结束时当前 warp 负责的每个 token 中需要的 K cache head 已经全被加载入 thread 本地的 <code>k_vecs</code> 中了.</p>
+<p>由于一个 thread group 的 <code>k_vecs</code> 才能真正组成一个 head, 在退回第二个循环进行 QK dot 的时候, 需要做个 reduction, 具体的范围就是 <code>THREAD_GROUP_SIZE</code> 个 thread:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// Loop 1
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">block_idx</span> <span class="o">=</span> <span class="n">start_block_idx</span> <span class="o">+</span> <span class="n">warp_idx</span><span class="p">;</span> <span class="n">block_idx</span> <span class="o">&lt;</span> <span class="n">end_block_idx</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">block_idx</span> <span class="o">+=</span> <span class="n">NUM_WARPS</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Loop 2
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_TOKENS_PER_THREAD_GROUP</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">K_vec</span> <span class="n">k_vecs</span><span class="p">[</span><span class="n">NUM_VECS_PER_THREAD</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Loop 3
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">NUM_VECS_PER_THREAD</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">float</span> <span class="n">qk</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">Qk_dot</span><span class="o">&lt;</span><span class="n">scalar_t</span><span class="p">,</span> <span class="n">THREAD_GROUP_SIZE</span><span class="o">&gt;::</span><span class="n">dot</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">                             <span class="n">q_vecs</span><span class="p">[</span><span class="n">thread_group_offset</span><span class="p">],</span> <span class="n">k_vecs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></div><p>计算完 <code>qk</code> 后, 由当前 thread group 中第一个 (offset 为 0) 的 thread 对自己刚才算出来的 <code>qk</code> 进行 mask, 顺便看看如果没有 mask 掉, 把 <code>qk_max</code> 赋值为 <code>qk</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="n">thread_group_offset</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Store the partial reductions to shared memory.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="c1">// NOTE(woosuk): It is required to zero out the masked logits.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">const</span> <span class="kt">bool</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">token_idx</span> <span class="o">&gt;=</span> <span class="n">seq_len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">logits</span><span class="p">[</span><span class="n">token_idx</span> <span class="o">-</span> <span class="n">start_token_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">?</span> <span class="mf">0.f</span> <span class="o">:</span> <span class="n">qk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Update the max value.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">qk_max</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">?</span> <span class="nl">qk_max</span> <span class="p">:</span> <span class="n">fmaxf</span><span class="p">(</span><span class="n">qk_max</span><span class="p">,</span> <span class="n">qk</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>🧐 <strong>为什么要做 mask?</strong></p>
+<ul>
+<li>因为一个 seq 的最后一个 PA block 可能覆盖不满 <code>BLOCK_SIZE</code> 个 token. 这里的 mask 就是把那部分 qk 置零.</li>
+</ul>
+<h3 id="54-softmax">5.4. Softmax</h3>
+<p>我勒个 QK 啊, 总算算完了, 锐克 five 都要被抽清仓了. 页意丁真, 鉴定为开算 softmax.</p>
+<p>主要步骤就是广播然后算, 算 softmax 需要知道每个 head 对应的 qk 的最大值. 由于一个 cuda block 负责的就是一个 head, 对于这个 head 上面的计算步骤一共算了 <code>cache_len</code>个 token 的 qk, 因此需要做一个 cuda block 范围的规约, 找到其中最大的 qk 值.</p>
+<p>先在 warp 层面规约.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">__shared__</span> <span class="kt">float</span> <span class="n">red_smem</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">NUM_WARPS</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// Perform reduction across the threads in the same warp to get the
+</span></span></span><span class="line"><span class="cl"><span class="c1">// max qk value for each &#34;warp&#34; (not across the thread block yet).
+</span></span></span><span class="line"><span class="cl"><span class="c1">// The 0-th thread of each thread group already has its max qk value.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#pragma unroll
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">WARP_SIZE</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span> <span class="n">mask</span> <span class="o">&gt;=</span> <span class="n">THREAD_GROUP_SIZE</span><span class="p">;</span> <span class="n">mask</span> <span class="o">/=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">qk_max</span> <span class="o">=</span> <span class="n">fmaxf</span><span class="p">(</span><span class="n">qk_max</span><span class="p">,</span> <span class="n">VLLM_SHFL_XOR_SYNC</span><span class="p">(</span><span class="n">qk_max</span><span class="p">,</span> <span class="n">mask</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="n">lane</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">red_smem</span><span class="p">[</span><span class="n">warp_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">qk_max</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="n">__syncthreads</span><span class="p">();</span>
+</span></span></code></pre></div><ul>
+<li><code>red_smem</code> 是之前申请的 shared memory.</li>
+<li><code>VLLM_SHFL_XOR_SYNC</code> 是一个 warp 内的 shuffle 操作, 具体来说, 在每次循环时, 每个 thread 和自己相距 <code>mask</code> 位置的线程交换数据 (交换来的数据通过 <code>fmaxf</code> 比较), 并且 <code>mask</code> 会逐渐减半, 直到 <code>THREAD_GROUP_SIZE</code> 为止.</li>
+<li><code>lane</code> 表示当前 warp 中的线程索引.</li>
+</ul>
+<p>接着再对每个 warp 的最大值进行规约, 由于每个 warp 的最大值都被存入了 <code>red_smem</code> 中, 所以只需要再次进行 shuffle 操作即可.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// TODO(woosuk): Refactor this part.
+</span></span></span><span class="line"><span class="cl"><span class="c1">// Get the max qk value for the sequence.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">qk_max</span> <span class="o">=</span> <span class="n">lane</span> <span class="o">&lt;</span> <span class="n">NUM_WARPS</span> <span class="o">?</span> <span class="n">red_smem</span><span class="p">[</span><span class="n">lane</span><span class="p">]</span> <span class="o">:</span> <span class="o">-</span><span class="n">FLT_MAX</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#pragma unroll
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">NUM_WARPS</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span> <span class="n">mask</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">mask</span> <span class="o">/=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">qk_max</span> <span class="o">=</span> <span class="n">fmaxf</span><span class="p">(</span><span class="n">qk_max</span><span class="p">,</span> <span class="n">VLLM_SHFL_XOR_SYNC</span><span class="p">(</span><span class="n">qk_max</span><span class="p">,</span> <span class="n">mask</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>此时, 第 1 个线程的 <code>qk_max</code> 就是当前 cuda block 中所有 warp 中最大的 qk 值. 将其广播给所有线程:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// Broadcast the max qk value to all threads.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">qk_max</span> <span class="o">=</span> <span class="n">VLLM_SHFL_SYNC</span><span class="p">(</span><span class="n">qk_max</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span></code></pre></div><p>在获得了 <code>qk_max</code> 后, 就可以计算 softmax 了:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// Get the sum of the exp values.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kt">float</span> <span class="n">exp_sum</span> <span class="o">=</span> <span class="mf">0.f</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">thread_idx</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num_tokens</span><span class="p">;</span> <span class="n">i</span> <span class="o">+=</span> <span class="n">NUM_THREADS</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">float</span> <span class="n">val</span> <span class="o">=</span> <span class="n">__expf</span><span class="p">(</span><span class="n">logits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">qk_max</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">logits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">exp_sum</span> <span class="o">+=</span> <span class="n">val</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="n">exp_sum</span> <span class="o">=</span> <span class="n">block_sum</span><span class="o">&lt;</span><span class="n">NUM_WARPS</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="n">red_smem</span><span class="p">[</span><span class="n">NUM_WARPS</span><span class="p">],</span> <span class="n">exp_sum</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// Compute softmax.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">float</span> <span class="n">inv_sum</span> <span class="o">=</span> <span class="n">__fdividef</span><span class="p">(</span><span class="mf">1.f</span><span class="p">,</span> <span class="n">exp_sum</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="n">f</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">thread_idx</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num_tokens</span><span class="p">;</span> <span class="n">i</span> <span class="o">+=</span> <span class="n">NUM_THREADS</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">logits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">inv_sum</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="n">__syncthreads</span><span class="p">();</span>
+</span></span></code></pre></div><h3 id="55-lv-logits--value">5.5. LV (Logits * Value)</h3>
+<p><img alt="pa-cal.png" loading="lazy" src="/imgs/blogs/dive-into-paged-attention/pa-cal.png"></p>
+<p>上图展示了 LV 的计算过程, 主要区别是由于要计算 Logits 的 shape 可以表示为 <code>(num_heads, num_seqs, cache_len)</code>, 而 V 的 shape 可以表示为 <code>(num_heads, cache_len, head_size)</code>, 因此 LV 的矩阵乘法中, 每计算一个元素需要读取 logits 的一行和 V 的一列进行计算.</p>
+<p>此时, 一个 cuda block 的职责从 &ldquo;自 Q 中读取一个 head&rdquo; 转变为 &ldquo;计算 output 中的一个 head&rdquo;.</p>
+<p>🧐 <strong>为什么在计算 LV 时, 去掉了 thread group 的概念, 每个 thread 都被设定为每次读取 16B?</strong></p>
+<ul>
+<li>因为现在每计算一个元素, 需要的访存量更大, 因此给每个 thread 分配了更多的数据读取量. 也就是说, <code>V_VEC_SIZE</code> 比 <code>VEC_SIZE</code> 更大.</li>
+</ul>
+<p>由于 cuda 访存模式按行读取更快, 所以实际的计算结果在遍历 PA block 时线程内部利用 <code>accs</code> 进行累计 (以实现与 V 的一列进行计算的行为):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">constexpr</span> <span class="kt">int</span> <span class="n">NUM_V_VECS_PER_ROW</span> <span class="o">=</span> <span class="n">BLOCK_SIZE</span> <span class="o">/</span> <span class="n">V_VEC_SIZE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">constexpr</span> <span class="kt">int</span> <span class="n">NUM_ROWS_PER_ITER</span> <span class="o">=</span> <span class="n">WARP_SIZE</span> <span class="o">/</span> <span class="n">NUM_V_VECS_PER_ROW</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="k">constexpr</span> <span class="kt">int</span> <span class="n">NUM_ROWS_PER_THREAD</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl">    <span class="n">DIVIDE_ROUND_UP</span><span class="p">(</span><span class="n">HEAD_SIZE</span><span class="p">,</span> <span class="n">NUM_ROWS_PER_ITER</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// NOTE(woosuk): We use FP32 for the accumulator for better accuracy.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kt">float</span> <span class="n">accs</span><span class="p">[</span><span class="n">NUM_ROWS_PER_THREAD</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">block_idx</span> <span class="o">=</span> <span class="n">start_block_idx</span> <span class="o">+</span> <span class="n">warp_idx</span><span class="p">;</span> <span class="n">block_idx</span> <span class="o">&lt;</span> <span class="n">end_block_idx</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">block_idx</span> <span class="o">+=</span> <span class="n">NUM_WARPS</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">V_vec</span> <span class="n">v_vec</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_ROWS_PER_THREAD</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">V_VEC_SIZE</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Load V to `v_vec` ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="n">v_vec_ptr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">token_idx</span> <span class="o">+</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">seq_len</span> <span class="o">?</span> <span class="n">v_vec_ptr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">:</span> <span class="n">zero_value</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Accumulate the dot product.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">accs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">dot</span><span class="p">(</span><span class="n">logits_vec</span><span class="p">,</span> <span class="n">v_vec</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>由于每个线程负责的累计部分不满一整行/列, 所以进行规约:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// Perform reduction within each warp.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#pragma unroll
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_ROWS_PER_THREAD</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">float</span> <span class="n">acc</span> <span class="o">=</span> <span class="n">accs</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#pragma unroll
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">NUM_V_VECS_PER_ROW</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span> <span class="n">mask</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">mask</span> <span class="o">/=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">acc</span> <span class="o">+=</span> <span class="n">VLLM_SHFL_XOR_SYNC</span><span class="p">(</span><span class="n">acc</span><span class="p">,</span> <span class="n">mask</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="n">accs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">acc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// NOTE(woosuk): A barrier is required because the shared memory space for
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="c1">// logits is reused for the output.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">__syncthreads</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// Perform reduction across warps.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="kt">float</span><span class="o">*</span> <span class="n">out_smem</span> <span class="o">=</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">shared_mem</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#pragma unroll
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">NUM_WARPS</span><span class="p">;</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">/=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">mid</span> <span class="o">=</span> <span class="n">i</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Upper warps write to shared memory.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="p">(</span><span class="n">warp_idx</span> <span class="o">&gt;=</span> <span class="n">mid</span> <span class="o">&amp;&amp;</span> <span class="n">warp_idx</span> <span class="o">&lt;</span> <span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="kt">float</span><span class="o">*</span> <span class="n">dst</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">out_smem</span><span class="p">[(</span><span class="n">warp_idx</span> <span class="o">-</span> <span class="n">mid</span><span class="p">)</span> <span class="o">*</span> <span class="n">HEAD_SIZE</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#pragma unroll
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>      <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_ROWS_PER_THREAD</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">const</span> <span class="kt">int</span> <span class="n">row_idx</span> <span class="o">=</span> <span class="n">lane</span> <span class="o">/</span> <span class="n">NUM_V_VECS_PER_ROW</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">NUM_ROWS_PER_ITER</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">row_idx</span> <span class="o">&lt;</span> <span class="n">HEAD_SIZE</span> <span class="o">&amp;&amp;</span> <span class="n">lane</span> <span class="o">%</span> <span class="n">NUM_V_VECS_PER_ROW</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">          <span class="n">dst</span><span class="p">[</span><span class="n">row_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">accs</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">      <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__syncthreads</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// Lower warps update the output.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="p">(</span><span class="n">warp_idx</span> <span class="o">&lt;</span> <span class="n">mid</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="k">const</span> <span class="kt">float</span><span class="o">*</span> <span class="n">src</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">out_smem</span><span class="p">[</span><span class="n">warp_idx</span> <span class="o">*</span> <span class="n">HEAD_SIZE</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#pragma unroll
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>      <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_ROWS_PER_THREAD</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">const</span> <span class="kt">int</span> <span class="n">row_idx</span> <span class="o">=</span> <span class="n">lane</span> <span class="o">/</span> <span class="n">NUM_V_VECS_PER_ROW</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">NUM_ROWS_PER_ITER</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">row_idx</span> <span class="o">&lt;</span> <span class="n">HEAD_SIZE</span> <span class="o">&amp;&amp;</span> <span class="n">lane</span> <span class="o">%</span> <span class="n">NUM_V_VECS_PER_ROW</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">          <span class="n">accs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">src</span><span class="p">[</span><span class="n">row_idx</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">      <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__syncthreads</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span></code></pre></div><p>最后写入到输出中:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl">  <span class="c1">// Write the final output.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="k">if</span> <span class="p">(</span><span class="n">warp_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">scalar_t</span><span class="o">*</span> <span class="n">out_ptr</span> <span class="o">=</span>
+</span></span><span class="line"><span class="cl">        <span class="n">out</span> <span class="o">+</span> <span class="n">seq_idx</span> <span class="o">*</span> <span class="n">num_heads</span> <span class="o">*</span> <span class="n">max_num_partitions</span> <span class="o">*</span> <span class="n">HEAD_SIZE</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">        <span class="n">head_idx</span> <span class="o">*</span> <span class="n">max_num_partitions</span> <span class="o">*</span> <span class="n">HEAD_SIZE</span> <span class="o">+</span> <span class="n">partition_idx</span> <span class="o">*</span> <span class="n">HEAD_SIZE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#pragma unroll
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_ROWS_PER_THREAD</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="k">const</span> <span class="kt">int</span> <span class="n">row_idx</span> <span class="o">=</span> <span class="n">lane</span> <span class="o">/</span> <span class="n">NUM_V_VECS_PER_ROW</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">NUM_ROWS_PER_ITER</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="k">if</span> <span class="p">(</span><span class="n">row_idx</span> <span class="o">&lt;</span> <span class="n">HEAD_SIZE</span> <span class="o">&amp;&amp;</span> <span class="n">lane</span> <span class="o">%</span> <span class="n">NUM_V_VECS_PER_ROW</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">from_float</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">out_ptr</span> <span class="o">+</span> <span class="n">row_idx</span><span class="p">),</span> <span class="n">accs</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">      <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span></code></pre></div>]]></content:encoded></item></channel></rss>

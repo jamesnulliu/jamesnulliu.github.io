@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Rocky on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/rocky/</link><description>Recent content in Rocky on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 22:14:12 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/rocky/index.xml" rel="self" type="application/rss+xml"/><item><title>Install GCC-13 on Rocky 9</title><link>https://jamesnulliu.github.io/blogs/install-gcc-13-on-rocky-9/</link><pubDate>Sat, 06 Jul 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/install-gcc-13-on-rocky-9/</guid><description>How to install GCC-13 in Rocky 9.</description><content:encoded><![CDATA[<p>Install build essentials.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnf groupinstall <span class="s2">&#34;Development Tools&#34;</span>  <span class="c1"># gcc-11 is installed by default</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Enable devel repository and install gcc toolset 13:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnf config-manager --set-enabled devel
+</span></span><span class="line"><span class="cl">sudo dnf update
+</span></span><span class="line"><span class="cl">sudo dnf install gcc-toolset-13
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To enable gcc-13:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">scl <span class="nb">enable</span> gcc-toolset-13 bash
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To disable gcc-13, just exit the shell:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">exit</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item><item><title>Install Nvidia Driver and CUDA Toolkit on Rocky 9</title><link>https://jamesnulliu.github.io/blogs/install-nvidia-driver-and-cuda-toolkit-on-rocky-9/</link><pubDate>Sat, 06 Jul 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/install-nvidia-driver-and-cuda-toolkit-on-rocky-9/</guid><description>How to install Nvidia driver and CUDA toolkit on Rocky 9.</description><content:encoded><![CDATA[<p>To stop and disable gdm service (which is the default display manager):</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo systemctl disable gdm
+</span></span><span class="line"><span class="cl">sudo systemctl stop gdm
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To disable the default nouveau driver:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo bash -c <span class="s2">&#34;echo blacklist nouveau &gt; /etc/modprobe.d/blacklist-nvidia-nouveau.conf&#34;</span>
+</span></span><span class="line"><span class="cl">sudo bash -c <span class="s2">&#34;echo options nouveau modeset=0 &gt;&gt; /etc/modprobe.d/blacklist-nvidia-nouveau.conf&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># Update the kernel initramfs</span>
+</span></span><span class="line"><span class="cl">sudo dracut --force
+</span></span><span class="line"><span class="cl"><span class="c1"># Reboot</span>
+</span></span><span class="line"><span class="cl">sudo reboot
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Install epel-release and dkms:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnf install epel-release
+</span></span><span class="line"><span class="cl">sudo dnf install dkms
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Download the installation <strong>LOCAL RUN FILE</strong> of <strong>THE LATEST</strong> CUDA Toolkit (&gt;=12.5) from <a href="https://developer.nvidia.com/cuda-downloads">NVIDIA official website</a> and install it (with driver).</p>
+<blockquote>
+<p>💬 There is a bug of the compatibility of the new linux kernel and previous cuda derviers (less than 555). You could install other versions of cuda toolkit but keep the latest driver.</p></blockquote>
+<p>To enable and start gdm service:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo systemctl <span class="nb">enable</span> gdm
+</span></span><span class="line"><span class="cl">sudo systemctl start gdm
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item></channel></rss>

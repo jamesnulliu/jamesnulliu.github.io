@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Ffmpeg on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/ffmpeg/</link><description>Recent content in Ffmpeg on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 22:14:12 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/ffmpeg/index.xml" rel="self" type="application/rss+xml"/><item><title>Build FFmpeg against NVENC</title><link>https://jamesnulliu.github.io/blogs/build-ffmpeg-against-nvenc/</link><pubDate>Sat, 29 Jun 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/build-ffmpeg-against-nvenc/</guid><description>How to build FFmpeg against NVENC.</description><content:encoded><![CDATA[<p>FFmpeg is a powerful tool for video processing. It supports a wide range of codecs and formats. In this post, I will show you how to build FFmpeg with NVENC support.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Install cuda 12.2 first</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo apt update
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">sudo apt install autoconf automake build-essential cmake libass-dev <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    libfreetype6-dev libsdl2-dev libtool libva-dev libvdpau-dev <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    libvorbis-dev libxcb1-dev libxcb-shm0-dev libxcb-xfixes0-dev <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    pkg-config texinfo wget yasm zlib1g-dev
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">git clone https://git.videolan.org/git/ffmpeg/nv-codec-headers.git
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> nv-codec-headers <span class="o">&amp;&amp;</span> sudo make install
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> ..
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">git clone git@github.com:FFmpeg/FFmpeg.git
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> FFmpeg
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">./configure --prefix<span class="o">=</span>/usr/local/ffmpeg --enable-nonfree <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --enable-cuda-nvcc --disable-x86asm --nvcc<span class="o">=</span><span class="nv">$CUDA_HOME</span>/nvcc <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --enable-gpl --enable-libass --enable-libfreetype --enable-libvorbis <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --enable-libx265 --enable-cuvid --enable-nvenc --enable-libnpp <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --extra-cflags<span class="o">=</span>-I<span class="nv">$CUDA_HOME</span>/include --extra-ldflags<span class="o">=</span>-L<span class="nv">$CUDA_HOME</span>/lib64
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Example: Following code encode a video with nvenc</span>
+</span></span><span class="line"><span class="cl">ffmpeg -i input.mp4 -c:v hevc_nvenc -preset fast -rc:v vbr_hq <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    -cq:v <span class="m">19</span> -b:v <span class="m">0</span> -s 1280x720 output.mp4
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item></channel></rss>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Transformer on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/zh/tags/transformer/</link><description>Recent content in Transformer on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>zh</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 22:14:12 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/zh/tags/transformer/index.xml" rel="self" type="application/rss+xml"/><item><title>浅谈投机推理</title><link>https://jamesnulliu.github.io/zh/blogs/a-brief-talk-on-speculative-decoding/</link><pubDate>Fri, 21 Feb 2025 01:14:06 +0800</pubDate><guid>https://jamesnulliu.github.io/zh/blogs/a-brief-talk-on-speculative-decoding/</guid><description>大型语言模型中的投机推理简要介绍.</description><content:encoded><![CDATA[<h2 id="1-投机推理-speculative-decoding">1. 投机推理 (Speculative Decoding)</h2>
+<h3 id="11-简介">1.1. 简介</h3>
+<p>传统的 LLM 以自回归方式逐个生成 token. 例如, 给定一个提示 (prompt), 模型需要分别进行三次前向传播来生成三个 token T1, T2, T3. 推测解码 (Speculative Decoding) 通过允许一次性提议并验证多个 token，改变了这一生成过程.</p>
+<p>其核心流程如下:</p>
+<ol>
+<li><strong>草稿模型提议</strong>: 通过一个更轻量高效的模型逐个提议候选 token</li>
+<li><strong>目标模型验证</strong>: 将候选序列提交给大模型进行单次前向传播验证. 大模型会确认正确 token 并纠正错误提议</li>
+<li><strong>单次处理多 token</strong>: 与传统 &ldquo;一次一 token&rdquo; 模式不同, 该方法能并行处理多个 token, 显著降低生成延迟</li>
+</ol>
+<p>By using this approach, speculative decoding speeds up token generation, making it an effective method for both small-scale and large-scale language model deployments.</p>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/sd-example.png" 
+        alt="" 
+        class="image" 
+        width="80%"/>
+    <div class="image-caption">
+        如图所示, 草稿模型提议了五个token: [&#34;I&#34;, &#34;like&#34;, &#34;cooking&#34;, &#34;and&#34;, &#34;traveling&#34;]. 目标模型通过单次前向传播进行并行验证. 本例中第三个 token &#34;cooking&#34; (正确应为 &#34;playing&#34;) 提议错误, 因此最终接受前三个有效 token[&#34;I&#34;, &#34;like&#34;, &#34;playing&#34;]
+    </div>
+</div>
+<p>通过这种 &ldquo;先推测后验证&rdquo; 的机制, 推测解码实现了生成速度的飞跃. 该方法兼具通用性和高效性, 适用于不同规模的模型部署场景.</p>
+]]></content:encoded></item></channel></rss>

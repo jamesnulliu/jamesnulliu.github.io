@@ -1,0 +1,905 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>C++ on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/c++/</link><description>Recent content in C++ on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 22:14:12 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/c++/index.xml" rel="self" type="application/rss+xml"/><item><title>Create A LibTorch Project</title><link>https://jamesnulliu.github.io/blogs/create-a-libtorch-project/</link><pubDate>Mon, 23 Dec 2024 01:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/create-a-libtorch-project/</guid><description>How to create a LibTorch project.</description><content:encoded><![CDATA[<h2 id="0-introduction">0. Introduction</h2>
+<p>These days I am reading <a href="https://www.elsevier.com/books/programming-massively-parallel-processors/kirk/978-0-12-811986-0" target="_blank" rel="noopener noreferrer">
+    Programming Massively Parallel Processors: A Hands-on Approach, 4th Edition
+</a>
+, and created a <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors" target="_blank" rel="noopener noreferrer">
+    project
+</a>
+ to store my notes as I learn.</p>
+<p>One of the most important parts in the book is writing <strong>cuda kernels</strong>, so I decided to build all kernels into shared libraries and test those implementations both in C++ and Python.</p>
+<p>I generated my project using <a href="https://github.com/jamesnulliu/VSC-Python-Project-Template" target="_blank" rel="noopener noreferrer">
+    this template
+</a>
+ specifically tailored for the similar scenario, but still met some problems such as conflicts when linking libtorch and gtest 🤯.</p>
+<p><strong>So the purpose of this blog is to provide a concise guide to:</strong></p>
+<ol>
+<li>Build a C++, CUDA and LibTorch library, test it with gtest.</li>
+<li>Load the library into torch, call the operaters in Python.</li>
+<li>Resolve problems when linking all the libraries.</li>
+</ol>
+<blockquote>
+<p>⚠️<strong>WARNING</strong><br>
+Find some tutorials on how to use cmake and vcpkg before reading this blog.</p></blockquote>
+<h2 id="1-environment-and-quick-start">1. Environment and Quick Start</h2>
+<p>Check <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/tree/c648649/README.md" target="_blank" rel="noopener noreferrer">
+    README.md
+</a>
+ of the project repository.</p>
+<h2 id="2-create-a-c-cuda-and-libtorch-project">2. Create a C++, CUDA and LibTorch Project</h2>
+<p>I put all C++ codes in &ldquo;<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/tree/96685ab/csrc" target="_blank" rel="noopener noreferrer">
+    ./csrc/
+</a>
+&rdquo; and build them with cmake. The intermediate files should be generated in &ldquo;./build/&rdquo; and that is just about using some command-line arguments, see <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/scripts/build.sh#L42" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+.</p>
+<p>Vcpkg is used to manage the dependencies of the project. I am not going to teach you how to use vcpkg in this blog, but I will mention some pitfalls I met when using it.</p>
+<blockquote>
+<p>😍️ I really enjoy building C++ projects with cmake and vcpkg. Have a try if you haven&rsquo;t used them before.</p></blockquote>
+<h3 id="21-how-to-link-against-libtorch">2.1. How to Link against LibTorch</h3>
+<p>Since you have installed pytorch in <a href="#1-environment">
+    1. Environment
+</a>
+, now you already have libtorch installed in your conda environment. Run this command, and you will get the cmake prefix path of libtorch:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">python -c <span class="s2">&#34;import torch;print(torch.utils.cmake_prefix_path)&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To integrate libtorch into cmake, I create <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/cmake/utils/run-python.cmake" target="_blank" rel="noopener noreferrer">
+    this file
+</a>
+ and <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/cmake/libraries/libtorch.cmake" target="_blank" rel="noopener noreferrer">
+    this file
+</a>
+ to find libtorch in the current project and use them <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/CMakeLists.txt#L27" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+.</p>
+<p>Now you can link your targets against libtorch simply like what I do <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/CMakeLists.txt#L19" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+.</p>
+<blockquote>
+<p>📝<strong>NOTE</strong><br>
+When you link your target against <code>${TORCH_LIBRARIES}</code>, cuda libraries are being linked automatically, which means you don&rsquo;t have to find and link cuda using something like I write <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab6/csrc/cmake/libraries/libcuda.cmake" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+</p></blockquote>
+<h3 id="22-cmake-and-vcpkg-configuration">2.2. CMake and VCPKG Configuration</h3>
+<p>Currently, I am planning to use the C/C++ packages listed in <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/vcpkg.json" target="_blank" rel="noopener noreferrer">
+    this file
+</a>
+. I load the packages with <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/CMakeLists.txt#L30-L36" target="_blank" rel="noopener noreferrer">
+    these lines in &#34;./csrc/CMakeLists.txt&#34;
+</a>
+ . Then I link those packages to my targets <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/CMakeLists.txt#L20-L21" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+ and <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/test/CMakeLists.txt#L11-L13" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+.</p>
+<blockquote>
+<p>📝<strong>NOTE</strong><br>
+<code>libtorch &lt; 2.6</code> is compiled with <code>_GLIBCXX_USE_CXX11_ABI=0</code> to use legacy ABI before C++11, which conflicts with the packages managed by vcpkg in default. Consequentially, you have to create a custom vcpkg triplet to control the behaviors when vcpkg actually build the packages. The triplet file is <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/cmake/vcpkg-triplets/x64-linux.cmake" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+ and is enabled by <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/scripts/build.sh#L47-L48" target="_blank" rel="noopener noreferrer">
+    these lines
+</a>
+ when building the C++ part.</p></blockquote>
+<p>I also set <code>CMAKE_CXX_SCAN_FOR_MODULES</code> to <code>OFF</code> on <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/cmake/compilers/cxx-compiler-configs.cmake#L15" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+ because some compile errors occurs. This is a temporary solution but I am not planning to use modules from C++20 in this project, so just ignoring it.</p>
+<h3 id="23-write-and-register-custom-torch-operators">2.3. Write and Register Custom Torch Operators</h3>
+<p>In order to register a custom torch <strong>operator</strong>, basically what you need to do next is to write a <strong>function</strong> that usually takes several <code>torch::Tensor</code> as input and returns a <code>torch::Tensor</code> as output, and then register this function to torch.</p>
+<p>For example, I implement <code>pmpp::ops::cpu::launchVecAdd</code> in <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/vecAdd/op.cpp" target="_blank" rel="noopener noreferrer">
+    this cpp file
+</a>
+ and <code>pmpp::ops::cuda::launchVecAdd</code> in <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/vecAdd/op.cu" target="_blank" rel="noopener noreferrer">
+    this cu file
+</a>
+ and provide the corresponding torch implentations <code>pmpp::ops::cpu::vectorAddImpl</code> and <code>pmpp::ops::cuda::vectorAddImpl</code> in <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/vecAdd/torch_impl.cpp" target="_blank" rel="noopener noreferrer">
+    this file
+</a>
+.</p>
+<blockquote>
+<p>🤔 I didn&rsquo;t add any of those function declarations in hpp files under &ldquo;./include&rdquo; because I don&rsquo;t think they should be exposed to the users of the library. For the testing part, I will get and test the functions using <code>torch::Dispatcher</code> which aligns with the operaters invoked in python.</p></blockquote>
+<p>To register these implementations as an operater into pytorch, see <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/torch_bind.cpp#L10" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+, <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/torch_bind.cpp#L22" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+, and <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/ops/torch_bind.cpp#L32" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+, where I:</p>
+<ol>
+<li>Define a python function <code>vector_add</code> with signature: <code>vector_add(Tensor a, Tensor b) -&gt; Tensor</code>.</li>
+<li>Register the CPU implementation of the function.</li>
+<li>Register the CUDA implementation of the function.</li>
+</ol>
+<p>Now <code>vector_add</code> is a custom torch operator which can be called in both C++ and Python. All you need to do is to build these codes into a shared library like what I did <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/CMakeLists.txt#L7" target="_blank" rel="noopener noreferrer">
+    here in cmake
+</a>
+.</p>
+<h3 id="24-test-the-custom-torch-operators-in-c">2.4. Test the Custom Torch Operators in C++</h3>
+<p>As long as a custom torch operator is registered, normally one or multiple shared libraries will be generated. For C++ users, you should link your executable target against libtorch and the generated shared libraries so that those registered operators can be called.</p>
+<p>Since I have linked <code>libPmppTorchOps</code> against libtorch as <code>PUBLIC</code> in <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/lib/CMakeLists.txt#L18" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+, the test target will link against libtorch automatically as long as it links against <code>libPmppTorchOps</code>, see <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/test/CMakeLists.txt#L10" target="_blank" rel="noopener noreferrer">
+    this line
+</a>
+.</p>
+<blockquote>
+<p>📝<strong>NOTE</strong><br>
+You may be confused about why <code>-Wl,--no-as-needed</code> is added before <code>${PROJECT_NAMESPACE}pmpp-torch-ops</code>. This is because the shared libraries are not directly used in the test target (an operator is register in the library but not called directly in the executable), and the linker will not link against them by default. This flag will force the linker to link against the shared libraries even if they are not directly used.</p></blockquote>
+<p>The registered operators can be dispatched in a not-so-intuitional way 🤣 based on the official documentation, see <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/csrc/test/OpTest/vecAdd.cpp#L14-L17" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+.</p>
+<p>Now the only thing is to test the operators in C++ using gtest, but this is not the focus of this blog. So let&rsquo;s move on to the next part.</p>
+<h2 id="3-create-and-package-a-python-project">3. Create and Package a Python Project</h2>
+<h3 id="31-pyprojecttoml-and-setuppy">3.1. <code>pyproject.toml</code> and <code>setup.py</code></h3>
+<p>In modern python, pyproject.toml is a de-facto standard configuration file for packaging, and in this project, setuptools is used as the build backend because I believe it is the most popular one and is easy to cooperate with cmake.</p>
+<p>Particularly, &ldquo;<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/pyproject.toml" target="_blank" rel="noopener noreferrer">
+    ./pyproject.toml
+</a>
+&rdquo; and &ldquo;<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/setup.py" target="_blank" rel="noopener noreferrer">
+    ./setup.py
+</a>
+&rdquo; defines what will happen when you run <code>pip install .</code> in the root directory of the project. I created <code>CMakeExtention</code> and <code>CMakeBuild</code> (<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/setup.py#L23-L68" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+) and pass them to <code>setup</code> function (<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/setup.py#L92-L105" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+) so that the C++ library <code>libPmppTorchOps</code> (under &ldquo;./csrc/&rdquo;) will be built and installed before installing the python package.</p>
+<p>You can easily understand what I did by reading the source code of these two files, and there is one more thing I want to mention.</p>
+<p>Based on <a href="/blogs/create-a-libtorch-project/#2-create-a-c-cuda-and-libtorch-project">2. Create a C++, CUDA and LibTorch Project</a>, you should find that the generated shared library is under <code>./build/lib</code> ending with <code>.so</code> on linux or <code>.dll</code> on windows. Additionally, I added an install procedure <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/setup.py#L62-L68" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+ which will copy the shared libraries to &ldquo;./src/pmpp/_torch_ops&rdquo;.</p>
+<blockquote>
+<p>Note that &ldquo;<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/tree/96685ab/src/pmpp" target="_blank" rel="noopener noreferrer">
+    ./src/pmpp
+</a>
+&rdquo; is already an existing directory being the root of the actual python package, and &ldquo;./src/pmpp/_torch_ops&rdquo; will be created automatically while installing the shared libraries.</p></blockquote>
+<p>The problem is, when packaging the python project, only the directory containing &ldquo;__init__.py&rdquo; will be considered as a package (or module), and I don&rsquo;t want to add this file to &ldquo;./src/pmpp/_torch_ops&rdquo; due to my mysophobia 😷. Therefore, I used <code>find_namespace_packages</code> instead of <code>find_packages</code> and specified <code>package_data</code> to include the shared libraries <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/setup.py#L106-L108" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+.</p>
+<h3 id="32-install-the-python-package">3.2. Install the Python Package</h3>
+<p>If you are planning to build your libraries with dependencies listed <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/pyproject.toml#L26-L31" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+ while installing the python project, I don&rsquo;t really suggest installing it in an isolated python environment (which is the default behavior of setuptools). All packages listed <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/pyproject.toml#L2" target="_blank" rel="noopener noreferrer">
+    here
+</a>
+ have to be re-installed and in our case you need to at least append <code>torch</code> to that list.</p>
+<p>Alternatively, try this command, which will directly use the torch installed in current conda environment:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">pip install --no-build-isolation -v .
+</span></span></code></pre></div><h3 id="33-test-the-custom-torch-operators-in-python">3.3. Test the Custom Torch Operators in Python</h3>
+<p>As long as you have the shared libraries built in <a href="#2-create-a-c-cuda-and-libtorch-project">
+    2. Create a C&#43;&#43;, CUDA and LibTorch Project
+</a>
+, all you need to do is to use <code>torch.ops.load_library</code> to load the shared libraries and call the registered operators.</p>
+<p>I write this process into &ldquo;<a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/src/pmpp/__init__.py" target="_blank" rel="noopener noreferrer">
+    src/pmpp/__init__.py
+</a>
+&rdquo;, so the time you import <code>pmpp</code> in python, your custom torch operators will be ready to use. See <a href="https://github.com/jamesnulliu/Learning-Programming-Massively-Parallel-Processors/blob/96685ab/test/test.py" target="_blank" rel="noopener noreferrer">
+    this file
+</a>
+ for an example of testing the operators.</p>
+]]></content:encoded></item><item><title>VSCode: Debug C++</title><link>https://jamesnulliu.github.io/blogs/vscode-debug-cxx/</link><pubDate>Wed, 09 Oct 2024 11:35:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/vscode-debug-cxx/</guid><description>How to configure launch.json in VSCode for debugging C++</description><content:encoded><![CDATA[<blockquote>
+<p>Here is my template repository of building a CMake-CXX project (with CUDA): <a href="https://github.com/jamesnulliu/VSC-CMake-CXX-Project-Template">VSC-CMake-CXX-Project-Template</a> !</p></blockquote>
+<p>Suppose that you are managing your project with CMake. To build an executable, first write all your build commands in a bash script. For example, create a new file &ldquo;./scripts/build.sh&rdquo;:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nv">build_type</span><span class="o">=</span><span class="nv">$1</span>
+</span></span><span class="line"><span class="cl">cmake -S . -B ./build -DCMAKE_BUILD_TYPE<span class="o">=</span><span class="nv">$build_type</span>
+</span></span><span class="line"><span class="cl">cmake --build ./build -j <span class="k">$(</span>nproc<span class="k">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Second, add the following code to &ldquo;./.vscode/tasks.json&rdquo; (create the file if it does not exist):</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;version&#34;</span><span class="p">:</span> <span class="s2">&#34;2.0.0&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;tasks&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Other tasks...,
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Task name, anything you want, must match the preLaunchTask in 
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="c1">// launch.json
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;label&#34;</span><span class="p">:</span> <span class="s2">&#34;Build: Debug 01&#34;</span><span class="p">,</span>  
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;shell&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Command: bash &lt;script&gt; &lt;args...&gt;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;command&#34;</span><span class="p">:</span> <span class="s2">&#34;bash&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;args&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// Your build script path
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="s2">&#34;${workspaceFolder}/scripts/build.sh&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// Build script arguments
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="s2">&#34;Debug&#34;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">],</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;group&#34;</span><span class="p">:</span> <span class="s2">&#34;build&#34;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Other tasks...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Next, add the following code to &ldquo;./.vscode/launch.json&rdquo; (create the file if it does not exist):</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;version&#34;</span><span class="p">:</span> <span class="s2">&#34;0.2.0&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nt">&#34;configurations&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Other configurations...,
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Launch configuration name, anything you want
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;Launch: Debug 01&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;type&#34;</span><span class="p">:</span> <span class="s2">&#34;cppdbg&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;request&#34;</span><span class="p">:</span> <span class="s2">&#34;launch&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Path to the generated executable
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;program&#34;</span><span class="p">:</span> <span class="s2">&#34;${workspaceFolder}/&lt;path-to-generated-executable&gt;&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Arguments to pass to the program
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;args&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;arg1&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s2">&#34;arg2&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// Other arguments...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="p">],</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;externalConsole&#34;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;stopAtEntry&#34;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Working directory
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;cwd&#34;</span><span class="p">:</span> <span class="s2">&#34;${workspaceFolder}&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// MIMode should be &#34;gdb&#34; for gdb, &#34;lldb&#34; for lldb
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;MIMode&#34;</span><span class="p">:</span> <span class="s2">&#34;gdb&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Path to the gdb executable
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="c1">// Change this to lldb path if you are using lldb
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;miDebuggerPath&#34;</span><span class="p">:</span> <span class="s2">&#34;/usr/bin/gdb&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Pre-launch task, make sure it matches the task label in 
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="c1">// tasks.json
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;preLaunchTask&#34;</span><span class="p">:</span> <span class="s2">&#34;Build: Debug 01&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="c1">// Environment variables
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="nt">&#34;environment&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// This is an example of adding a path to the PATH environment 
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="c1">// variable
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;name&#34;</span><span class="p">:</span> <span class="s2">&#34;PATH&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;value&#34;</span><span class="p">:</span> <span class="s2">&#34;&lt;some-path&gt;:${env:PATH}&#34;</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">            <span class="p">],</span>
+</span></span><span class="line"><span class="cl">            <span class="nt">&#34;setupCommands&#34;</span><span class="p">:</span> <span class="p">[</span>
+</span></span><span class="line"><span class="cl">                <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;description&#34;</span><span class="p">:</span> <span class="s2">&#34;Enable pretty-printing for gdb/lldb&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;text&#34;</span><span class="p">:</span> <span class="s2">&#34;-enable-pretty-printing&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="nt">&#34;ignoreFailures&#34;</span><span class="p">:</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">            <span class="p">],</span>
+</span></span><span class="line"><span class="cl">        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Other configurations...,
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">]</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Finally, click on the &ldquo;Run and Debug&rdquo; icon on the left sidebar, choose the configuration with the name you specified in &ldquo;launch.json&rdquo;, then click on the green play button to start debugging.</p>
+]]></content:encoded></item><item><title>Install GCC-13 on Rocky 9</title><link>https://jamesnulliu.github.io/blogs/install-gcc-13-on-rocky-9/</link><pubDate>Sat, 06 Jul 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/install-gcc-13-on-rocky-9/</guid><description>How to install GCC-13 in Rocky 9.</description><content:encoded><![CDATA[<p>Install build essentials.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnf groupinstall <span class="s2">&#34;Development Tools&#34;</span>  <span class="c1"># gcc-11 is installed by default</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Enable devel repository and install gcc toolset 13:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo dnf config-manager --set-enabled devel
+</span></span><span class="line"><span class="cl">sudo dnf update
+</span></span><span class="line"><span class="cl">sudo dnf install gcc-toolset-13
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To enable gcc-13:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">scl <span class="nb">enable</span> gcc-toolset-13 bash
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>To disable gcc-13, just exit the shell:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="nb">exit</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>]]></content:encoded></item><item><title>03 | Resource Management</title><link>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/03-resource-management/</link><pubDate>Sat, 29 Jun 2024 00:03:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/03-resource-management/</guid><description>My learning notes of &amp;#34;Effective C++&amp;#34; by Scott Meyers.</description><content:encoded><![CDATA[<h2 id="term-13-use-objects-to-manage-resources">Term 13: Use objects to manage resources</h2>
+<p>Do not make multiple <code>std::auto_ptr</code>s point to the same object.<br>
+If one is destroyed, the object would be released automatically.</p>
+<p>Simply put, do not use <code>std::auto_ptr</code>.</p>
+<p>Use <strong>RCSP (reference-counting smart pointer)</strong> to manage resources:<br>
+<code>std::shared_ptr</code></p>
+<p>Remember: both <code>auto_ptr</code> and <code>shared_ptr</code> use <code>delete</code> instead of <code>delete[]</code>. As a result, do not write <code>std::shared_ptr&lt;int&gt; spi(new int[1024])</code>.</p>
+<h2 id="term-14-think-carefully-about-copying-behavior-in-resource-managing-classes">Term 14: Think carefully about copying behavior in resource-managing classes.</h2>
+<p>Term 13 introduces such concept: <strong>Resource Acquisition Is Initialization, RAII</strong>. This concept is performed when <code>std::auto_ptr</code> and <code>std::shared_ptr</code> manage heap-based resource.<br>
+Not all resource is  heap-based, and it is usual that RCSP is not suitable resource handlers for these resource.<br>
+That is why sometimes you should write your own resource-managing classes.</p>
+<p>Suppose we use a mutex object with class <code>Mutex</code>, and there are two functions <code>lock()</code> and <code>unlock()</code>. In order not to forget to unlock any locked mutex, it is feasible to write a class <code>Lock</code> to manage the mutex. Example is shown as following:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Lock</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="k">explicit</span> <span class="n">Lock</span><span class="p">(</span><span class="n">Mutex</span><span class="o">*</span> <span class="n">pm</span><span class="p">)</span> <span class="o">:</span> <span class="n">mutexPtr</span><span class="p">(</span><span class="n">pm</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="n">lock</span><span class="p">(</span><span class="n">mutexPtr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="o">~</span><span class="n">Lock</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="n">unlock</span><span class="p">(</span><span class="n">mutexPtr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Mutex</span><span class="o">*</span> <span class="n">mutexPtr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>If we copy a <code>Lock</code> object to another, in most cases you would choose one of the following four options.</p>
+<ul>
+<li><strong>To Forbid Copying</strong>. By following term 6, you can make class <code>Lock</code> inherit from a base class whose copy constructor is declared private.</li>
+<li><strong>Use Reference-Count for Underlying Resource</strong>. Use <code>std::shared_ptr&lt;Mutex&gt;</code> to manage <code>Lock::mutexPtr</code> in stead of <code>Mutex*</code>. However, one question is that what a <code>std::shared_ptr</code> do is when reference-count equals to 0, the underlying pointer is deleted, and that is not what we want. We want to call function <code>unlock</code>. The lucky thing is that <code>std::share_ptr</code> allow users to specify a <strong>deleter</strong>, so the class <code>Lock</code> can be written as follow:
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Lock</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">explicit</span> <span class="n">Lock</span><span class="p">(</span><span class="n">Mutex</span><span class="o">*</span> <span class="n">pm</span><span class="p">)</span> <span class="o">:</span> <span class="n">mutexPtr</span><span class="p">(</span><span class="n">pm</span><span class="p">,</span> <span class="n">unlock</span><span class="p">)</span> <span class="c1">// Use func {unlock} to sepecify a deleter and initialize a std::shared_ptr
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  	  <span class="n">lock</span><span class="p">(</span><span class="n">mutexPtr</span><span class="p">.</span><span class="n">get</span><span class="p">());</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Destructor is omitted because {mutexPtr} would automatically invoke func {unlock}.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Mutex</span><span class="o">&gt;</span> <span class="n">mutexPtr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div></li>
+<li><strong>Deep Copying</strong>.</li>
+<li><strong>Transfer Ownership</strong>. For example: <code>std::auto_ptr</code>.</li>
+</ul>
+<h2 id="term-15-provide-access-to-raw-resources-in-resource-managing-classes">Term 15: Provide access to raw resources in resource-managing classes</h2>
+<p><code>std::shared_ptr</code> and <code>std::auto_ptr</code> both provide <code>get()</code> methods to give access to the underlying raw pointers.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Font</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="k">explicit</span> <span class="n">Font</span><span class="p">(</span><span class="n">FontHandle</span> <span class="n">fh</span><span class="p">)</span> <span class="o">:</span> <span class="n">f</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span> <span class="p">{}</span>
+</span></span><span class="line"><span class="cl">	<span class="o">~</span><span class="n">Font</span><span class="p">()</span> <span class="p">{</span> <span class="n">releaseFont</span><span class="p">(</span><span class="n">f</span><span class="p">);</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="n">FontHandle</span> <span class="nf">get</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">f</span><span class="p">;</span> <span class="p">}</span>  <span class="c1">// Explicit conversion
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">operator</span> <span class="nf">FontHandle</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">f</span><span class="p">;</span> <span class="p">}</span>  <span class="c1">// Implicit conversion
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">FontHandle</span> <span class="n">f</span><span class="p">;</span>  <span class="c1">// Raw font resource
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></div><p>Implicit conversion could be dangerous.</p>
+<h2 id="term-16-use-the-same-form-in-corresponding-uses-of-new-and-delete">Term 16: Use the same form in corresponding uses of new and delete.</h2>
+<h2 id="term-17-store-new-objects-in-smart-pointers-in-standalone-statements">Term 17: Store new objects in smart pointers in standalone statements.</h2>
+<p>Suppose there is a function:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">processWidget</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Widget</span><span class="o">&gt;</span> <span class="n">pw</span><span class="p">,</span> <span class="kt">int</span> <span class="n">priority</span><span class="p">);</span>
+</span></span></code></pre></div><p>Following call of the function is invalid:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">processWidget</span><span class="p">(</span><span class="k">new</span> <span class="n">Widget</span><span class="p">,</span> <span class="n">priority</span><span class="p">());</span>
+</span></span></code></pre></div><p>The reason is that construction of <code>std::shared_ptr</code> is declared explicitly. If we adjust the statement to:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">processWidget</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">share_ptr</span><span class="o">&lt;</span><span class="n">Widget</span><span class="o">&gt;</span><span class="p">(</span><span class="k">new</span> <span class="n">Widget</span><span class="p">),</span> <span class="n">priority</span><span class="p">());</span>
+</span></span></code></pre></div><p>This could cause memory leak. The above statement has to do 3 things:</p>
+<ul>
+<li>Call <code>priority()</code></li>
+<li>Run <code>new Widget</code></li>
+<li>Call constructor of <code>std::shared_ptr</code></li>
+</ul>
+<p>In C++, in order to generate more efficient code, the execution sequence could be:</p>
+<ol>
+<li>Run <code>new Widget</code></li>
+<li>Call <code>priority()</code></li>
+<li>Call constructor of <code>std::share_ptr</code></li>
+</ol>
+<p>In this situation, if an exception is thrown when <code>priority()</code> is called, the resource accuired by <code>new Widget</code> would not be free properly. This is memory leak.</p>
+<p>To avoid this, write as following:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">std</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Widget</span><span class="o">&gt;</span> <span class="n">pw</span><span class="p">(</span><span class="k">new</span> <span class="n">Widget</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="n">processWidget</span><span class="p">(</span><span class="n">pw</span><span class="p">,</span> <span class="n">priority</span><span class="p">());</span>
+</span></span></code></pre></div>]]></content:encoded></item><item><title>02 | Constructors, Destructorsm and Assignment Operators</title><link>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/02-constructors-destructors-and-assignment-operators/</link><pubDate>Sat, 29 Jun 2024 00:02:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/02-constructors-destructors-and-assignment-operators/</guid><description>My learning notes of &amp;#34;Effective C++&amp;#34; by Scott Meyers.</description><content:encoded><![CDATA[<h2 id="term-05-know-what-functions-c-silently-writes-and-calls">Term 05 Know what functions C++ silently writes and calls</h2>
+<p>A compiler will automatically generate four functions for a class if the class does not define them by itself:</p>
+<ul>
+<li>default constructor</li>
+<li>copy constructor</li>
+<li>copy assignment operator</li>
+<li>destructor</li>
+</ul>
+<p>The destructor compiler automatically generates is non-virtual, unless that the base class&rsquo;s destructor is virtual. (The virtualness mainly comes from the base class.)</p>
+<p>If a class has reference members or const members, you have to define a copy assignment operator by yourself. The compiler would not generate a default copy assignment operator.</p>
+<p>If some base class declares that its copy assignment operator is private, the compiler will refuse to generate a default copy assignment operator for its derived class.</p>
+<h2 id="term-06-explicitly-disallow-the-use-of-compiler-generated-functions-you-do-not-want">Term 06 Explicitly disallow the use of compiler-generated functions you do not want</h2>
+<p>One way to disallow the use of copy constructor and copy assignment (more specifically, the compiler-generated ones) is to inherit a class that declared private copy constructor and copy assignment operator.</p>
+<h2 id="term-07-declare-destructor-virtual-in-polymorphic-base-classes">Term 07 Declare destructor virtual in polymorphic base classes</h2>
+<p>When deleting a base pointer pointing to a instance of a derived class, if destructor is declared non-virtual in base class, only the memory of base part would be released.</p>
+<p>Consider about a class <code>Point</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Point</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Point</span><span class="p">(</span><span class="kt">int</span> <span class="n">xCoord</span><span class="p">,</span> <span class="kt">int</span> <span class="n">yCoord</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="o">~</span><span class="n">Point</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>If &ldquo;int&rdquo; takes 32 bits, a <code>Point</code> instance takes 64 bits, and can be easily passed to other languages such as C and FORTRAN.</p>
+<p>However, if we declare <code>~Point()</code> as a virtual function, a <strong>vptr</strong> (virtual table pointer) would be added to the instance. That causes the instance takes upto 128 bits (2 32-bit integer and 1 64-bit pointer). Moreover, since C and FORTRAN does not have vptr, the class is not portable any more.</p>
+<p>To create an abstract class, you could (I think you&rsquo;d better declare other functions pure virtual) declare a pure virtual destructor; But you has to offer a definition for the destructor outside the class (maybe in a cpp file).<br>
+The reason is that when an instance of a derived class is dectructed, the destructor of the most derived class is called, and each base class of them is called after. So there is an actor that the pure virtual destructor (of base class) is called inside the derived class.</p>
+<h3 id="sum-up">Sum up</h3>
+<ul>
+<li>Do not delcare a function virtual with no reason.</li>
+<li>Do not inherit frome a class that does not have a virtual destructor (e.g., std::string, std::set, std::vector, std::map) when the class is not designed for polymorphism.</li>
+</ul>
+<h2 id="term-08-prevent-exceptions-from-leaving-destructors">Term 08 Prevent exceptions from leaving destructors</h2>
+<p>Trow exceptions out from a destructor is not encouraged by C++.</p>
+<p>Suppose there are several objects in a block. At the end of the block, all the objects are destroyed automatically.<br>
+If destructor of the first object throws an exception, every thing is okay; Destructors of the other objects would be called porperly.<br>
+However, if the second destructor also throws an exception, the program would either be terminated or cause an undefined behavior (that would be fatal).</p>
+<p>A good strategy is to give the chance to users that they can handle the exceptions themselves.</p>
+<p>In the following example code, db is an instance of class <code>DBConnect</code>, and meanwhile it is a member of class <code>DBConn</code>.<br>
+Before calling <code>~DBConn()</code> automatically, user (instead of the compiler) should call <code>DBConn::close()</code> at first and handle the possible exception thrown by <code>DBConnect::close()</code>.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">DBConn</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="p">...</span>
+</span></span><span class="line"><span class="cl">	<span class="kt">void</span> <span class="n">close</span><span class="p">()</span> <span class="c1">// A close function for users to use
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="n">db</span><span class="p">.</span><span class="n">close</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">		<span class="n">closed</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	
+</span></span><span class="line"><span class="cl">	<span class="o">~</span><span class="n">DBConn</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">closed</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">			<span class="k">try</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="n">db</span><span class="p">.</span><span class="n">close</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span> <span class="k">catch</span><span class="p">(...)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">				<span class="n">Log</span> <span class="n">the</span> <span class="n">faliure</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">			<span class="p">}</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">DBConnection</span> <span class="n">db</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="kt">bool</span> <span class="n">closed</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h3 id="sum-up-1">Sum up</h3>
+<ul>
+<li>Do not give any chance for an exception to leave a destructor. Destructor should catch and handle the exceptions inside itself.</li>
+<li>Offer a function to let user handle the exception that inside the destructor.</li>
+</ul>
+<h2 id="term-09-never-call-virtual-functions-during-construction-or-distruction">Term 09: Never call virtual functions during construction or distruction.</h2>
+<p>In C++, when constructing a derived class, the base part is constructed first; And during the construction of base part, the vptr is still pointing at the base class. This means, if you invoke a virtual function in the constructor of a base class, when you create an instance of a derived class, the actual called virtual function is the base version, not the overrided one.</p>
+<h2 id="term-10-have-assignment-operator-return-a-reference-to-this">Term 10: Have assignment operator return a reference to <code>*this</code></h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Widget</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Widget</span><span class="o">&amp;</span> <span class="k">operator</span><span class="o">+=</span><span class="p">(</span><span class="k">const</span> <span class="n">Widget</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="p">...;</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Widget</span><span class="o">&amp;</span> <span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="kt">int</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="p">...;</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Bitmap</span><span class="o">*</span> <span class="n">pb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></div><h2 id="term-11-handle-assignment-to-self-in-operator">Term 11: Handle assignment to self in <code>operator=</code></h2>
+<p>Self-assignment could cause a question that the resources are released before they are assigned.</p>
+<p>Traditionally, <strong>identity test</strong> can check whether there is an assignment to self:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">Widget</span><span class="o">&amp;</span> <span class="n">Widget</span><span class="o">::</span><span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="k">const</span> <span class="n">Widget</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span><span class="p">(</span><span class="k">this</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">rhs</span><span class="p">)</span> <span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>  <span class="c1">// Identity test
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>	<span class="k">delete</span> <span class="n">pb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="n">pb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Bitmap</span><span class="p">(</span><span class="o">*</span><span class="n">rhs</span><span class="p">.</span><span class="n">pb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>However, if the exception occurs (either because the memory is not enough when allocation or the copy constructor throws one exception), the pointer <code>pb</code> would ultimately points to a deleted Bitmap, and that is harmful.</p>
+<p>Nowadays more people tends to care for <strong>exception safety</strong> rather than <strong>self-allocation safety</strong>. For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">Widget</span><span class="o">&amp;</span> <span class="n">Widget</span><span class="o">::</span><span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="k">const</span> <span class="n">Widget</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Bitmap</span><span class="o">*</span> <span class="n">pOrigin</span> <span class="o">=</span> <span class="n">pb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="n">pb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Bitmap</span><span class="p">(</span><span class="o">*</span><span class="n">rhs</span><span class="p">.</span><span class="n">pb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">delete</span> <span class="n">pOrigin</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Even if without identity test, self-assignment can be handled, and <code>pb</code> has no chance to point to a deleted Bitmap.</p>
+<p>Identity test can be put back to the begin of the funtion; But that may lower the efficiency, since self-assignment does not happen so much.</p>
+<p>There is another way called <strong>copy and swap</strong> technic. For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">Widget</span><span class="o">&amp;</span> <span class="n">Widget</span><span class="o">::</span><span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="k">const</span> <span class="n">Widget</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Widget</span> <span class="nf">temp</span><span class="p">(</span><span class="n">rhs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">this</span><span class="o">-&gt;</span><span class="n">swap</span><span class="p">(</span><span class="n">temp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Or:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="n">Widget</span><span class="o">&amp;</span> <span class="n">Widget</span><span class="o">::</span><span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="n">Widget</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">this</span><span class="o">-&gt;</span><span class="n">swap</span><span class="p">(</span><span class="n">thd</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="o">*</span><span class="k">this</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>The second way sacrificces clearity; However, because it moves &ldquo;copy&rdquo; action from the function body to &ldquo;parameter-constructing stage&rdquo;, sometimes the compiler could generate more efficient codes.</p>
+<h2 id="term-12-copy-all-parts-of-an-object">Term 12: Copy all parts of an object.</h2>
+<p>Compiler would not warn you if there is a particial copy, and do not let that happen.</p>
+<p>Copy constructor of a derived class should invoke the copy constructor of base class:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Base</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Base</span><span class="p">(</span><span class="k">const</span> <span class="n">Base</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="o">:</span> <span class="n">name</span><span class="p">(</span><span class="n">rhs</span><span class="p">.</span><span class="n">name</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">			<span class="n">lastTransaction</span><span class="p">(</span><span class="n">rhs</span><span class="p">.</span><span class="n">lastTransaction</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="n">log</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">name</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Date</span> <span class="n">lastTransaction</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Derived</span> <span class="o">:</span> <span class="n">Base</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="n">Derived</span><span class="p">(</span><span class="k">const</span> <span class="n">Derived</span><span class="o">&amp;</span> <span class="n">rhs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="o">:</span> <span class="n">Base</span><span class="p">(</span><span class="n">rhs</span><span class="p">),</span>  <span class="c1">// Invoke the copy constructor of base class
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>			<span class="n">priority</span><span class="p">(</span><span class="n">rhs</span><span class="p">.</span><span class="n">priority</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="n">log</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">	<span class="kt">int</span> <span class="n">priority</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Do not have copy assignment operator call copy constructor, vice versa.<br>
+If you want, you can write a function <code>init()</code> additionally and call it in both functions.</p>
+]]></content:encoded></item><item><title>01 | Accustoming Yourself to C++</title><link>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/01-accustoming-yourself-to-cxx/</link><pubDate>Sat, 29 Jun 2024 00:01:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/learning-notes-effective-cxx/01-accustoming-yourself-to-cxx/</guid><description>My learning notes of &amp;#34;Effective C++&amp;#34; by Scott Meyers.</description><content:encoded><![CDATA[<h2 id="term-01-view-c-as-a-federation-of-languages">Term 01: View C++ as a federation of languages.</h2>
+<p>Today&rsquo;s C++ is a multiparadigm programming language, one supporting a combination of procedural, object-oriented, functional, generic, and metaprogramming features.</p>
+<h2 id="term-02-prefer-consts-enums-inlines-to-defines">Term 02: Prefer consts, enums, inlines to #defines</h2>
+<p>The substitution of a macro could result in multiple copies of the object in your object code, while the use of the constant should never result in more than one copy.</p>
+<h3 id="-constant-pointer">🎼 Constant Pointer</h3>
+<p>To define a constant char*-based string in a header file, for example, you have to write const twice:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// File header.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="k">const</span> <span class="n">authorName</span> <span class="o">=</span> <span class="s">&#34;Scott Meyers&#34;</span><span class="p">;</span>
+</span></span></code></pre></div><blockquote>
+<p>💡 <strong>Note</strong>: A constant object can be defined in a header file, and there will be no redefinition error when the header file is included in multiple source files.</p></blockquote>
+<h3 id="-static-constant-members-of-a-class">🎼 Static Constant Members of a Class</h3>
+<p>To limit the scope of a constant to a class, you must make it a member, and to ensure there&rsquo;s at most one copy of the constant, you must make it a static member:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// File GamePlayer.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">class</span> <span class="nc">GamePlayer</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">static</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">NumTurns</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>  <span class="c1">// Declaration of a const
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">scores</span><span class="p">[</span><span class="n">NumTurns</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>What you see above is a declaration for <code>NumTurns</code>, not a definition.</p>
+<p>Usually, C++ requires that you provide a definition for anything you use, but classspecific constants that are <strong>static and of integral type</strong> (e.g., integers, chars, bools) are an exception.</p>
+<p>As long as you don&rsquo;t take their address, you can declare them and use them without providing a definition. If you do take the address of a class constant, or if your compiler incorrectly insists on a definition even if you don&rsquo;t take the address, you should provide a separate definition like this:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// File GamePlayer.cpp
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">int</span> <span class="n">GamePlayer</span><span class="o">::</span><span class="n">NumTurns</span><span class="p">;</span>  <span class="c1">// Definition of a const
+</span></span></span></code></pre></div><p>You put this in an implementation file, not a header file. Because the initial value of class constants is provided where the constant is declared (e.g., <code>NumTurns</code> is initialized to 5 when it is declared), no initial value is permitted at the point of definition.</p>
+<p>For non-integral types, you must provide a definition for the constant in the header file, like this:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="c1">// File CostEstimate.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">class</span> <span class="nc">A</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">static</span> <span class="k">const</span> <span class="kt">double</span> <span class="n">FudgeFactor</span><span class="p">;</span>  <span class="c1">// Declaration of a class static const
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// File CostEstimate.cpp
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">double</span> <span class="n">CostEstimate</span><span class="o">::</span><span class="n">FudgeFactor</span> <span class="o">=</span> <span class="mf">1.35</span><span class="p">;</span>  <span class="c1">// Defination of a class static const
+</span></span></span></code></pre></div><blockquote>
+<p>💡 <strong>Keypoints</strong>:</p>
+<ol>
+<li>Declare class-specific constants as <code>static</code> members of the class.</li>
+<li>Provide a separate definition in an implementation file if the compiler requires it.</li>
+<li>Only for <strong>static</strong> <strong>constants</strong> of <strong>integral</strong> type, provide an initial value at the point of declaration. Otherwise, provide an initial value of a static member at the point of definition.</li>
+</ol></blockquote>
+<h3 id="-enum-hack">🎼 Enum Hack</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">GamePlayer2</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">enum</span> <span class="p">{</span> <span class="n">NumTurns</span> <span class="o">=</span> <span class="mi">5</span><span class="p">};</span>  <span class="c1">// &#34;the enum hack&#34; - let {NumTurns} be a marker of 5
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="kt">int</span> <span class="n">scores</span><span class="p">[</span><span class="n">NumTurns</span><span class="p">];</span>  <span class="c1">// valid
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></div><p>The enum hack is worth knowing about for several reasons.</p>
+<ol>
+<li>The enum hack behaves in some ways more like a #define than a const does, and sometimes that&rsquo;s what you want. It&rsquo;s not legal to take the address of an enum, and it&rsquo;s typically not legal to take the address of a #define, either. Also, like #defines, enums never result in unnecessary memory allocation.</li>
+<li>The enum hack is purely pragmatic. The enum hack is a fundamental technique of template metaprogramming (item 48).</li>
+</ol>
+<h3 id="-inline">🎼 Inline</h3>
+<p>Use inline functions instead of #defines.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="cp">#define CALL_WITH_MAX(a, b) f((a)&gt;(b)?(a):(b))
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="n">CALL_WITH_MAX</span><span class="p">(</span><span class="o">++</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>     <span class="c1">// a is incremented twice
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="n">CALL_WITH_MAX</span><span class="p">(</span><span class="o">++</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">+</span><span class="mi">10</span><span class="p">);</span>  <span class="c1">// a is incremented once
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span> <span class="nc">T</span><span class="o">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="kr">inline</span> <span class="kt">void</span> <span class="n">callWithMax</span><span class="p">(</span><span class="k">const</span> <span class="n">T</span><span class="o">&amp;</span> <span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="n">T</span><span class="o">&amp;</span> <span class="n">b</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">f</span><span class="p">(</span><span class="n">a</span> <span class="o">&gt;</span> <span class="n">b</span> <span class="o">?</span> <span class="nl">a</span> <span class="p">:</span> <span class="n">b</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h2 id="term-03-use-const-whenever-possible">Term 03: Use <code>const</code> Whenever Possible</h2>
+<h3 id="-const-and-pointers">🎼 <code>const</code> and Pointers</h3>
+<p>If the word const appears to the left of the asterisk, what&rsquo;s pointed to is constant; if the word const appears to the right of the asterisk, the pointer itself is constant; if const appears on both sides, both are constant.</p>
+<p>For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="kt">char</span> <span class="n">greeting</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&#34;Hello&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="kt">char</span><span class="o">*</span> <span class="n">p</span> <span class="o">=</span> <span class="n">greeting</span><span class="p">;</span>  <span class="c1">// non-const pointer, non-const data
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">p</span> <span class="o">=</span> <span class="n">greeting</span><span class="p">;</span>  <span class="c1">// non-const pointer, const data
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kt">char</span><span class="o">*</span> <span class="k">const</span> <span class="n">p</span> <span class="o">=</span> <span class="n">greeting</span><span class="p">;</span>  <span class="c1">// const pointer, non-const data
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="k">const</span> <span class="n">p</span> <span class="o">=</span> <span class="n">greeting</span><span class="p">;</span>  <span class="c1">// const pointer, const data
+</span></span></span></code></pre></div><h3 id="-use-const-to-restrict-the-users-behavior">🎼 Use <code>const</code> to Restrict the User&rsquo;s Behavior</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">A</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">A</span> <span class="k">operator</span><span class="o">+</span><span class="p">(</span><span class="k">const</span> <span class="n">A</span><span class="o">&amp;</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nf">A</span><span class="p">();</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">A</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">a1</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">=</span> <span class="n">A</span><span class="p">();</span>  <span class="c1">// This is not expected.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>Where <code>a1 + a2 = A();</code> is not expected, because the result of <code>a1 + a2</code> is a temporary object, and it is not allowed to assign a value to a temporary object.</p>
+<p>To prevent this, you can add <code>const</code> to the return value of the <code>operator+</code> function:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">A</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="n">A</span> <span class="k">operator</span><span class="o">+</span><span class="p">(</span><span class="k">const</span> <span class="n">A</span><span class="o">&amp;</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nf">A</span><span class="p">();</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></div><h3 id="-const-member-functions">🎼 Const Member Functions</h3>
+<p>There are two prevailing notions: <strong><em>bitwise</em> constness</strong> (also known as physical constness) and <strong><em>logical</em> constness</strong>.</p>
+<p>The bitwise const camp believes that a member function is const if and only if it doesn&rsquo;t modify any of the object&rsquo;s data members (excluding those that are static), i.e., if it doesn&rsquo;t modify any of the bits inside the object.</p>
+<p>The nice thing about bitwise constness is that it&rsquo;s easy to detect violations: compilers just look for assignments to data members.</p>
+<p>Unfortunately, many member functions that don&rsquo;t act very const pass the bitwise test. For exapmle:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">CTextBlock</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="p">...</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span><span class="o">&amp;</span> <span class="k">operator</span><span class="p">[](</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">position</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">pText</span><span class="p">[</span><span class="n">position</span><span class="p">];</span>  <span class="c1">// Not suitable
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span><span class="o">*</span> <span class="n">pText</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><blockquote>
+<p>It is worth noting that you should return a <code>const char&amp;</code> instead of a <code>char&amp;</code> in the <code>operator[]</code> function above.</p></blockquote>
+<p>This leads to the notion of <strong>logical constness</strong>. Adherents to this philosophy (and you should be among them) — argue that a const member function might modify some of the bits in the object on which it&rsquo;s invoked, but only in ways that clients cannot detect. For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">CTextBlock</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">length</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">lengthIsValid</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">textLength</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">strlen</span><span class="p">(</span><span class="n">pText</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="n">lengthIsValid</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">textLength</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="k">private</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span><span class="o">*</span> <span class="n">pText</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">mutable</span> <span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">textLength</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">mutable</span> <span class="kt">bool</span> <span class="n">lengthIsValid</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h3 id="-avoiding-duplication-in-const-and-non-const-member-functions">🎼 Avoiding Duplication in const and Non-const Member Functions</h3>
+<p>When you have a const and a non-const member function that have essentially identical implementations, you can <strong>avoid code duplication by having the non-const member function call the const member function</strong>. For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">TextBlock</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="k">public</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">char</span><span class="o">&amp;</span> <span class="k">operator</span><span class="p">[](</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">position</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">text</span><span class="p">[</span><span class="n">position</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span><span class="o">&amp;</span> <span class="k">operator</span><span class="p">[](</span><span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">position</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> 
+</span></span><span class="line"><span class="cl">            <span class="k">const_cast</span><span class="o">&lt;</span><span class="kt">char</span><span class="o">&amp;&gt;</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">                <span class="k">static_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">TextBlock</span><span class="o">&amp;&gt;</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">)[</span><span class="n">position</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">            <span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><blockquote>
+<p>💡 <strong>Note</strong>: Do not avoiding duplication by having the const version call the non-const version. A const member function promises never to change the logical state of its object, but a non-const member function makes no such promise.</p></blockquote>
+<h3 id="-things-to-remember">🎼 Things to Remember</h3>
+<ul>
+<li>Declaring something <code>const</code> helps compilers detect usage errors. <code>const</code> can be applied to objects at any scope, to function parameters and return types, and to member functions as a whole.</li>
+<li>Compilers enforce bitwise constness, but you should program using logical constness.</li>
+<li>When <code>const</code> and <code>non-const</code> member functions have essentially identical implementations, code duplication can be avoided by having the non-const version call the const version.</li>
+</ul>
+<h2 id="term-04-make-sure-the-objects-are-initialized-before-they-are-used">Term 04: Make Sure the Objects are initialized before they are used</h2>
+<p>Always initialize objects before they are used.</p>
+<h3 id="-member-initialization-list">🎼 Member initialization list</h3>
+<p>Always use the member initialization list to initialize member objects.</p>
+<p>One aspect of C++ that isn&rsquo;t fickle is the order in which an object&rsquo;s data is initialized. This order is always the same: base classes are initialized before derived classes (see also Item 12), and within a class, data members are initialized in the order in which they are declared.</p>
+<h3 id="-initialize-static-objects">🎼 Initialize Static Objects</h3>
+<p>A <strong>static object</strong> is one that exists from the time it&rsquo;s constructed until the end of the program. Stack and heap-based objects are thus excluded.</p>
+<p>Included are:</p>
+<ul>
+<li>global objects</li>
+<li>objects defined at namespace scope</li>
+<li>objects declared static inside classes</li>
+<li>objects declared static inside functions</li>
+<li>objects declared static at file scope</li>
+</ul>
+<p>Static objects inside functions are known as local static objects (because they&rsquo;re local to a function), and the other kinds of static objects are known as non-local static objects.</p>
+<p>Static objects are destroyed when the program exits, i.e., their destructors are called when main finishes executing.</p>
+<p>⚠ <strong>Warning</strong>: If initialization of a non-local static object in one translation unit uses a non-local static object in a different translation unit, the object it uses could be uninitialized, because <strong>the relative order of initialization of non-local static objects defined in different translation units is undefined</strong>.</p>
+<blockquote>
+<p>💬 Multiple translation units and non-local static objects is generated through implicit template instantiations (which may themselves arise via implicit template instantiations). It&rsquo;s not only impossible to determine the right order of initialization, it&rsquo;s typically not even worth looking for special cases where it is possible to determine the right order.</p></blockquote>
+<p>To avoid the problem of undefined initialization order, you can use <strong>a function-local static object</strong> instead of a non-local static object. These functions return references to the objects they contain. (Aficionados of design patterns will recognize this as a common implementation of the <strong>Singleton Pattern</strong>.)</p>
+<p>For example:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-cpp" data-lang="cpp"><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">FileSystem</span> <span class="p">{...};</span>
+</span></span><span class="line"><span class="cl"><span class="kr">inline</span> <span class="n">FileSystem</span><span class="o">&amp;</span> <span class="n">tfs</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">static</span> <span class="n">FileSystem</span> <span class="n">fs</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">fs</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">class</span> <span class="nc">Directory</span> <span class="p">{...};</span>
+</span></span><span class="line"><span class="cl"><span class="n">Directory</span><span class="o">::</span><span class="n">Directory</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="p">...</span>
+</span></span><span class="line"><span class="cl">    <span class="n">std</span><span class="o">::</span><span class="n">size_t</span> <span class="n">disks</span> <span class="o">=</span> <span class="n">tfs</span><span class="p">().</span><span class="n">numDisks</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">    <span class="p">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="kr">inline</span> <span class="n">Directory</span><span class="o">&amp;</span> <span class="n">tempDir</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">static</span> <span class="n">Directory</span> <span class="n">td</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">td</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>This approach is founded on C++&rsquo;s guarantee that <strong>local static objects are initialized when the object&rsquo;s definition is first encountered during a call to that function</strong>. So if you replace direct accesses to non-local static objects with calls to functions that return references to local static objects, you&rsquo;re guaranteed that the references you get back will refer to initialized objects. As a bonus, if you never call a function emulating a non-local static object, you never incur the cost of constructing and destructing the object, something that can&rsquo;t be said for true non-local static objects.</p>
+<blockquote>
+<p>However, the fact that these functions contain static objects makes them problematic <strong>in multithreaded systems</strong>. Then again, any kind of non-const static object — local or non-local — is trouble waiting to happen in the presence of multiple threads.</p>
+<p>One way to deal with such trouble is to <strong>manually invoke all the reference-returning functions during the single-threaded startup portion of the program</strong>. This eliminates initialization-related race conditions.</p></blockquote>
+<h3 id="-things-to-remember-1">🎼 Things to Remember</h3>
+<ul>
+<li>Manually initialize objects of built-in type, because C++ only sometimes initializes them itself.</li>
+<li>In a constructor, prefer use of the member initialization list to assignment inside the body of the constructor. List data members in the initialization list in the same order they&rsquo;re declared in the class.</li>
+<li>Avoid initialization order problems across translation units by replacing non-local static objects with local static objects.</li>
+</ul>
+]]></content:encoded></item><item><title>Install GCC-13 on Ubuntu 20 (or Earlier)</title><link>https://jamesnulliu.github.io/blogs/install-gcc-13-on-ubuntu-20/</link><pubDate>Sat, 29 Jun 2024 00:00:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/install-gcc-13-on-ubuntu-20/</guid><description>This blog is a tutorial on how to install GCC-13 in Ubuntu 20 (or earlier).</description><content:encoded><![CDATA[<p>Install build essentials.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo apt install build-essential
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Check which version of gcc and g++ is installed on your system:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">gcc -v  <span class="c1"># or g++ -v</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><strong>Suppose</strong> that your currently installed gcc and g++ version is 11, you should be able to find gcc-11 and g++-11 under &ldquo;/usr/bin/&rdquo;:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">ls /usr/bin
+</span></span><span class="line"><span class="cl"><span class="c1"># All files under &#34;/usr/bin&#34; would be listd.</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Now, install gcc-13 and g++-13, while keeping older version existed:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># Install gcc-13 and g++-13</span>
+</span></span><span class="line"><span class="cl">sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+</span></span><span class="line"><span class="cl">sudo apt-get update
+</span></span><span class="line"><span class="cl">sudo apt-get install gcc-13 g++-13
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Register gcc-11 and g++-11 as one group of alternatives</span>
+</span></span><span class="line"><span class="cl">sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 <span class="m">110</span> --slave /usr/bin/g++ g++ /usr/bin/g++-11
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Register gcc-13 and g++-13 as another group of alternatives</span>
+</span></span><span class="line"><span class="cl">sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 <span class="m">130</span> --slave /usr/bin/g++ g++ /usr/bin/g++-13
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Pop a prompt to select the default version of gcc, and g++ would be updated automatically</span>
+</span></span><span class="line"><span class="cl">sudo update-alternatives --config gcc
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>For general purpose of C++ programing, it is suggested that gcc-11 and g++-11 is installed on your system. Some softwares may have a strict rule for gcc version not larger than 12.</p>
+]]></content:encoded></item></channel></rss>

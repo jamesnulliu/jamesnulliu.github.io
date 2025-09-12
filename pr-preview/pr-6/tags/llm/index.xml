@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Llm on 秋水·JamesNULLiu</title><link>https://jamesnulliu.github.io/tags/llm/</link><description>Recent content in Llm on 秋水·JamesNULLiu</description><generator>Hugo -- 0.148.2</generator><language>en</language><copyright>2024-2025 JamesNULLiu</copyright><lastBuildDate>Fri, 12 Sep 2025 22:14:12 +0000</lastBuildDate><atom:link href="https://jamesnulliu.github.io/tags/llm/index.xml" rel="self" type="application/rss+xml"/><item><title>Arithmetic Intensity Estimation of Large Language Models</title><link>https://jamesnulliu.github.io/blogs/arithmetic-intensity-estimation-of-large-language-models/</link><pubDate>Thu, 13 Mar 2025 17:38:00 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/arithmetic-intensity-estimation-of-large-language-models/</guid><description>This blog post discusses the arithmetic intensity of large language models and how it affects the performance of these models.</description><content:encoded><![CDATA[<h2 id="1-estimating-total-flops">1. Estimating Total FLOPs</h2>
+<p>We only consider the FLOPs of Transformer layers, excluding the embedding layer and the output layer.</p>
+<ul>
+<li>
+<p><strong>Attention</strong>:</p>
+<ol>
+<li>Each projection for Q, K and V is matmul of input <code>(B, S, H)</code> and weight <code>(H, H)</code>, yielding <code>(B, S, H)</code>:<br>
+$$
+    \text{FLOPs} = 3 \times (2 \times B \times S \times H \times H) = 6 \times B \times S \times H^2
+    $$</li>
+<li>$S = QK^T$, matmul of $Q$ <code>(B, S, H)</code> and $K^T$ <code>(B, H, S)</code>, yielding <code>(B, S, S)</code>:<br>
+$$
+    \text{FLOPs} = 2 \times B \times S \times S \times H = 2 \times B \times S^2 \times H
+    $$</li>
+<li>$L = S \cdot V$, matmul of $S$ <code>(B, S, S)</code> and $V$ <code>(B, S, H)</code>, yielding <code>(B, S, H)</code>:<br>
+$$
+    \text{FLOPs} = 2 \times B \times S \times H \times S
+    $$</li>
+<li>$O = L \cdot W_O$, matmul of $L$ <code>(B, S, H)</code> and $W_O$ <code>(H, H)</code>, yielding <code>(B, S, H)</code>:<br>
+$$
+    \text{FLOPs} = 2 \times B \times S \times H^2
+    $$</li>
+<li>Total attention FLOPs per Transformer layer:
+$$
+    \text{FLOPs} = 8 \times B \times S \times H^2 + 4 \times B \times S^2 \times H
+    $$</li>
+</ol>
+</li>
+<li>
+<p><strong>Feed-Forward Networek</strong><br>
+Typically 2 linear layers, one mapping <code>(B, S, H)</code> to <code>(B, S, 4H)</code> and the other mapping <code>(B, S, 4H)</code> to <code>(B, S, H)</code>:</p>
+<ul>
+<li>
+<p>Total FFN FLOPs per Transformer layer:</p>
+$$
+    \begin{align*}
+    \text{FLOPs} &= 2 \times B \times S \times H \times (4 \times H) + 2 \times B \times S \times (4 \times H) \times H \\
+                 &= 16 \times B \times S \times H^2
+    \end{align*}
+    $$</li>
+</ul>
+</li>
+<li>
+<p><strong>Total FLOPs: $N$ Layers of Transformer</strong><br>
+Each Transformer layer consists of an attention mechanism and a feed-forward network</p>
+<ul>
+<li>
+<p>When prefilling, the total FLOPs is:</p>
+$$
+    \text{FLOPs}_\text{total} = N (24 B S H^2 + 4 B S^2 H)
+    $$</li>
+<li>
+<p>When decoding, suppose the input is of shape <code>(B, Si, H)</code> and KV cache is of shape <code>(B, Sc, H)</code>, the total FLOPs is:</p>
+$$
+    \text{FLOPs}_\text{total} = N (24 B S_i H^2 + 4 B S_i S_c H)
+    $$</li>
+</ul>
+</li>
+</ul>
+<h2 id="2-estimating-total-bytes-transfered">2. Estimating Total Bytes Transfered</h2>
+<p>In FP16, each parameter or activation element is 2 bytes.</p>
+<p>Data transferred includes <strong>loading model weights</strong> and <strong>handling activations</strong>.</p>
+<p>Suppose we have a $Z$-B-fp16 model and $N$ Transformer layers, each with input size <code>(B, S, H)</code>.</p>
+<ul>
+<li>
+<p><strong>Model Weights</strong><br>
+A $Z$-B-fp16 model has $Z \times 10^9$ <code>fp16</code> parameters, each 2 bytes:</p>
+$$
+  \text{Bytes}_\text{weights} = Z \times 10^9 \times 2 ~ \text{Bytes} = 2 \times Z ~ \text{GBytes}
+  $$<p>In an optimized GPU inference, weights are typically loaded into high-bandwidth memory (HBM) once and reused, so we assume $2Z$ GB is read once per forward pass.</p>
+</li>
+<li>
+<p><strong>Activations</strong></p>
+<ul>
+<li>For each Transfomer layer, input and output activations are of shape <code>(B, S, H)</code>, and each element is 2 bytes in <code>fp16</code>:
+$$
+      \text{Bytes}_\text{act-layer} = B \times S \times H \times 2 ~ \text{Bytes}
+      $$</li>
+<li>For $N$ layers, activations are computed sequentially. Since each layer’s output becomes the next layer’s input (read once, written once):<br>
+$$
+    \begin{align*}
+    \text{Bytes}_\text{act-total} &= 2 \times N \times  \text{Bytes}_\text{act-layer} ~ \text{Bytes} \\
+                                   &= 4 \times N \times B \times S \times H ~ \text{Bytes}
+    \end{align*}
+    $$</li>
+</ul>
+</li>
+<li>
+<p><strong>KV Caches</strong><br>
+When decoding, each Transformer layer would load cached K and V both of shape <code>(B, Sc, H)</code>. After decoding, the new K and V of shape <code>(B, Si, H)</code> are computed and cached for the next layer. So the bytes transfered for one forward pass is:</p>
+$$
+  \text{Bytes}_\text{KV} = N \times (B \times S_c \times H + 2 \times B \times S_i \times H) \times 2 ~ \text{Bytes}
+  $$</li>
+<li>
+<p><strong>Total Data Transferred</strong></p>
+<ul>
+<li>
+<p>When prefilling, the total bytes transferred is:</p>
+$$
+    \begin{align*}
+    \text{Bytes}_\text{total} &= \text{Bytes}_\text{weights} + \text{Bytes}_\text{act-total} \\
+                              &= 2 Z \text{e}^9 + 4 N B S H ~ \text{Bytes}
+    \end{align*}
+    $$</li>
+<li>
+<p>When decoding, suppose cached sequence length is $S_c$ and the input sequence length is $S_i$, the total bytes transferred is:</p>
+$$
+    \begin{align*}
+    \text{Bytes}_\text{total} &= \text{Bytes}_\text{weights} + \text{Bytes}_\text{act-total} + \text{Bytes}_\text{KV} \\
+                              &= 2 Z \text{e}^{9} + 8 N B S_i H + 2 N B S_c H ~ \text{Bytes}
+    \end{align*}
+    $$</li>
+</ul>
+</li>
+</ul>
+<h2 id="3-arithmetic-intensity">3. Arithmetic Intensity</h2>
+<p>When prefilling, there is no cached K and V, so the arithmetic intensity is:</p>
+$$
+\begin{align*}
+\text{Arithmetic Intensity} &= \text{FLOPs}_\text{total} / \text{Bytes}_\text{total} \\
+                            &= \frac{N (24 B S H^2 + 4 B S^2 H)}{2 Z 10^9 + 4 N B S H}
+\end{align*}
+$$<p>When decoding, suppose cached sequence length is $S_c$ and the input sequence length is $S_i$ , then the arithmetic intensity is:</p>
+$$
+\begin{align*}
+\text{Arithmetic Intensity} &= \text{FLOPs}_\text{total} / \text{Bytes}_\text{total} \\
+                            &= \frac{N (24 B S_i H^2 + 4 B S_i S_c H)}{2 Z 10^9 + 8 N B S_i H + 2 N B S_c H}
+\end{align*}
+$$<h2 id="4-roofline-model">4. Roofline Model</h2>
+<div class="image-container">
+    <img src="/imgs/blogs/arithmetic-intensity-estimation-of-large-language-models/roofline_model.png" 
+        alt="" 
+        class="image" 
+        width="80%"/>
+    <div class="image-caption">
+        Roofline Model. If the arithmetic intensity is on the right side of the machine balance, the performance compute-bound. If it is on the left side, the performance is memory-bound.
+    </div>
+</div>
+<p>A100-80GB has the following hardware `specifications:</p>
+<ul>
+<li><strong>Peak FLOPs</strong> ($\pi$): $312 \times 10^{12}$ FLOPs/s</li>
+<li><strong>Memory Bandwidth</strong> ($\beta$): $2039 \times 10^9$ B/s</li>
+<li><strong>Machine Balance</strong> ($I_{max}$): $312 \times 10^{12} / (2039 \times 10^9) \approx 153$ FLOPs/Byte</li>
+</ul>
+<p>Here are two examples of arithmetic intensity estimation:</p>
+<ul>
+<li>See: <a href="https://www.geogebra.org/calculator/uqzhngtf" target="_blank" rel="noopener noreferrer">
+    Arithmetic Intensity for Prefilling
+</a>
+</li>
+<li>See: <a href="https://www.geogebra.org/calculator/tkkekjdb" target="_blank" rel="noopener noreferrer">
+    Arithmetic Intensity for Speculative Decoding
+</a>
+</li>
+</ul>
+<h2 id="5-discussion-tensor-parallelism">5. Discussion: Tensor Parallelism</h2>
+<p>If the model is split across multiple GPUs using TP, the hidden size <code>H</code> and the model weight is divided by the number of GPUs.</p>
+]]></content:encoded></item><item><title>A Brief Talk on Speculative Decoding</title><link>https://jamesnulliu.github.io/blogs/a-brief-talk-on-speculative-decoding/</link><pubDate>Fri, 21 Feb 2025 01:14:06 +0800</pubDate><guid>https://jamesnulliu.github.io/blogs/a-brief-talk-on-speculative-decoding/</guid><description>A brief talk on speculative decoding in large language models.</description><content:encoded><![CDATA[<iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS8hnf4AA8xVJCNKTACvm4H_Lnu6kXtfB7tdL4Iv90OcsuXBnMs87XaVll4Dz0XhmXbjvbjKIeu8k3r/pubhtml" frameborder="0" width="100%" height="400"></iframe>
+<h2 id="1-introduction-to-speculative-decoding">1. Introduction to Speculative Decoding</h2>
+<p>Given a score model <code>S</code> (for example, LLAMA-3-70B) and a draft model <code>D</code> (for example, LLAMA-3-7B), the process of <strong>speculative decoding</strong> can be described as follows:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">input_ids</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>  <span class="c1"># (seq_len,)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># D generates tokens[seq_len, ..., seq_len + k]</span>
+</span></span><span class="line"><span class="cl">    <span class="n">draft_outputs</span> <span class="o">=</span> <span class="n">D</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>  <span class="c1"># (k,)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># Given tokens[seq_len - 1, ..., seq_len + k], S generates real </span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># prediction for tokens[seq_len, ..., seq_len + k, seq_len + k + 1] with</span>
+</span></span><span class="line"><span class="cl">    <span class="c1"># one forward pass.</span>
+</span></span><span class="line"><span class="cl">    <span class="n">score_outputs</span> <span class="o">=</span> <span class="n">S</span><span class="p">(</span><span class="n">cat</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">draft_outputs</span><span class="p">))</span>  <span class="c1"># (k + 1,)</span>
+</span></span><span class="line"><span class="cl">    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="ow">not</span> <span class="n">verify</span><span class="p">(</span><span class="n">draft_outputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">score_outputs</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+</span></span><span class="line"><span class="cl">            <span class="k">break</span>
+</span></span><span class="line"><span class="cl">        <span class="n">input_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">draft_outputs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</span></span><span class="line"><span class="cl">    <span class="n">input_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">score_outputs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> 
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/sd-workflow-in-vllm-k-3-p-1.png" 
+        alt="" 
+        class="image" 
+        width="85%"/>
+    <div class="image-caption">
+        Speculative decoding workflow in vLLM (k=3, top-p=1). k=3 indicates that the draft model generates 3 tokens per forward pass, and top-p=1 means that for each token, only 1 candidate is proposed. As shown in the picture, at prefill statge, input sequence would first be fed into both draft and score models to acquire kv caches. The output of draft model at this stage is omitted. Then, T5 is fed into draft model to generate proposed T6&#39;, T7&#39;, and T8&#39;. To verify these tokens, T5, T6&#39;, T7&#39; and T8&#39; are fed into the score model to get T6, T7*, T8* and T9* in one forward pass. Note that here T6 must be correct because it is generated by T5 through the score model; However, T7*, T8* and T9* are not guaranteed to be correct. The final step is to verify T6&#39;, T7&#39; and T8&#39; to see if T7*, T8* and T9* are correct. For example, if T6&#39; and T7&#39; is correct, then the final accepted tokens would be T6&#39;, T7&#39; and T8&#39;, which means the socore model generates 3 tokens in one forward pass.
+    </div>
+</div>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/sd-workflow-in-vllm-k-1-p-1.png" 
+        alt="" 
+        class="image" 
+        width="80%"/>
+    <div class="image-caption">
+        Workflow of spuculative decoing in vLLM (k=1, top-p=1). Like the previous picture, if T6&#39; is correct, then the final accepted tokens would be T6&#39; and T7*, one generated by the draft model and the other by the score model. The score model generates 2 tokens in one forward pass.
+    </div>
+</div>
+<h2 id="2-how-speculative-decoding-works-in-vllm">2. How Speculative Decoding Works in vLLM</h2>
+<p>In vLLM, speculative decoding is integrated with the system&rsquo;s continuous batching architecture, where different requests are processed together in a single batch, enabling higher throughput. vLLM uses two key components to implement this:</p>
+<ul>
+<li><strong>Draft Runner</strong>: This runner is responsible for executing <strong>the smaller proposer model</strong> to propose candidate tokens.</li>
+<li><strong>Target Runner</strong>: The target runner verifies the tokens by running <strong>the larger scorer model</strong>.</li>
+</ul>
+<p>vLLM&rsquo;s system is optimized to handle this process efficiently, allowing speculative decoding to work seamlessly with continuous batching, which increases the overall system performance.</p>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/sd-in-vllm.png" 
+        alt="" 
+        class="image" 
+        width=""/>
+    <div class="image-caption">
+        Diagram illustrating how the draft and target runners interact within the vLLM batching system.
+    </div>
+</div>
+<p>To implement speculative decoding in vLLM, two crucial components had to be modified:</p>
+<ul>
+<li><strong>Scheduler</strong>: The scheduler was adjusted to handle multiple token slots within a single forward pass, enabling the simultaneous generation and verification of several tokens.</li>
+<li><strong>Memory Manager</strong>: The memory manager now handles the KV cache for both the draft and scorer models, ensuring smooth processing during speculative decoding.</li>
+</ul>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/vllm-sd-system-archi.png" 
+        alt="" 
+        class="image" 
+        width="80%"/>
+    <div class="image-caption">
+        System architecture of speculative decoding in vLLM. 
+    </div>
+</div>
+<h2 id="3-types-of-speculative-decoding-supported-in-vllm">3. Types of Speculative Decoding Supported in vLLM</h2>
+<h3 id="31-draft-model-based-speculative-decoding">3.1. Draft Model-Based Speculative Decoding</h3>
+<p>This is the most commonly used form of speculative decoding, where a smaller model predicts the next tokens, and a larger model verifies them. A common example would be using a Llama 68M model to predict tokens for a Llama 2 70B model. This approach requires careful selection of the draft model to balance accuracy and overhead.</p>
+<p>Choosing the correct draft model is essential for maximizing the efficiency of speculative decoding. The draft model needs to be small enough to avoid creating significant overhead but still accurate enough to provide a meaningful performance boost.</p>
+<p>However, <strong>selecting the right draft model</strong> can be challenging. For example, in models like Llama 3, finding a suitable draft model is difficult due to differences in vocabulary size. Speculative decoding requires that the draft and target models <strong>share the same vocabulary</strong>, and in some cases, this can limit the use of speculative decoding. Therefore, in the following sections, we introduce several draft-model free speculative decoding methods.</p>
+<h3 id="32-prompt-lookup-decoding">3.2. Prompt Lookup Decoding</h3>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/prompt-lookup-decoding.png" 
+        alt="" 
+        class="image" 
+        width="80%"/>
+    <div class="image-caption">
+        An example of prompt lookup decoding. Given the prompt, we build all 2-grams as the lookup key. The values are the three tokens following the lookup key. During generation, we will check if the current 2-gram matches any key. If so, we will propose the following tokens with the value.
+    </div>
+</div>
+<p>Otherwise known as n-gram matching, this approach is effective for use cases like summarization and question-answering, where there is a significant overlap between the prompt and the answer. Instead of using a small model to propose tokens, the system speculates based on the information already available in the prompt. This works particularly well when the large model repeats parts of the prompt in its answers.</p>
+<h2 id="4-medusa">4. MEDUSA</h2>
+<h3 id="41-roadmap">4.1. Roadmap</h3>
+<ol>
+<li><a href="https://github.com/vllm-project/vllm/issues/1023" target="_blank" rel="noopener noreferrer">
+    [vllm][ISSUE] | Can vLLM support medusa head? #1023
+</a>
+</li>
+<li><a href="https://github.com/vllm-project/vllm/issues/1171" target="_blank" rel="noopener noreferrer">
+    [vllm][ISSUE] | [Discussion] Will vLLM consider using Speculative Sampling to accelerating LLM decoding? #1171
+</a>
+</li>
+<li><a href="https://github.com/vllm-project/vllm/pull/4978" target="_blank" rel="noopener noreferrer">
+    [vllm][PR] | [Speculative Decoding] Medusa Implementation with Top-1 proposer #4978
+</a>
+</li>
+</ol>
+<h3 id="41-medusa-heads">4.1. <strong>MEDUSA Heads</strong></h3>
+<p>MEDUSA heads are additional decoding heads appended to the last hidden states of the original model.</p>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/medusa.png" 
+        alt="" 
+        class="image" 
+        width="70%"/>
+    <div class="image-caption">
+        Three heads are used to propose tokens for the following three positions. Head 1 is proposing [&#34;is&#34;, &#34;\&#39;&#34;, &#34;the&#34;] for the first position. Head 2 is proposing [&#34;difficult&#34;, &#34;is&#34;, &#34;\&#39;&#34;] for the second position. Head 3 is proposing [&#34;not&#34;, &#34;difficult&#34;, &#34;a&#34;] for the third position. NOTE: All heads take the output of the last transformer block as the input.
+    </div>
+</div>
+<p>Specifically, given the original model’s last hidden states $h_t$ at position $t$, we add $K$ decoding heads to $h_t$. The $k$-th head is used to predict the token in the $(t + k + 1)$-th position of the next tokens (the original language model head is used to predict the $(t + 1)$-th position).</p>
+$$
+\begin{aligned}
+p_{t}^{(k)} & =\mathrm{softmax}\left(W_{2}^{(k)}\cdot\left(\mathrm{SiLU}(W_{1}^{(k)}\cdot h_{t})+h_{t}\right)\right), \\
+ & \mathrm{where~}W_{2}^{(k)}\in\mathbb{R}^{d\times V},W_{1}^{(k)}\in\mathbb{R}^{d\times d}.
+\end{aligned}
+$$<p>Unlike a draft model, MEDUSA heads are trained in conjunction with the original backbone model, which can remain frozen during training (MEDUSA-1) or be trained together (MEDUSA-2).</p>
+<h3 id="42-tree-attention">4.2. <strong>Tree Attention</strong></h3>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/tree-attn.png" 
+        alt="" 
+        class="image" 
+        width="70%"/>
+    <div class="image-caption">
+        
+    </div>
+</div>
+<p>The top-2 predictions from the first MEDUSA head and the top-3 from the second result in a total of $2 \times 3 = 6$ candidates. Each of these candidates corresponds to a distinct branch within the tree structure.</p>
+<p>To guarantee that each token only accesses its predecessors, an attention mask is devised that exclusively permits attention flow from the current token back to its antecedent tokens.</p>
+<h2 id="5-eagle">5. EAGLE</h2>
+<h3 id="51-roadmap">5.1. Roadmap</h3>
+<ol>
+<li><a href="https://github.com/vllm-project/vllm/pull/6830" target="_blank" rel="noopener noreferrer">
+    [vllm][PR] |  [Speculative Decoding] EAGLE Implementation with Top-1 proposer #6830
+</a>
+</li>
+</ol>
+<h3 id="52-detailed-process">5.2. Detailed Process</h3>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/eagle-compare.png" 
+        alt="" 
+        class="image" 
+        width="80%"/>
+    <div class="image-caption">
+        A comparison of the methods for drafting the fourth and fifth tokens, t4 and t5. t (represented by blue blocks) denotes tokens, and f (orange blocks) signifies the features, with subscripts indicating their positions in the sequence.  The red border indicates the predictions of the draft model. For simplicity, the n in the n-gram for Lookahead, as shown in the figure, has been set to 2.
+    </div>
+</div>
+<p>This link is a Feishu drawboard to show the detailed process of speculative decoding with EAGLE in vLLM:</p>
+<ul>
+<li><a href="https://ncnqdau83tum.feishu.cn/docx/PliBdWWPWohaClxAagjcZqcZnMe?from=from_copylink" target="_blank" rel="noopener noreferrer">
+    Speculative Decoding with EAGLE in vLLM
+</a>
+</li>
+</ul>
+<h2 id="6-deepseekmtp">6. DeepseekMTP</h2>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/deepseekmtp-structure.png" 
+        alt="" 
+        class="image" 
+        width="90%"/>
+    <div class="image-caption">
+        Structure of DeepseekMTP. This figure also demonstrates the training process of draft models, which are fed with continuous tokens and corresponding masks to predict the next tokens for each position. This process is similar to the pre-training process of the larger scorer model.
+    </div>
+</div>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/deepseekmtp-compute-graph.png" 
+        alt="" 
+        class="image" 
+        width="100%"/>
+    <div class="image-caption">
+        Compute graph of DeepseekMTP.
+    </div>
+</div>
+<h2 id="7-discussion">7. Discussion</h2>
+<h3 id="71-performance-insights-speedups-and-trade-offs">7.1. Performance Insights, Speedups, and Trade-offs</h3>
+<blockquote>
+<p>Ref: <a href="https://blog.vllm.ai/2024/10/17/spec-decode.html#speculative-decoding-performance-insights-speedups-and-trade-offs" target="_blank" rel="noopener noreferrer">
+    [vllm] | How Speculative Decoding Boosts vLLM Performance by up to 2.8x
+</a>
+</p></blockquote>
+<p>Speculative decoding offers significant performance benefits in <strong>low-QPS (queries per second)</strong> environments. For example, in testing on the ShareGPT dataset, vLLM demonstrated up to a 1.5x speedup in token generation when using draft model-based speculative decoding. Similarly, prompt lookup decoding has shown speedups of up to 2.8x when applied to summarization datasets, such as CNN/DailyMail.</p>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/sd-performance-low-qps.png" 
+        alt="" 
+        class="image" 
+        width="75%"/>
+    <div class="image-caption">
+        Performance comparison showing spec decode delivering up to 1.5x Speedup at QPS=1 Llama3-70B on ShareGPT with 4xH100 using draft model (turboderp/Qwama-0.5B-Instruct) and up to 2.8x Speedup at QPS=1 Llama3-70B on CNN Dailymail with 4xH100 using n-grams.
+    </div>
+</div>
+<p>However, in <strong>high-QPS environments</strong>, speculative decoding may introduce performance trade-offs. The extra compute required to propose and verify tokens can sometimes slow down the system when it is already compute-bound, as seen when the number of requests per second increases. In such cases, the overhead of speculative decoding can outweigh its benefits, leading to reduced performance.</p>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/sd-performance-high-qps.png" 
+        alt="" 
+        class="image" 
+        width=""/>
+    <div class="image-caption">
+        As high QPS, we see 1.4x slowdown Llama3-70B on ShareGPT with 4xH100, 1.8x slowdown Llama3-70B on CNN Dailymail with 4xH100
+    </div>
+</div>
+<h3 id="72-why-exactly-is-batch-expansion-inefficient">7.2. Why exactly is batch expansion inefficient?</h3>
+<blockquote>
+<p>Ref: <a href="https://docs.google.com/document/d/1T-JaS2T1NRfdP51qzqpyakoCXxSXTtORppiwaj5asxA/edit?tab=t.0#heading=h.71imqkdaug8g" target="_blank" rel="noopener noreferrer">
+    Optimizing attention for spec decode can reduce latency / increase throughput
+</a>
+</p></blockquote>
+<p>Looking at Llama2 architecture, each component has the following algorithmic complexity wrt speculative tokens and sequence length. The baseline is non-speculative decoding, so factors such as d_model are ignored as they are the same in either case.</p>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/llama2-sd-complexity.png" 
+        alt="" 
+        class="image" 
+        width=""/>
+    <div class="image-caption">
+        
+    </div>
+</div>
+<p>Each of these scales linearly with number of speculative tokens, except for attention, which scales by <code>num_spec_tokens * seq_len</code>. This means that for large batch sizes and/or large speculative trees and/or large sequence lengths, attention will be the computational bottleneck.</p>
+<p>To optimize the attention operation, the key is that components of the attention operation are duplicated when scoring different speculative tokens given the same prefix sequence:</p>
+<div class="image-container">
+    <img src="/imgs/blogs/a-brief-talk-on-speculative-decoding/sd-attn-opt.png" 
+        alt="" 
+        class="image" 
+        width=""/>
+    <div class="image-caption">
+        
+    </div>
+</div>
+<p>Speaking theoretically, we can optimize attention for speculative scoring by reducing redundant <code>QK^T</code> computations + loads and <code>Softmax(...)V</code> loads:</p>
+<ul>
+<li>Share K loads for common tokens</li>
+<li>Share K*Q compute for common tokens</li>
+<li>Share V loads for common tokens</li>
+</ul>
+<p>We should experimentally verify this analysis: one weakness is that <code>Softmax(...)V</code> computation is still <code>O(num_spec_tokens * seq_len)</code>.</p>
+<h2 id="references">References</h2>
+<ol>
+<li><a href="https://docs.vllm.ai/en/latest/features/spec_decode.html" target="_blank" rel="noopener noreferrer">
+    [vllm] | Speculative Decoding
+</a>
+</li>
+<li><a href="https://blog.vllm.ai/2024/10/17/spec-decode.html" target="_blank" rel="noopener noreferrer">
+    [vllm] | How Speculative Decoding Boosts vLLM Performance by up to 2.8x
+</a>
+</li>
+<li><a href="https://blog.vllm.ai/2024/10/17/spec-decode.html#how-to-use-speculative-decoding-in-vllm" target="_blank" rel="noopener noreferrer">
+    [vllm] | How to Use Speculative Decoding in vLLM
+</a>
+.</li>
+<li><a href="https://github.com/vllm-project/vllm/pull/4978" target="_blank" rel="noopener noreferrer">
+    [vllm][PR] | [Speculative Decoding] Medusa Implementation with Top-1 proposer #4978
+</a>
+</li>
+<li><a href="https://pytorch.org/blog/hitchhikers-guide-speculative-decoding" target="_blank" rel="noopener noreferrer">
+    A Hitchhiker&#39;s Guide to Speculative Decoding
+</a>
+</li>
+<li><a href="https://docs.google.com/document/d/1Z9TvqzzBPnh5WHcRwjvK2UEeFeq5zMZb5mFE8jR0HCs/edit?tab=t.0#heading=h.1fjfb0donq5a" target="_blank" rel="noopener noreferrer">
+    [vllm] | What is lookahead scheduling in vLLM?
+</a>
+</li>
+<li><a href="https://docs.google.com/document/d/1T-JaS2T1NRfdP51qzqpyakoCXxSXTtORppiwaj5asxA/edit?tab=t.0#heading=h.kk7dq05lc6q8" target="_blank" rel="noopener noreferrer">
+    Optimizing attention for spec decode can reduce latency / increase throughput
+</a>
+</li>
+<li><a href="https://github.com/vllm-project/vllm/issues/4565" target="_blank" rel="noopener noreferrer">
+    [vllm][ISSUE] | [RFC]: Automate Speculative Decoding #4565
+</a>
+</li>
+<li><a href="https://huggingface.co/blog/dynamic_speculation_lookahead" target="_blank" rel="noopener noreferrer">
+    [HF] | Faster Assisted Generation with Dynamic Speculation
+</a>
+</li>
+</ol>
+]]></content:encoded></item></channel></rss>
