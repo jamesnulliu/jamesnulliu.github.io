@@ -81,6 +81,9 @@ jobs:
         
   preview-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     needs: build
     steps:
       - uses: actions/checkout@v4
