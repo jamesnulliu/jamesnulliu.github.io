@@ -42,8 +42,6 @@ useradd -m -s /bin/bash -c "<full-name>" <username>
 passwd <username>
 ```
 
-Remove an existing user:
-
 Remove the user from the sudo or wheel group (if they were in) before deleting them:
 
 ```bash {linenos=true}
@@ -51,6 +49,7 @@ gpasswd -d <username> sudo
 gpasswd -d <username> wheel
 ```
 
+Remove an existing user:
 
 ```bash {linenos=true}
 # `-r`: Removes the user's home directory and mail spool.
