@@ -33,7 +33,7 @@ But now you want to connect `LA` to `RB` with your local git, so that pulling fr
 
 First, check existing remotes:
 
-```bash {linenos=true}
+```bash
 git remote -v
 # Expected output:
 # origin  https://github.com/YourUsername/RA.git (fetch)
@@ -42,13 +42,13 @@ git remote -v
 
 Next, add `RB` as a remote, naming it, for example, `upstream`:
 
-```bash {linenos=true}
+```bash
 git remote add upstream <URL_OF_RB>
 ```
 
 Verify that the new remote has been added:
 
-```bash {linenos=true}
+```bash
 git remote -v
 # Expected output:
 # origin  https://github.com/YourUsername/RA.git (fetch)
@@ -59,13 +59,13 @@ git remote -v
 
 Then, fetch the branches and commits from `upstream`:
 
-```bash {linenos=true}
+```bash
 git fetch upstream
 ```
 
 Create a local branch `upstream-dev` to track `upstream/dev`:
 
-```bash {linenos=true}
+```bash
 git switch -c upstream-dev upstream/dev
 # or
 git checkout -b upstream-dev upstream/dev
@@ -73,13 +73,13 @@ git checkout -b upstream-dev upstream/dev
 
 Create the corresponding remote branch in your `RA`:
 
-```bash {linenos=true}
+```bash
 git push -u origin upstream-dev:upstream-dev
 ```
 
 Next time when you want to pull the changes from `RB/dev` to `RA/upstream-dev`, you can do:
 
-```bash {linenos=true}
+```bash
 git switch upstream-dev
 git pull upstream dev
 ```
@@ -93,7 +93,7 @@ If you clone a repository with `--branch <branchname>`, git will only clone that
 
 Check your remote config:
 
-```bash {linenos=true}
+```bash
 git config --get remote.origin.fetch
 # Expected output:
 # +refs/heads/main:refs/remotes/origin/main
@@ -103,7 +103,7 @@ This means that git will only fetch `main` branch from remote `origin`.
 
 To fix this, run:
 
-```bash {linenos=true}
+```bash
 git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
 git fetch origin
 ```
@@ -112,7 +112,7 @@ Then you can see all branches with `git branch -a`.
 
 Switch to your target branch:
 
-```bash {linenos=true}
+```bash
 git switch <branchname>
 # or
 git checkout <branchname>

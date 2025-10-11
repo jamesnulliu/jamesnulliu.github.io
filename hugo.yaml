@@ -141,9 +141,7 @@ markup:
     codeFences: true
     guessSyntax: true
     linenos: true
-    style: monospace
 
-markup:
   goldmark:
     extensions:
       passthrough:
