@@ -177,8 +177,8 @@ table.lntable {
 }
 
 .pe-code-details .pe-code-details-content {
-    max-height: 10rem;
-    overflow-y: hidden;
+    max-height: var(--pe-code-details-collapsed-max, 10rem);
+    overflow-y: auto;
     -webkit-transition: max-height 0.8s cubic-bezier(0, 1, 0, 1) -0.1s;
     -moz-transition: max-height 0.8s cubic-bezier(0, 1, 0, 1) -0.1s;
     -o-transition: max-height 0.8s cubic-bezier(0, 1, 0, 1) -0.1s;
@@ -193,8 +193,12 @@ table.lntable {
     transform: rotate(90deg);
 }
 
+.pe-code-details.locked svg.pe-code-details-icon {
+    transform: rotate(90deg);
+}
+
 .pe-code-details.open .pe-code-details-content {
-    max-height: 50vh;
+    max-height: var(--pe-code-details-expanded-max, 50vh);
     -webkit-transition: max-height 0.8s cubic-bezier(0.5, 0, 1, 0) 0s;
     -moz-transition: max-height 0.8s cubic-bezier(0.5, 0, 1, 0) 0s;
     -o-transition: max-height 0.8s cubic-bezier(0.5, 0, 1, 0) 0s;
