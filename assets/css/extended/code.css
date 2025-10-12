@@ -1,0 +1,250 @@
+:root {
+    --pe-primary-hover-color: #777777;
+    /* 代码块标题色 */
+    --pe-code-block-header-color: var(--primary);
+    /* 代码块标题背景色 */
+    --pe-code-block-header-bg-color: #ededed;
+    /* 代码块文本颜色 */
+    --pe-code-block-color: #979797;
+    /* 代码块背景色 */
+    --pe-code-block-bg-color: #f5f5f5;
+    /* 代码块复制按钮字体颜色 */
+    --pe-copy-code-color: #fff;
+    /* 代码块复制按钮背景色 */
+    --pe-copy-code-bg-color: #979797;
+    --pe-scrollbar-bg-color: rgb(163, 163, 165);
+    --pe-scrollbar-hover-bg-color: rgb(113, 113, 117);
+    --copy-btn-hover-color: #4489f9;
+    --code-color: #ff8a8a;
+}
+
+.dark {
+    /* 代码块标题色 */
+    --pe-code-block-header-color: var(--primary);
+    /* 代码块标题背景色 */
+    --pe-code-block-header-bg-color: #20252B;
+    /* 代码块文本颜色 */
+    --pe-code-block-color: rgba(255, 255, 255, 0.7);
+    /* 代码块背景色 */
+    --pe-code-block-bg-color: #272C34;
+
+    --pe-copy-code-color: rgba(255, 255, 255, 0.7);
+    --pe-copy-code-bg-color: #414244;
+
+    --pe-scrollbar-bg-color: rgb(113, 113, 117);
+    --pe-scrollbar-hover-bg-color: rgb(163, 163, 165);
+    --copy-btn-hover-color: #b3d0ff;
+}
+
+.post-content a:hover {
+    color: var(--copy-btn-hover-color);
+}
+
+/* 代码样式 */
+.post-content code {
+    margin: unset;
+    padding: .3rem .4rem;
+    line-height: 1.5;
+    background: var(--code-bg);
+    border-radius: .5rem;
+    font-size: 0.875em;
+    font-family: Consolas, sans-serif;
+    color: var(--code-color);
+}
+
+/* 代码块样式 */
+.pe-code-block-wrap {
+    border-radius: var(--radius);
+    margin: var(--content-gap) auto;
+    background-color: var(--pe-code-block-header-bg-color);
+    font-family: Consolas, sans-serif;
+    overflow: hidden;
+}
+
+.pe-code-block-header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    color: var(--pe-code-block-header-color);
+    justify-content: space-between;
+    padding: .4rem 1rem;
+    font-size: 0.875rem;
+}
+
+.pe-code-block-header-left {
+    flex: 1;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+    font-style: italic;
+}
+
+.pe-code-block-header-center {
+    flex: 1;
+    text-align: center;
+    font-weight: bold;
+}
+
+.pe-code-block-header-right {
+    flex: 1;
+    line-height: 1rem;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.post-content .highlight:not(table) {
+    margin: unset;
+    background: var(--pe-code-block-bg-color) !important;
+    border-radius: unset;
+}
+
+.post-content pre code {
+    background-color: var(--pe-code-block-bg-color) !important;
+    font-size: 0.875rem;
+    color: var(--pe-code-block-color);
+    border-radius: unset;
+}
+
+.pe-icon {
+    width: 1.6rem;
+    height: 1.6rem;
+}
+
+.copy-code:hover {
+    background: var(--pe-primary-hover-color);
+}
+
+.chroma .lnt {
+    padding: 0 0 0 1.2rem !important;
+}
+
+/* 滚动条 */
+.post-content :not(table) ::-webkit-scrollbar-thumb {
+    border: .2rem solid var(--pe-code-block-bg-color);
+    background: var(--pe-scrollbar-bg-color);
+}
+
+.post-content :not(table) ::-webkit-scrollbar-thumb:hover {
+    background: var(--pe-scrollbar-hover-bg-color);
+}
+
+.pe-code-details-content::-webkit-scrollbar {
+    width: .8rem;
+}
+
+.pe-code-details-content::-webkit-scrollbar-track {
+    background: var(--pe-code-block-bg-color); /* Background of the scrollbar track */
+}
+
+.pe-code-details-content::-webkit-scrollbar-thumb {
+    border: .2rem solid var(--pe-code-block-bg-color);
+    background: var(--pe-scrollbar-bg-color);
+}
+
+.pe-code-details-content::-webkit-scrollbar-thumb:hover {
+    background: var(--pe-scrollbar-hover-bg-color);
+}
+
+.pe-code-details-content::-webkit-scrollbar-corner {
+    background: var(--pe-code-block-bg-color);
+}
+
+table.lntable {
+    overflow-x: unset;
+}
+
+.pe-code-block-container pre {
+    margin: unset;
+}
+
+.pe-code-details .pe-code-details-summary:hover {
+    cursor: pointer;
+}
+
+.pe-code-details svg.pe-code-details-icon {
+    color: var(--content);
+    -webkit-transition: transform 0.2s ease;
+    -moz-transition: transform 0.2s ease;
+    -o-transition: transform 0.2s ease;
+    transition: transform 0.2s ease;
+}
+
+.dark .pe-code-details svg.pe-code-details-icon {
+    color: var(--content);
+}
+
+.pe-code-details .pe-code-details-content {
+    max-height: var(--pe-code-details-collapsed-max, 10rem);
+    overflow-y: auto;
+    -webkit-transition: max-height 0.8s cubic-bezier(0, 1, 0, 1) -0.1s;
+    -moz-transition: max-height 0.8s cubic-bezier(0, 1, 0, 1) -0.1s;
+    -o-transition: max-height 0.8s cubic-bezier(0, 1, 0, 1) -0.1s;
+    transition: max-height 0.8s cubic-bezier(0, 1, 0, 1) -0.1s;
+}
+
+.pe-code-details.open svg.pe-code-details-icon {
+    -webkit-transform: rotate(90deg);
+    -moz-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    -o-transform: rotate(90deg);
+    transform: rotate(90deg);
+}
+
+.pe-code-details.locked svg.pe-code-details-icon {
+    transform: rotate(90deg);
+}
+
+.pe-code-details.open .pe-code-details-content {
+    max-height: var(--pe-code-details-expanded-max, 50vh);
+    -webkit-transition: max-height 0.8s cubic-bezier(0.5, 0, 1, 0) 0s;
+    -moz-transition: max-height 0.8s cubic-bezier(0.5, 0, 1, 0) 0s;
+    -o-transition: max-height 0.8s cubic-bezier(0.5, 0, 1, 0) 0s;
+    transition: max-height 0.8s cubic-bezier(0.5, 0, 1, 0) 0s;
+}
+
+.pe-code-details.scrollable .pe-code-details-content{
+    overflow: auto;
+}
+
+.scrollable {
+    overflow: auto;
+}
+
+.pe-code-details .pe-code-copy-button {
+    display: inherit;
+}
+
+.pe-code-details.open .pe-code-copy-button {
+    display: inherit;
+}
+
+.pe-code-copy-button:hover {
+    color: var(--copy-btn-hover-color);
+}
+.mac-dots {
+    align-self: center;
+    position: relative;
+    /* 容器宽度，足以容纳三个点 */
+    width: 52px;
+    /* 容器高度 */
+    height: 12px;
+    /* 与语言名称的间距 */
+    margin-right: 10px;
+    margin-left: 5px;
+}
+
+.mac-dots::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #ff5f56;
+    /* 阴影绘制另外两个点 */
+    box-shadow: 20px 0 0 #ffbd2e, 40px 0 0 #27c93f;
+}
