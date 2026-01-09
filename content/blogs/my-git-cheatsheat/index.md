@@ -117,3 +117,19 @@ git switch <branchname>
 # or
 git checkout <branchname>
 ```
+
+## 3. Force Checkout to remote HEAD
+
+Sometimes you want to discard all local changes and force checkout to the remote HEAD.
+
+First, fetch the latest changes from remote:
+
+```bash
+git fetch origin
+```
+
+Then, reset your local branch to match the remote branch:
+
+```bash
+git reset --hard origin/<branchname>
+```

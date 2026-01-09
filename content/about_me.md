@@ -55,6 +55,9 @@ If you have any inquiries or are interested in collaboration, please feel free t
 
 ## 📰 Publications
 
+**2026 ------------**
+1. [{{<text color="#767676">}}ICLR 8666{{</text>}}] S. Wang, {{<text color="#8860cc" weight="bold" >}}Y. Liu{{</text>}}, X. Ren. “Segment-Level Attribution for Selective Learning of Long Reasoning Traces”.
+
 **2025 ------------**
 
 1. [{{< text color="#767676" url="https://arxiv.org/abs/2506.10401v2" >}}Preprint{{< /text >}} | {{< text color="#767676" url="https://github.com/PJLAB-CHIP/HPCTransCompile" >}}Code{{< /text >}}] J. Lv, X. He, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, A. Shen, X. Dai$^*$, Y. Li, J. Hao, J. Ding, Y. Hu, S. Yin. "HPCTransCompile: An AI Compiler Generated Dataset for High-Performance CUDA Transpilation and LLM Preliminary Exploration".  
