@@ -1,7 +1,7 @@
 ---
 title: "My Knowledge Map"
 date: 2025-11-24T16:00:00-07:00
-lastmod: 2025-11-24T16:06:00-07:00 
+lastmod: 2026-03-10T02:57:14-07:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -39,9 +39,7 @@ cover:
 - RLHF: verl
 - Compute Graph: MLIR
 
-## 4. Concepts
-
-### 4.1. NLP
+## 4. NLP
 
 - Inference:
   - TP (Megatron)
@@ -72,3 +70,9 @@ cover:
   - Ray
   - InfiniBand
   - Evaluation: HPCG
+
+
+### 4.1. Model Parallel & Data Parallel & Tensor Parallel
+
+- MP: 
+

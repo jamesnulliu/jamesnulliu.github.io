@@ -1,0 +1,20 @@
+@font-face {
+  font-family: "MyCodeFont";
+  src: url("/fonts/MyCodeFont.woff2") format("woff2"),
+       url("/fonts/MyCodeFont.woff") format("woff");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --code-font: "Fira Code", monospace;
+}
+
+.post-content code,
+.post-content pre code,
+.chroma,
+.chroma code,
+.highlight pre {
+  font-family: var(--code-font);
+}

@@ -1,7 +1,7 @@
 ---
 title: "About Me"
 date: 2024-06-29T00:00:00+08:00
-lastmod: 2024-11-15T00:47:00+08:00
+lastmod: 2026-03-09T16:26:25-07:00
 draft: false
 author: ["jamesnulliu"]
 keywords:
@@ -28,9 +28,11 @@ cover:
 
 Hello, I am JamesNULLiu (Yanchen Liu, 刘彦辰).
 
-I am a first-year MSCS student at **University of Southern California**, now working as a research intern in {{< text url="https://inklab.usc.edu/" >}}INK Lab @ USC{{< /text >}}, advised by Prof. {{< text url="https://www.seanre.com/" >}}Xiang Ren{{< /text >}} and Postdoc. {{< text url="https://siyuanwangw.github.io/" >}}Siyuan Wang{{< /text >}}. My current research focuses on {{< text color="#8860cc" weight="bold" >}}RLHF{{< /text >}}, {{< text color="#8860cc" weight="bold" >}}Test-time Computing{{< /text >}} and {{< text color="#8860cc" weight="bold" >}}Reasoning{{< /text >}} of {{< text color="#8860cc" weight="bold" >}}Large Language Models{{< /text >}}.
+I am a first-year MSCS student at **University of Southern California**, now working as a research intern in {{< text url="https://inklab.usc.edu/" >}}INK Lab @ USC{{< /text >}}, advised by Prof. {{< text url="https://www.seanre.com/" >}}Xiang Ren{{< /text >}} and Postdoc. {{< text url="https://siyuanwangw.github.io/" >}}Siyuan Wang{{< /text >}}. 
 
-I achieved my Bachelor's degree in Computer Science from **Shanghai University**. During that time, I conducted in-depth research on **Inference Acceleration**, **High Performance Computing**, **In-vehicle System Security** and **Super-Resolution**. 
+My current research focuses on LLM post-training and reasoning, particularly in areas such as SFT, RLHF, and test-time reasoning. I am also interested in improving the efficiency of LLM training and inference, as well as the development of LLM-based agents.
+
+More broadly, my goal is to improve the efficiency and capability of LLMs at both the algorithmic and systems levels. At the algorithmic level, I aim to enhance model reasoning through improved training data, reward modeling, and sampling strategies during post-training. At the systems level, I am interested in optimizing training and inference frameworks to better utilize heterogeneous hardware and improve the scalability and efficiency of LLM deployment.
 
 If you have any inquiries or are interested in collaboration, please feel free to contact me via email at jamesnulliu@gmail.com.
 
@@ -56,13 +58,13 @@ If you have any inquiries or are interested in collaboration, please feel free t
 ## 📰 Publications
 
 **2026 ------------**
-1. [{{<text color="#767676">}}ICLR 8666{{</text>}}] S. Wang, {{<text color="#8860cc" weight="bold" >}}Y. Liu{{</text>}}, X. Ren. “Segment-Level Attribution for Selective Learning of Long Reasoning Traces”.
+1. [{{<text color="#767676" url="https://arxiv.org/abs/2602.00425">}}ICLR{{</text>}}] S. Wang, {{<text color="#8860cc" weight="bold" >}}Y. Liu{{</text>}}, X. Ren. "Segment-Level Attribution for Selective Learning of Long Reasoning Traces".
 
 **2025 ------------**
 
-1. [{{< text color="#767676" url="https://arxiv.org/abs/2506.10401v2" >}}Preprint{{< /text >}} | {{< text color="#767676" url="https://github.com/PJLAB-CHIP/HPCTransCompile" >}}Code{{< /text >}}] J. Lv, X. He, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, A. Shen, X. Dai$^*$, Y. Li, J. Hao, J. Ding, Y. Hu, S. Yin. "HPCTransCompile: An AI Compiler Generated Dataset for High-Performance CUDA Transpilation and LLM Preliminary Exploration".  
-2. [{{< text color="#767676" url="https://arxiv.org/abs/2411.10258" >}}Preprint{{< /text >}} | {{< text color="#767676" url="https://github.com/Tiara8735/MDHP-Net-Anonymous" >}}Code{{< /text >}}] Q. Liu$^\dagger$, {{< text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{< /text >}}, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng. "MDHP-Net: Detecting an Emerging Time-exciting Threat in IVN".  
-3. [{{< text color="#767676" >}}Preprint{{< /text >}}] Z. Xu, A. Shen, D. Kong, X. Dai, J. Liu, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, L. Wang, S. Wei, Y. Hu and S. Yin*. "LLMEngine: Disaggregated Mapping and Memory Management Co-scheduling for Wafer-scale Chips".  
+1. [{{<text color="#767676" url="https://arxiv.org/abs/2506.10401v2">}}Arxiv{{< /text >}} | {{< text color="#767676" url="https://github.com/PJLAB-CHIP/HPCTransCompile" >}}Code{{< /text >}}] J. Lv, X. He, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, A. Shen, X. Dai$^*$, Y. Li, J. Hao, J. Ding, Y. Hu, S. Yin. "HPCTransCompile: An AI Compiler Generated Dataset for High-Performance CUDA Transpilation and LLM Preliminary Exploration".  
+2. [{{< text color="#767676" url="https://arxiv.org/abs/2411.10258" >}}Arxiv{{< /text >}} | {{< text color="#767676" url="https://github.com/Tiara8735/MDHP-Net-Anonymous" >}}Code{{< /text >}}] Q. Liu$^\dagger$, {{< text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{< /text >}}, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng. "MDHP-Net: Detecting an Emerging Time-exciting Threat in IVN".  
+3. Z. Xu, A. Shen, D. Kong, X. Dai, J. Liu, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, L. Wang, S. Wei, Y. Hu and S. Yin*. "LLMEngine: Disaggregated Mapping and Memory Management Co-scheduling for Wafer-scale Chips".  
 
 **2024 ------------**
 
