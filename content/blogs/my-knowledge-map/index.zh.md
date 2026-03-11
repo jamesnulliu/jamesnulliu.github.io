@@ -1,7 +1,7 @@
 ---
 title: "My Knowledge Map"
 date: 2025-11-24T16:00:00-07:00
-lastmod: 2026-03-11T16:25:59-07:00
+lastmod: 2026-03-11T16:31:45-07:00
 draft: false
 author: ["jamesnulliu"]
 keywords: 
@@ -90,6 +90,15 @@ caption=`Decoder-Only 模型的经典结构`
 >}}
 
 上图展示了 Decoder-Only Model 的经典结构; 省略了每层 Decoder Layer 的 Residual 结构和 Attention 内部的 Causal Mask.
+
+另外要注意, 最后输出的 logitis: (B, L, V) 在 sampling 阶段需要对 vocab 维度做 softmax 进而转化为 probs 或者 logprobs:
+
+```python
+import torch.nn.functional as F
+
+probs = F.softmax(logitis, dim=-1)  # (B, L, V)
+log_probs = F.log_softmax(logitis, dim=-1)  # (B, L, V)
+```
 
 ### 4.1. Embedding
 
