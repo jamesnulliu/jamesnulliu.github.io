@@ -1,7 +1,7 @@
 ---
 title: "About Me"
 date: 2024-06-29T00:00:00+08:00
-lastmod: 2026-03-09T16:26:25-07:00
+lastmod: 2026-03-11T16:25:43-07:00
 draft: false
 author: ["jamesnulliu"]
 keywords:
@@ -28,7 +28,7 @@ cover:
 
 Hello, I am JamesNULLiu (Yanchen Liu, 刘彦辰).
 
-I am a first-year MSCS student at **University of Southern California**, now working as a research intern in {{< text url="https://inklab.usc.edu/" >}}INK Lab @ USC{{< /text >}}, advised by Prof. {{< text url="https://www.seanre.com/" >}}Xiang Ren{{< /text >}} and Postdoc. {{< text url="https://siyuanwangw.github.io/" >}}Siyuan Wang{{< /text >}}. 
+I am a first-year MSCS student at **University of Southern California**, now working as a research intern in {{<text url="https://inklab.usc.edu/">}}INK Lab @ USC{{</text>}}, advised by Prof. {{<text url="https://www.seanre.com/">}}Xiang Ren{{</text>}} and Postdoc. {{<text url="https://siyuanwangw.github.io/">}}Siyuan Wang{{</text>}}.
 
 My current research focuses on LLM post-training and reasoning, particularly in areas such as SFT, RLHF, and test-time reasoning. I am also interested in improving the efficiency of LLM training and inference, as well as the development of LLM-based agents.
 
