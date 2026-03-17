@@ -42,7 +42,154 @@ cover:
 - RLHF: verl
 - Compute Graph: MLIR
 
-## 3. NLP
+## 3. 基础 DL
+
+### 3.1. MAE (L1) & MSE (L2) Loss
+
+MAE, i.e., Mean Absolute Error:
+
+$$
+\text{MAE} = \frac{1}{n} \sum^{n}_{i=1}|\hat{y} - y|
+$$
+
+
+MSE, i.e. Mean Squared Error:
+
+$$
+\text{MAE} = \frac{1}{n} \sum^{n}_{i=1}(\hat{y} - y)
+$$
+
+**MAE & MSE loss 通常被用于回归任务**; 即单纯让模型的 output Tensor 中每个元素都数值上靠近 label Tensor, 不存在 "将 output 看成不同类别的概率" 这个操作.
+
+> 比如有个模型的 output 是 [10, 4, 5] shape 的 tensor.
+> - **在分类任务中**, 我们可能会把 10 作为 batch size (B), 4 作为 seq len (L), 5 作为 vocab size (V).  
+>   接着我们会对 V 维度做 softmax: `outputs = torch.softmax(outputs, dim=-1)`, 这样每个 token 对应的 V 维度的 5 个值自然地被 map 到 (0, 1) 这个区间, 代表这个 token 是 0 号单词的概率, 是 1 号单词的 概率, ... 是 5 号单词的概率.  
+>   **这其实就是对 (10 * 4) 个 token 的分类问题, 一共有 5 类.**
+> - 但是**在回归问题中**, output 和 label 的 shape 一般相同 (**每个维度都有意义, 每个元素都应该靠近 label**).  
+>   例如, 场景是: batch size = 10, 预测一张 (4 * 5) 的图像内每个像素点的灰度值是多少.   
+>   这种情况下就应该直接将 `MAE(pred, label)` 或者 `MSE(pred, label)` 作为 loss 来优化.
+
+1. 惩罚强度不同。  
+   MAE 对误差是线性惩罚，错 10 ⽐错 1 ⼤ 10 倍。  
+   MSE 对误差是平⽅惩罚，错 10 ⽐错 1 ⼤ 100 倍。  
+   所以 MSE 会更强烈地惩罚⼤误差。(即在优化时让模型更趋近 ground truth)
+2. 对离群点的敏感性不同。  
+   MAE 对 outlier 更稳健。
+   MSE 很容易被少数⼏个特别⼤的误差主导。   
+   所以数据⾥如果有脏点、极端值，MAE 往往更稳。  
+3. 优化性质不同。  
+   MSE 更平滑，可导性更好，优化通常更稳定，尤其在深度学习⾥很常⻅。  
+   MAE 在 $e=0$ 处不可导，⽽且梯度⼤⼩基本是常数，不像 MSE 会随误差变⼤⽽增⼤，所以优化时有时没那么“顺⼿”。  
+4. 统计含义不同。  
+   最⼩化 MSE 往往对应去拟合条件均值。   
+   最⼩化 MAE 往往对应去拟合条件中位数。  
+   所以如果你的⽬标更像“平均值预测”，MSE 常⻅；如果你更想抗异常值，MAE 常⻅. 
+
+⼀句话总结：
+
+- L1 loss 适合你怀疑数据⾥有噪声点、离群点，或者你更想优化“中位数式”的稳健表现。
+- L2 loss 适合误差近似⾼斯、你想让模型更重视⼤偏差，或者需要平滑、好优化的⽬标。
+
+Code:
+
+{{<details title="Click to Expand">}}
+
+```python
+import torch
+
+# MAE, L1
+def mae_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+  # pred: [...], target: [...]
+  return torch.mean(torch.abs(pred - target))  # Scalar
+
+# MSE, L2
+def mse_loss(pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+  # pred: [...], target: [...]
+  return torch.mean((pred - target) ** 2)  # Scalar
+```
+
+Which is the same as:
+
+```python
+from torch import nn
+
+# Callable, whose forward function takes #1: pred, #2: y
+mae_loss = nn.L1Loss()  
+# Callable, whose forward function takes #1: pred, #2: y
+mse_loss = nn.MSELoss()
+```
+{{</details>}}
+
+### 3.2. Cross Entropy Loss and Binary Cross Entropy Loss
+
+CE Loss 一般被用于分类任务; BCE Loss 一般被用于二分类任务.
+
+#### 3.2.1. Target Distribution Cross Entropy
+
+假定我们要做一个分 `NC` 类的分类任务; 一般模型的 output logits 的 shape 为: `[B, NC]`, 其中 `B` 为 batch size.
+
+> 在 LLM 中, logits 一般理解为 `[B, L, NC]`, 这只是 layout 的区别罢了, 因为本质上我们就是要为 (B * L) 的 token 分类.
+
+在 Target Distribution Cross Entropy 中, label 的 shape 则为 `[B, NC]`: 即对于每个 sample, label 给出这个 sample 是第 $i (i \in [1, \text{NC}])$ 类的概率 (是一个 prob distribution).
+
+> 这可能和你认为的经典分类任务不太一样: "每个 sample 不应该就是有一个确定的类别吗?" ------ Wait, wait, wait! 谁说一个 sample 只可能有一个类别了? 比如我说 "Tom 的性别 label 是 [0.5, 0.2, 0.3], 即 50% 像男人, 20% 像女人, 30% 不知道" 呢? 此时我的模型是不是就该输出一个 `[..., 3]` 的 Tensor, 并且尽可能向 [0.5, 0.2, 0.3] 靠近?
+
+为计算 CE, 我们的第一步是对 logits 的 `NC` 维度 apply softmax, 进而转化为 probs: `probs = torch.softmax(logits, dim=-1)`. 此时对于 `probs: [B, NC]` 中的每个 sample, 其 `NC` 个数字就代表了该 sample 是第 $i (i \in [1, \text{NC}])$ 类的概率.
+
+> **注意: softmax 不仅能把 `NC` 个数统一映射到 (0, 1), 还能保证他们的和为 1**.
+
+接着, 对于单个 sample, CE loss 的计算公式如下:
+
+$$
+L_\text{CE} = - \sum_{i=1}^{\text{NC}}(p_\text{label}^i \times \log{p_\text{pred}^i})
+$$
+
+计算结果是一个标量; 而对于 `B` 个 sample, 最终的 CE Loss 就是将所有 sample 的 Loss 求和取平均.
+
+> 看到这里, 我们会发现, CE Loss 与 L1/L2 Loss 都在 "将 output tensor 中的所有元素向 label 中的所有元素优化".  
+> 但是他们有个很重要的不同: CE Loss 将最后一个维度 (`NC`) 对待为 "有 `NC` 种类别, 它们分别是什么概率", 因此 apply 了 softmax; 而 L1/L2 loss 无论有多少维, 都会平等对待所有元素, 统一向 label 优化.
+
+
+Code:
+
+```python
+import torch
+
+def standard_ce_loss(
+  logits: torch.Tensor, labels: torch.Tensor
+) -> torch.Tensor:
+    # logits: [B, NC]; labels: [B, NC]
+    log_probs = torch.log_softmax(logitis, dim=-1)  # [B, NC]
+    each_sample_loss = -torch.sum(labels * log_probs, dim=-1) # [B]
+    return torch.mean(each_sample_loss) # Scalar
+
+```
+
+#### 3.2.1. 明确要分第几类任务下的 CE Loss (NLL Loss)
+
+模型输出 logits 还是 `[B, NC]`, 计算 probs: `probs = torch.softmax(logits, dim=-1)`.
+
+现在, label 不再是 `[B, NC]` 的 "概率矩阵" 了, 而是 `[B]` 的 "第几类" 矩阵 ------ 每个元素的意义就是对应 sample 是第几类.
+
+那么, 对于一个 sample, 我们是不是可以理解为, **是这个类型的 ground truth prob 就是 1, 不是这个类型的 ground truth prob 就是 0**?
+
+此时计算该 sample 的标准 CE Loss 就可以简化为:
+
+$$
+L_\text{CE} = - \sum_{i=1}^{\text{NC}}(\text{label}^i \times \log{p_\text{pred}^i})
+$$
+
+这里的 $\text{label}$ 是一个 0/1 向量, 只有 "确实是这个类型" 的位置是 1, 其余都是 0.
+
+
+### 3.2. L1 & L2 正则化
+
+
+
+## 4. LLM Tech List
+
+
+{{<details title="Click to Expand">}}
 
 - Inference:
   - TP (Megatron)
@@ -73,12 +220,9 @@ cover:
   - Ray
   - InfiniBand
   - Evaluation: HPCG
+  
+{{</details>}}
 
-## 4. 基础 DL
-
-### 4.1. MAE (L1) & MSE (L2) Loss
-
-### 4.2. L1 & L2 正则化
 
 ## 5. LLM 基础模型结构
 
