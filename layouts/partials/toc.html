@@ -1,13 +1,20 @@
 {{- $headers := findRE "<h[1-6].*?>(.|\n])+?</h[1-6]>" .Content -}}
 {{- $has_headers := ge (len $headers) 1 -}}
 {{- if $has_headers -}}
-<aside id="toc-container" class="toc-container wide">
+<aside id="toc-container" class="toc-container">
     <div class="toc">
-        <details {{if (.Param "TocOpen") }} open{{ end }}>
-            <summary accesskey="c" title="(Alt + C)">
-                <span class="details">{{- i18n "toc" | default "Table of Contents" }}</span>
+        <details id="toc-details" data-open-default="{{ if (.Param "TocOpen") }}true{{ else }}false{{ end }}">
+            <summary accesskey="c" title="Toggle table of contents (Alt + C)" aria-label="Toggle table of contents">
+                <span class="toc-toggle" aria-hidden="true">
+                    <svg class="toc-toggle-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </span>
             </summary>
 
+            <div class="toc-title">{{- i18n "toc" | default "Table of Contents" }}</div>
             <div class="inner">
                 {{- $largest := 6 -}}
                 {{- range $headers -}}
@@ -93,23 +100,69 @@
     </div>
 </aside>
 <script>
+    const tocContainer = document.getElementById('toc-container');
+    const tocDetails = document.getElementById('toc-details');
+    const mainWidth = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
+    const tocWidth = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
+    const layoutGap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
+    const defaultOpen = tocDetails.dataset.openDefault === 'true';
+    const pageHeader = document.querySelector('.header');
     let activeElement;
     let elements;
-    window.addEventListener('DOMContentLoaded', function (event) {
-        checkTocPosition();
+    let previousWideState;
 
-        elements = document.querySelectorAll('h1[id],h2[id],h3[id],h4[id],h5[id],h6[id]');
-         // Make the first header active
-         activeElement = elements[0];
-         const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
-         document.querySelector(`.inner ul li a[href="#${id}"]`).classList.add('active');
-     }, false);
+    function updateTocOpenState() {
+        tocContainer.classList.toggle('open', tocDetails.open);
+    }
 
-    window.addEventListener('resize', function(event) {
-        checkTocPosition();
+    function updateCompactTocTop() {
+        if (tocContainer.classList.contains('wide')) {
+            tocContainer.style.removeProperty('--toc-top');
+            return;
+        }
+
+        const headerBottom = pageHeader ? Math.max(0, pageHeader.getBoundingClientRect().bottom) : 0;
+        tocContainer.style.setProperty('--toc-top', `${headerBottom}px`);
+    }
+
+    function updateTocLayout() {
+        const availableWidth = document.documentElement.clientWidth;
+        const isWide = availableWidth >= mainWidth + (tocWidth * 2) + (layoutGap * 4);
+
+        tocContainer.classList.toggle('wide', isWide);
+        document.body.classList.toggle('toc-compact', !isWide);
+
+        if (previousWideState === undefined) {
+            tocDetails.open = isWide && defaultOpen;
+        } else if (previousWideState !== isWide && !isWide) {
+            tocDetails.open = false;
+        }
+
+        previousWideState = isWide;
+        updateTocOpenState();
+        updateCompactTocTop();
+    }
+
+    updateTocLayout();
+    tocDetails.addEventListener('toggle', updateTocOpenState);
+
+    window.addEventListener('DOMContentLoaded', function () {
+        elements = document.querySelectorAll('.post-content h1[id],.post-content h2[id],.post-content h3[id],.post-content h4[id],.post-content h5[id],.post-content h6[id]');
+        activeElement = elements[0];
+
+        if (activeElement) {
+            const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
+            const firstLink = tocContainer.querySelector(`.inner ul li a[href="#${id}"]`);
+            if (firstLink) firstLink.classList.add('active');
+        }
+
     }, false);
 
+    window.addEventListener('resize', updateTocLayout, false);
+
     window.addEventListener('scroll', () => {
+        updateCompactTocTop();
+
         // Find the currently visible heading
         let newActiveElement = null;
         
@@ -145,14 +198,14 @@
             // Remove active class from previous element
             if (activeElement) {
                 const prevId = encodeURI(activeElement.getAttribute('id')).toLowerCase();
-                const prevLink = document.querySelector(`.inner ul li a[href="#${prevId}"]`);
+                const prevLink = tocContainer.querySelector(`.inner ul li a[href="#${prevId}"]`);
                 if (prevLink) prevLink.classList.remove('active');
             }
             
             // Add active class to new element
             activeElement = newActiveElement;
             const id = encodeURI(activeElement.getAttribute('id')).toLowerCase();
-            const link = document.querySelector(`.inner ul li a[href="#${id}"]`);
+            const link = tocContainer.querySelector(`.inner ul li a[href="#${id}"]`);
             if (link) {
                 link.classList.add('active');
                 
@@ -164,20 +217,6 @@
         }
     }, false);
 
-    const main = parseInt(getComputedStyle(document.body).getPropertyValue('--article-width'), 10);
-    const toc = parseInt(getComputedStyle(document.body).getPropertyValue('--toc-width'), 10);
-    const gap = parseInt(getComputedStyle(document.body).getPropertyValue('--gap'), 10);
-
-    function checkTocPosition() {
-        const width = document.body.scrollWidth;
-
-        if (width - main - (toc * 2) - (gap * 4) > 0) {
-            document.getElementById("toc-container").classList.add("wide");
-        } else {
-            document.getElementById("toc-container").classList.remove("wide");
-        }
-    }
-
     function getOffsetTop(element) {
         if (!element.getClientRects().length) {
             return 0;
@@ -188,7 +227,7 @@
     }
 
     function scrollTocToActiveItem(activeLink) {
-        const tocInner = document.querySelector('.toc .inner');
+        const tocInner = tocContainer.querySelector('.toc .inner');
         if (!tocInner || !activeLink) return;
         
         const tocRect = tocInner.getBoundingClientRect();

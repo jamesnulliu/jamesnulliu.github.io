@@ -28,9 +28,9 @@ cover:
 
 Hello, I am JamesNULLiu (Yanchen Liu, 刘彦辰).
 
-I am a first-year MSCS student at **University of Southern California**, now working as a research intern in {{<text url="https://inklab.usc.edu/">}}INK Lab @ USC{{</text>}}, advised by Prof. {{<text url="https://www.seanre.com/">}}Xiang Ren{{</text>}} and Postdoc. {{<text url="https://siyuanwangw.github.io/">}}Siyuan Wang{{</text>}}.
+I am a second-year MSCS student at **University of Southern California**, now working as a research intern in {{<text url="https://inklab.usc.edu/">}}INK Lab @ USC{{</text>}}, advised by Prof. {{<text url="https://www.seanre.com/">}}Xiang Ren{{</text>}}.
 
-My current research focuses on LLM post-training and reasoning, particularly in areas such as SFT, RLHF, and test-time reasoning. I am also interested in improving the efficiency of LLM training and inference, as well as the development of LLM-based agents.
+My research focuses LLM post-training and reasoning, particularly in areas such as SFT, RLHF, and test-time reasoning. I am also interested in improving the efficiency of LLM training and inference, as well as the development of LLM-based agents.
 
 More broadly, my goal is to improve the efficiency and capability of LLMs at both the algorithmic and systems levels. At the algorithmic level, I aim to enhance model reasoning through improved training data, reward modeling, and sampling strategies during post-training. At the systems level, I am interested in optimizing training and inference frameworks to better utilize heterogeneous hardware and improve the scalability and efficiency of LLM deployment.
 
