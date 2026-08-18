@@ -51,7 +51,10 @@ params:
   showToc: true
   showbreadcrumbs: true
   ShowAllPagesInArchive: true
-  ShowCodeCopyButtons: true
+  ShowCodeCopyButtons: true #代码块复制按钮与折叠耦合 必须开启
+  codeBlockFoldMode: true # 默认折叠代码块
+  codeBlockCollapsedMax: "10rem"   # 折叠时最大高度，默认 10rem
+  codeBlockExpandedMax: "50vh"     # 展开时最大高度，默认 50vh
   ShowFullTextinRSS: true 
   ShowWordCount: true
   ShowPageNums: true
