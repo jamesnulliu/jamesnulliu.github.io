@@ -28,7 +28,7 @@
     transition: all ease-out 0.3s;
 }
 
-.dark .frienddiv:hover {
+[data-theme="dark"] .frienddiv:hover {
     background: var(--code-bg);
 }
 

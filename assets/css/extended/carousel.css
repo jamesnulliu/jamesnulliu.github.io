@@ -1,0 +1,136 @@
+.carousel {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: var(--carousel-ratio, 16/9);
+    margin: 0 0 var(--content-gap);
+    border-radius: var(--radius);
+    background: var(--code-bg);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.carousel:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.carousel-track {
+    display: flex;
+    height: 100%;
+    touch-action: pan-y;
+    transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
+    will-change: transform;
+}
+
+.carousel:not([data-count="1"]) .carousel-track {
+    cursor: grab;
+}
+
+.carousel.is-dragging .carousel-track {
+    cursor: grabbing;
+    transition: none;
+}
+
+.carousel-slide {
+    flex: 0 0 100%;
+    height: 100%;
+    margin: 0;
+}
+
+.md-content .carousel-slide img,
+.carousel-slide img {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+    object-fit: var(--carousel-fit, cover);
+    pointer-events: none;
+    -webkit-user-drag: none;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    transform: translateY(-50%);
+    transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.carousel-btn:hover {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.carousel-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.carousel-prev {
+    inset-inline-start: 0.75rem;
+}
+
+.carousel-next {
+    inset-inline-end: 0.75rem;
+}
+
+/* Arrows appear on hover for mouse users; touch users swipe. */
+@media (hover: hover) {
+    .carousel-btn {
+        opacity: 0;
+    }
+
+    .carousel:hover .carousel-btn,
+    .carousel:focus-within .carousel-btn {
+        opacity: 1;
+    }
+}
+
+@media (hover: none) {
+    .carousel-btn {
+        display: none;
+    }
+}
+
+.carousel-dots {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 50%;
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.3);
+    transform: translateX(-50%);
+}
+
+.carousel-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.55);
+    transition: width 0.25s ease, background 0.25s ease;
+}
+
+.carousel-dot[aria-current="true"] {
+    width: 1.25rem;
+    background: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .carousel-track,
+    .carousel-btn,
+    .carousel-dot {
+        transition: none;
+    }
+}

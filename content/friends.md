@@ -4,6 +4,7 @@ nolisence: true
 comments: true
 hideFooter: true
 hidemeta: true
+hiddenInRss: true
 ---
 
 {{<friend name="luminolt's Page" url="https://luminolt.cn/" logo=https://luminolt.cn/author/chenghao-chen/avatar_hu_79c871b478558618.jpg word="Cryptography Learner">}}

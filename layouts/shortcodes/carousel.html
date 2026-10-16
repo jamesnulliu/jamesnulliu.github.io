@@ -1,0 +1,72 @@
+{{- /*
+  Draggable image carousel. Shows every image inside an `assets/` folder, sorted by file name.
+
+  Usage: {{< carousel dir="imgs/about_me/carousel" >}}
+    dir      (required) folder under assets/
+    ratio    frame aspect ratio, e.g. "16/9"; defaults to the first image's ratio
+    fit      "cover" (crop to fill the frame, default) or "contain" (show the whole image)
+    interval autoplay delay in ms; default 5000, "0" disables autoplay
+*/ -}}
+{{- $dir := trim (.Get "dir") "/" -}}
+{{- $images := sort (where (resources.Match (printf "%s/*" $dir)) "ResourceType" "image") "Name" -}}
+{{- $resizable := slice "jpeg" "png" "webp" "tiff" "bmp" -}}
+
+{{- $slides := slice -}}
+{{- range $images -}}
+  {{- $img := . -}}
+  {{- $s := dict "src" $img.RelPermalink "srcset" "" "w" 0 "h" 0 -}}
+  {{- if in $resizable $img.MediaType.SubType -}}
+    {{- $img = $img.Filter images.AutoOrient -}}
+    {{- $large := $img.Resize (printf "%dx webp q82" (cond (gt $img.Width 1600) 1600 $img.Width)) -}}
+    {{- $srcset := printf "%s %dw" $large.RelPermalink $large.Width -}}
+    {{- if gt $large.Width 800 -}}
+      {{- $small := $img.Resize "800x webp q82" -}}
+      {{- $srcset = printf "%s %dw, %s" $small.RelPermalink $small.Width $srcset -}}
+    {{- end -}}
+    {{- $s = dict "src" $large.RelPermalink "srcset" $srcset "w" $large.Width "h" $large.Height -}}
+  {{- else if eq $img.MediaType.SubType "gif" -}}
+    {{- $s = merge $s (dict "w" $img.Width "h" $img.Height) -}}
+  {{- end -}}
+  {{- $alt := replaceRE `[-_]+` " " (path.BaseName $img.Name) -}}
+  {{- $slides = $slides | append (merge $s (dict "alt" $alt)) -}}
+{{- end -}}
+
+{{- if not $slides -}}
+  {{- warnf "carousel: no images found in assets/%s (%s)" $dir .Position -}}
+{{- else -}}
+  {{- $first := index $slides 0 -}}
+  {{- $ratio := .Get "ratio" | default (cond (gt $first.w 0) (printf "%d/%d" $first.w $first.h) "16/9") -}}
+  {{- $fit := .Get "fit" | default "cover" -}}
+  {{- $count := len $slides -}}
+<div class="carousel" data-count="{{ $count }}" data-interval="{{ .Get "interval" | default "5000" }}"
+    style="{{ printf "--carousel-ratio: %s; --carousel-fit: %s;" $ratio $fit | safeCSS }}"
+    role="region" aria-roledescription="carousel" aria-label="Image carousel"{{ if gt $count 1 }} tabindex="0"{{ end }}>
+    <div class="carousel-track">
+        {{- range $i, $s := $slides }}
+        <figure class="carousel-slide" role="group" aria-roledescription="slide" aria-label="{{ add $i 1 }} / {{ $count }}">
+            <img src="{{ $s.src }}"{{ with $s.srcset }} srcset="{{ . }}" sizes="(max-width: 700px) 100vw, 700px"{{ end }}
+                {{- if $s.w }} width="{{ $s.w }}" height="{{ $s.h }}"{{ end }} alt="{{ $s.alt }}"
+                loading="{{ if eq $i 0 }}eager{{ else }}lazy{{ end }}" decoding="async" draggable="false">
+        </figure>
+        {{- end }}
+    </div>
+    {{- if gt $count 1 }}
+    <button class="carousel-btn carousel-prev" type="button" aria-label="Previous image">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+    </button>
+    <button class="carousel-btn carousel-next" type="button" aria-label="Next image">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+    </button>
+    <div class="carousel-dots">
+        {{- range $i, $_ := $slides }}
+        <button class="carousel-dot" type="button" aria-label="Go to image {{ add $i 1 }}"{{ if eq $i 0 }} aria-current="true"{{ end }}></button>
+        {{- end }}
+    </div>
+    {{- end }}
+</div>
+  {{- if and (gt $count 1) (not (.Page.Store.Get "carousel-js")) -}}
+    {{- .Page.Store.Set "carousel-js" true -}}
+    {{- $js := resources.Get "js/carousel.js" | minify | fingerprint }}
+<script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+  {{- end -}}
+{{- end -}}

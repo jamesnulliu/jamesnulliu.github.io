@@ -1,53 +1,50 @@
 ---
 title: "About Me"
 date: 2024-06-29T00:00:00+08:00
-lastmod: 2026-03-11T16:25:43-07:00
+lastmod: 2026-10-16T10:34:12-07:00
 draft: false
 author: ["jamesnulliu"]
-keywords:
--
-categories:
--
-tags:
--
-description: My research interests, education, work experience, achievements and publications.
+keywords: []
+categories: []
+tags: []
+description: My research interests, education, experience, achievements, publications and tech stack.
 comments: false
 showToc: true
 TocOpen: true
 hidemeta: false
 showbreadcrumbs: true
 nolisence: true
-cover:
-    image: "/imgs/people/jamesnulliu-wide.jpg"
-    caption: ""
-    alt: ""
-    relative: false 
+hiddenInRss: true
 ---
+
+{{< carousel dir="imgs/about_me/carousel" >}}
 
 ## 🤖 Brief Introduction
 
-Hello, I am JamesNULLiu (Yanchen Liu, 刘彦辰).
+Hello, I am JamesNULLiu (Yanchen Liu, 刘彦辰), a second-year MSCS student at **University of Southern California** and a graduate research assistant in {{<text url="https://inklab.usc.edu/">}}INK Lab @ USC{{</text>}}, advised by Prof. {{<text url="https://www.seanre.com/">}}Xiang Ren{{</text>}}.
 
-I am a second-year MSCS student at **University of Southern California**, now working as a research intern in {{<text url="https://inklab.usc.edu/">}}INK Lab @ USC{{</text>}}, advised by Prof. {{<text url="https://www.seanre.com/">}}Xiang Ren{{</text>}}.
+My current research focuses on **how to provide better signals and environments for real-world agentic RL**:
 
-My research focuses LLM post-training and reasoning, particularly in areas such as SFT, RLHF, and test-time reasoning. I am also interested in improving the efficiency of LLM training and inference, as well as the development of LLM-based agents.
+- **Signals**: long-horizon and efficient learning signals, and reward design.
+- **Environments**: gaming systems, user simulation, and interactive systems.
 
-More broadly, my goal is to improve the efficiency and capability of LLMs at both the algorithmic and systems levels. At the algorithmic level, I aim to enhance model reasoning through improved training data, reward modeling, and sampling strategies during post-training. At the systems level, I am interested in optimizing training and inference frameworks to better utilize heterogeneous hardware and improve the scalability and efficiency of LLM deployment.
+I have also worked on LLM reasoning and LLM systems (inference engines, AI compilers and kernels), and spent summer 2026 at **Amazon Lab126 - Kindle** building a benchmark system for agentic coding.
 
 If you have any inquiries or are interested in collaboration, please feel free to contact me via email at jamesnulliu@gmail.com.
 
 ## 🧑‍🎓 Education History
 
-- **2025.09 - 2027.06**: Master of Computer Science, University of Southern California, Los Angeles, California, USA.
-- **2021.09 - 2025.06**: Bachelor of Computer Science, Shanghai University, Shanghai, China.
+- **2025.09 - 2027.06**: M.Sc. in Computer Science, University of Southern California, Los Angeles, California, USA.
+- **2021.09 - 2025.06**: B.Eng. in Computer Science, Shanghai University, Shanghai, China.
 
 ## 💻 Professional Experience
 
-- **2025.07 - Present**: Graduate Research Intern, INK Lab, University of Southern California.
-- **2024.07 - 2025.06**: MLE Intern, Shanghai AI Laboratory.
-- **2023.03 - 2025.04**: Undergraduate Research Assistant, SHUCS Lab, Shanghai University.
-- **2023.03 - 2025.04**: Team Leader, Shangai University Super Computing Team.
-- **2023.06 - 2024.07**: Undergraduate Research Intern, Shanghai University and East China Air Traffic Control Bureau.
+- **2026.06 - 2026.08**: Software Development Engineer Intern (AI/ML), Amazon Lab126 - Kindle. *Benchmark System for Agentic Coding.*
+- **2025.06 - Present**: Graduate Research Assistant, INK Lab, University of Southern California. *RLHF and Reasoning for LLMs.*
+- **2024.07 - 2025.06**: Machine Learning Engineer Intern, Shanghai AI Laboratory. *LLM Inference Engine, AI Compiler for Graph, Post-training.*
+- **2023.06 - 2024.07**: Undergraduate Research Intern, Shanghai University and East China Air Traffic Control Bureau. *Super Resolution for Meteorological Data.*
+- **2023.03 - 2025.04**: Undergraduate Research Assistant, Cyber Security Lab, Shanghai University. *Vehicle Modeling, Simulation, and Intrusion Detection.*
+- **2023.03 - 2025.04**: Team Leader, Shanghai University Super Computing Team.
 
 
 ## 🎉 Honors and Awards
@@ -57,20 +54,35 @@ If you have any inquiries or are interested in collaboration, please feel free t
 
 ## 📰 Publications
 
+{{<text color="#767676">}}$^\dagger$ Equal contribution. $^*$ Corresponding author.{{</text>}}
+
 **2026 ------------**
-1. [{{<text color="#767676" url="https://arxiv.org/abs/2602.00425">}}ICLR{{</text>}}] S. Wang, {{<text color="#8860cc" weight="bold" >}}Y. Liu{{</text>}}, X. Ren. "Segment-Level Attribution for Selective Learning of Long Reasoning Traces".
+
+1. [{{<text color="#767676" url="https://arxiv.org/abs/2602.00425">}}ICLR Poster{{</text>}}] S. Wang, {{<text color="#8860cc" weight="bold" >}}Y. Liu{{</text>}}, X. Ren. "Segment-Level Attribution for Selective Learning of Long Reasoning Traces".
+2. {{<text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{</text>}}, X. Che$^\dagger$, B. Joshi$^\dagger$, R. Fukuda, J. Liu, R. Li, Y. Ge, H. Yan, X. Ren. "Replay-Grounded Signals for Long-Horizon Civilization Agents".
+3. {{<text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{</text>}}, J. Liu$^\dagger$, B. Joshi$^\dagger$, X. Che, R. Li, X. Ren. "Attribution Trials: Auditing Whether User Simulators Represent the Intended Individual".
+4. B. Joshi$^\dagger$, {{<text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{</text>}}, S. Swayamdipta, X. Ren, T. Paek, R. Koncel-Kedziorski. "Learning to Seek User Information for Personalization via Multi-turn Conversations".
+5. J. Liu$^\dagger$, {{<text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{</text>}}, L. He, Z. Zhang, X. Che, L. Ge, F. Qian. "When Repairs Stop Being Recipes: Re-Grounding Repair Memory for Coding Agents".
+6. X. Che, H. Yan, {{<text color="#8860cc" weight="bold" >}}Y. Liu{{</text>}}, Y. Ge, H. Liu, A. Shi, R. Li, H. Wang. "Does Learning to Predict the World Help LLM Agents Act? Auditing World-Model Post-Training".
+7. X. Che, S. Li, Y. Ge, {{<text color="#8860cc" weight="bold" >}}Y. Liu{{</text>}}, H. Yan, X. Lei, Y. Wang, Z. Dong, Y. Yao, Q. Xie, J. Liu. "GameLogicBench: Evaluating Coding Agents on Runtime Game Logic with Frame-Level Behavioral Assertions".
 
 **2025 ------------**
 
-1. [{{<text color="#767676" url="https://arxiv.org/abs/2506.10401v2">}}Arxiv{{< /text >}} | {{< text color="#767676" url="https://github.com/PJLAB-CHIP/HPCTransCompile" >}}Code{{< /text >}}] J. Lv, X. He, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, A. Shen, X. Dai$^*$, Y. Li, J. Hao, J. Ding, Y. Hu, S. Yin. "HPCTransCompile: An AI Compiler Generated Dataset for High-Performance CUDA Transpilation and LLM Preliminary Exploration".  
-2. [{{< text color="#767676" url="https://arxiv.org/abs/2411.10258" >}}Arxiv{{< /text >}} | {{< text color="#767676" url="https://github.com/Tiara8735/MDHP-Net-Anonymous" >}}Code{{< /text >}}] Q. Liu$^\dagger$, {{< text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{< /text >}}, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng. "MDHP-Net: Detecting an Emerging Time-exciting Threat in IVN".  
-3. Z. Xu, A. Shen, D. Kong, X. Dai, J. Liu, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, L. Wang, S. Wei, Y. Hu and S. Yin*. "LLMEngine: Disaggregated Mapping and Memory Management Co-scheduling for Wafer-scale Chips".  
+8. [{{<text color="#767676" url="https://arxiv.org/abs/2506.10401v2">}}Arxiv{{< /text >}} | {{< text color="#767676" url="https://github.com/PJLAB-CHIP/HPCTransCompile" >}}Code{{< /text >}}] J. Lv, X. He, {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}, A. Shen, X. Dai, Y. Li, J. Hao, J. Ding, Y. Hu, S. Yin. "HPCTransEval: A Benchmark of High-Performance GPU-to-CPU Transpilation with Pre-trained Large Language Models".
+9. [{{< text color="#767676" url="https://arxiv.org/abs/2411.10258" >}}Arxiv{{< /text >}} | {{< text color="#767676" url="https://github.com/Tiara8735/MDHP-Net-Anonymous" >}}Code{{< /text >}}] Q. Liu$^\dagger$, {{< text color="#8860cc" weight="bold" >}}Y. Liu$^\dagger${{< /text >}}, R. Li, C. Cao, Y. Li$^*$, X. Li$^*$, P. Wang, R. Feng. "MDHP-Net: Detecting an Emerging Time-Exciting Threat in IVN".
 
 **2024 ------------**
 
-1. [{{< text color="#767676" url="https://ieeexplore.ieee.org/document/10521910" >}}IEEE Internet of Things Journal{{< /text >}} | {{< text color="#767676" url="https://github.com/jamesnulliu/SISSA" >}}Code{{< /text >}}] Q. Liu, X. Li, K. Sun, Y. Li$^*$ and {{< text color="#8860cc" weight="bold" >}}Y. Liu$^*${{< /text >}}. "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic".  
-2. [{{< text color="#767676" url="https://www.mdpi.com/1999-5903/16/6/185" >}}MDPI Future Internet{{< /text >}} | {{< text color="#767676" url="https://github.com/jamesnulliu/HP-LSTM" >}}Code{{< /text >}}] X. Li, R. Li, and {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}. "HP-LSTM: Hawkes Process–LSTM-Based Detection of DDoS Attack for In-Vehicle Network".  
+10. [{{< text color="#767676" url="https://ieeexplore.ieee.org/document/10521910" >}}IEEE Internet of Things Journal{{< /text >}} | {{< text color="#767676" url="https://github.com/jamesnulliu/SISSA" >}}Code{{< /text >}}] Q. Liu, X. Li, K. Sun, Y. Li$^*$ and {{< text color="#8860cc" weight="bold" >}}Y. Liu$^*${{< /text >}}. "SISSA: Real-Time Monitoring of Hardware Functional Safety and Cybersecurity With In-Vehicle SOME/IP Ethernet Traffic".
+11. [{{< text color="#767676" url="https://www.mdpi.com/1999-5903/16/6/185" >}}MDPI Future Internet{{< /text >}} | {{< text color="#767676" url="https://github.com/jamesnulliu/HP-LSTM" >}}Code{{< /text >}}] X. Li, R. Li, and {{< text color="#8860cc" weight="bold" >}}Y. Liu{{< /text >}}. "HP-LSTM: Hawkes Process–LSTM-Based Detection of DDoS Attack for In-Vehicle Network".
 
+## 🛠️ Tech Stack
+
+- **Programming Languages**: C++ (CMake, Bazel, vcpkg, GCC, Clang, MSVC, MSBuild, SIMD), CUDA (SIMT, Nsight Compute), Python (pip, conda, uv).
+- **Post-Training & RL**: LoRA, SFT, OPD, RLHF, PPO, GRPO, DAPO, OPSD, SDPO, Agentic RL; TRL, verl, slime.
+- **Inference Acceleration**: TP, Prefilling, Decoding, Prefix Caching, Continuous Batching, Chunked Prefill, Speculative Decoding, Quantization, Paged Attention, Flash Attention, MQA, GQA, MLA.
+- **Training Acceleration**: Mixed Precision, Gradient Checkpointing, ZeRO, DP, DDP, FSDP, MP, PP.
+- **Dev Tools**: Git, GitHub, GitLab, Brazil (Amazon); Docker, Apptainer, Singularity, Slurm, Module; Linux (Ubuntu, Debian, Fedora, Rocky Linux), WSL2.
 
 ## 🤪 Hobbies
 
