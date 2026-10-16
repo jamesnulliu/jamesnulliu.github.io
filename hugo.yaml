@@ -98,6 +98,9 @@ params:
   socialIcons:
     - name: github
       url: https://www.github.com/jamesnulliu
+    - name: googlescholar
+      title: Google Scholar
+      url: "https://scholar.google.com/citations?user=_nKcsagAAAAJ&hl=en"
     - name: linkedin
       url: https://www.linkedin.com/in/jamesnulliu
     - name: X
