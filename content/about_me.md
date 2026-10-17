@@ -30,7 +30,7 @@ My current research focuses on **how to provide better signals and environments 
 
 I have also worked on LLM reasoning and LLM systems (inference engines, AI compilers and kernels), and spent summer 2026 at **Amazon Lab126 - Kindle** building a benchmark system for agentic coding.
 
-If you have any inquiries or are interested in collaboration, please feel free to contact me via email at jamesnulliu@gmail.com.
+If you have any inquiries or are interested in collaboration, please feel free to contact me via email at liuyanch@usc.edu or jamesnulliu@gmail.com.
 
 ## 🧑‍🎓 Education History
 
